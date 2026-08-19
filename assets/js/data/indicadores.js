@@ -3,7 +3,7 @@
 // conferência: não veio de leitura automática de planilha nem de fonte em texto.
 const RFEPCT_BASELINE = {rap:"20,42", iea:"73,30%", tecnico:"50,60%", formacao:"13,90%", eja:"2,11%"};
 const RFEPCT_DATA = [
-  {unidade:"IFPB", rap:{v:"23,74",c:"green"}, iea:{v:"45,10%",c:"red"}, tecnico:{v:"50,90%",c:"blue"}, formacao:{v:"14,30%",c:"red"}, eja:{v:"1,31%",c:"red"}},
+  {unidade:"- Institucional -", rap:{v:"23,74",c:"green"}, iea:{v:"45,10%",c:"red"}, tecnico:{v:"50,90%",c:"blue"}, formacao:{v:"14,30%",c:"red"}, eja:{v:"1,31%",c:"red"}},
   {unidade:"Areia", rap:{v:"31,29",c:"green"}, iea:{v:"46,43%",c:"red"}, tecnico:{v:"85,90%",c:"green"}, formacao:{v:"3,60%",c:"red"}, eja:{v:"11,23%",c:"green"}},
   {unidade:"Cabedelo", rap:{v:"32,86",c:"green"}, iea:{v:"72,46%",c:"orange"}, tecnico:{v:"40,70%",c:"red"}, formacao:{v:"27,10%",c:"green"}, eja:{v:"3,31%",c:"yellow"}},
   {unidade:"Cabedelo Centro", rap:{v:"13,33",c:"red"}, iea:{v:"40,66%",c:"red"}, tecnico:{v:"62,70%",c:"green"}, formacao:{v:"3,20%",c:"red"}, eja:{v:"6,44%",c:"blue"}},
