@@ -65,6 +65,7 @@
   .collapse-btn:hover{background:rgba(255,255,255,.09); color:#fff;}
   .collapse-btn svg{width:18px; height:18px;}
 
+  .sidebar.collapsed .brand-acronym,
   .sidebar.collapsed .brand-meaning,
   .sidebar.collapsed .brand-sub,
   .sidebar.collapsed .nav-label{display:none;}

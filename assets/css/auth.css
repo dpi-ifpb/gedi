@@ -1,15 +1,17 @@
 #appRoot{display:flex; min-height:100vh; width:100%;}
 
 .auth-gate{
-  position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center;
-  background:var(--bg); padding:24px;
+  position:fixed; inset:0; z-index:100; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; background:var(--bg); padding:24px;
 }
+.auth-header{text-align:center; margin-bottom:28px; max-width:360px; width:100%;}
+.auth-logo{width:84px; height:auto; margin:0 auto 16px; display:block;}
 .auth-card{
   background:var(--surface); border:1px solid var(--border); border-radius:16px;
-  box-shadow:0 12px 40px rgba(42,20,88,.12); padding:40px 36px; max-width:360px; width:100%; text-align:center;
+  box-shadow:0 12px 40px rgba(42,20,88,.12); padding:32px 36px; max-width:360px; width:100%; text-align:center;
 }
 .auth-title{font-size:24px; font-weight:700; color:var(--c1); letter-spacing:.3px; margin-bottom:4px;}
-.auth-subtitle{font-size:12.5px; color:var(--ink-soft); margin-bottom:18px; line-height:1.4;}
+.auth-subtitle{font-size:12.5px; color:var(--ink-soft); line-height:1.4;}
 .auth-desc{font-size:13px; color:var(--ink-soft); line-height:1.5; margin-bottom:24px;}
 .auth-btn-wrap{display:flex; justify-content:center;}
 .auth-error{
@@ -27,7 +29,7 @@
 }
 .auth-user-avatar{
   width:26px; height:26px; border-radius:50%; background:rgba(255,255,255,.14); color:#fff;
-  font-size:10.5px; font-weight:700; display:flex; align-items:center; justify-content:center;
+  font-size:10.5px; font-weight:700; align-items:center; justify-content:center;
   flex-shrink:0; letter-spacing:.3px;
 }
 .auth-user-name{
@@ -39,7 +41,11 @@
 }
 .auth-signout:hover{background:rgba(255,255,255,.09); color:#fff;}
 
-/* barra recolhida: mostra só o avatar (com o nome via title="") e some com nome/botão */
+/* barra aberta: nome já identifica a pessoa, então o avatar de iniciais some */
+.auth-user-avatar{display:none;}
+
+/* barra recolhida: mostra só o avatar (iniciais) — sem clique, sem acionar logout */
 .sidebar.collapsed .auth-user{justify-content:center; padding:10px 0;}
+.sidebar.collapsed .auth-user-avatar{display:flex;}
 .sidebar.collapsed .auth-user-name,
 .sidebar.collapsed .auth-signout{display:none;}
