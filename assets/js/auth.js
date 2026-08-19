@@ -127,9 +127,10 @@ function initAuthGate(){
     callback: handleCredentialResponse,
     hd: ALLOWED_DOMAIN,
   });
+  const btnContainer = document.getElementById('googleSignInButton');
   google.accounts.id.renderButton(
-    document.getElementById('googleSignInButton'),
-    { theme: 'filled_blue', size: 'large', text: 'signin_with', shape: 'pill' }
+    btnContainer,
+    { theme: 'filled_blue', size: 'large', text: 'signin_with', shape: 'pill', width: btnContainer.clientWidth }
   );
 }
 
