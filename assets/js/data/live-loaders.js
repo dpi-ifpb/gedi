@@ -9,7 +9,7 @@ async function loadData(){
 
   const header = table.cols.map(c => (c.label || '').trim());
   const idx = {
-    id: header.indexOf('Identificador'),
+    id: header.indexOf('ID') !== -1 ? header.indexOf('ID') : header.indexOf('Identificador'), // planilha já usou os dois nomes
     descricao: header.indexOf('Descrição'),
     unidade: header.indexOf('Unidade'),
     valor: header.findIndex(h => h.replace(/\s+/g,' ').trim().startsWith('Valor')),
@@ -21,7 +21,7 @@ async function loadData(){
     dataDoc: header.indexOf('Data do Doc.'),
   };
 
-  if(idx.id === -1) throw new Error('Não encontrei a coluna "Identificador" na planilha — confira se a aba lida é a de despesas.');
+  if(idx.id === -1) throw new Error('Não encontrei a coluna "ID" (ou "Identificador") na planilha — confira se a aba lida é a de despesas.');
 
   const itens = [];
   table.rows.forEach(row => {
