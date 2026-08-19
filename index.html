@@ -17,11 +17,12 @@
 <!-- ============ PORTÃO DE LOGIN (Google, restrito a @ifpb.edu.br) ============ -->
 <div class="auth-gate" id="authGate">
   <div class="auth-card">
-    <img src="assets/img/ifpb-logo-vertical-branco.png" alt="IFPB" class="auth-logo" />
-    <h1>Gestão e Transparência</h1>
-    <p>Acesso restrito a contas do domínio <strong>@ifpb.edu.br</strong>.</p>
+    <h1 class="auth-title">GEDI</h1>
+    <p class="auth-subtitle">Gestão Estratégica e Des. Institucional</p>
+    <p class="auth-desc">Acesso restrito a contas do domínio <strong>@ifpb.edu.br</strong>.</p>
     <div id="googleSignInButton" class="auth-btn-wrap"></div>
     <p class="auth-error" id="authError" style="display:none;"></p>
+    <a href="#" class="auth-retry-link" onclick="retryLogin(); return false;">Fazer login novamente</a>
   </div>
 </div>
 
@@ -30,16 +31,13 @@
 <div class="sidebar collapsed" id="sidebar">
   <div class="brand">
     <div class="brand-top">
-      <div class="brand-text">
-        <span class="brand-acronym">GEDI</span>
-        <span class="brand-meaning">Gestão Estratégica e Des. Institucional</span>
-      </div>
+      <span class="brand-acronym">GEDI</span>
       <button type="button" class="collapse-btn" id="collapseBtn"></button>
     </div>
+    <div class="brand-meaning">Gestão Estratégica e Des. Institucional</div>
   </div>
 
   <div class="nav-list-wrap">
-    <img src="assets/img/ifpb-logo-vertical-branco.png" alt="" class="nav-bg-logo" />
 
     <div class="nav-section-label">Despesas e Demandas</div>
     <div class="nav-item active" id="navTotais" onclick="switchPage('totais')">
@@ -61,16 +59,16 @@
       <span class="nav-label">Indicadores</span>
     </div>
 
-    <div class="nav-section-label">Análises Estratégicas</div>
-    <div class="nav-item" id="navPares" onclick="switchPage('pares')">
+    <div class="nav-section-label" style="display:none;">Análises Estratégicas</div>
+    <div class="nav-item" id="navPares" onclick="switchPage('pares')" style="display:none;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3.2"/><circle cx="17" cy="7" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M13 14c.6-.3 1.3-.5 2-.5 3.3 0 6 2.7 6 6"/></svg>
       <span class="nav-label">Análise dos Pares</span>
     </div>
-    <div class="nav-item" id="navSimulador" onclick="switchPage('simulador')">
+    <div class="nav-item" id="navSimulador" onclick="switchPage('simulador')" style="display:none;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v4H9z"/><rect x="4" y="7" width="16" height="14" rx="2"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg>
       <span class="nav-label">Simulador QE</span>
     </div>
-    <div class="nav-item" id="navSimuladorF" onclick="switchPage('simuladorF')">
+    <div class="nav-item" id="navSimuladorF" onclick="switchPage('simuladorF')" style="display:none;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l5-4 5 4v11"/><path d="M15 21V13l4-2v10"/></svg>
       <span class="nav-label">Simulador Funcionamento</span>
     </div>
