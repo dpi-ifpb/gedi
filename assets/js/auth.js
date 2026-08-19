@@ -1,14 +1,3 @@
-/* ================= Autenticação (Google Sign-In, restrita a @ifpb.edu.br) =================
- * IMPORTANTE — antes de usar, troque GOOGLE_CLIENT_ID pelo Client ID gerado no Google Cloud
- * Console (Credenciais OAuth 2.0), com https://dpi-ifpb.github.io como origem JavaScript
- * autorizada. Veja o passo a passo que acompanha este arquivo.
- *
- * LIMITAÇÃO IMPORTANTE: como este painel é só HTML/JS estático (sem servidor próprio), essa
- * checagem roda inteiramente no navegador de quem acessa. Ela barra o acesso casual/não
- * autorizado de forma eficaz, mas não é segurança formal — alguém com conhecimento técnico
- * poderia inspecionar o código e contornar. Não é adequado para dados ultrassensíveis sem
- * um backend validando o token também.
- */
 const GOOGLE_CLIENT_ID = '807358818690-rg7qcv6bs38ltlgaf26qq228pdcuhie6.apps.googleusercontent.com';
 const ALLOWED_DOMAIN = 'ifpb.edu.br';
 // Opcional: restrinja a e-mails específicos, além do domínio. Deixe [] para liberar
@@ -22,7 +11,7 @@ const ALLOWED_EMAILS = [
   'anna.mendonca@ifpb.edu.br'
 ];
 // Tempo de inatividade até pedir login de novo (ms). 30 minutos por padrão.
-const INACTIVITY_LIMIT_MS = 30 * 60 * 1000;
+const INACTIVITY_LIMIT_MS = 15 * 60 * 1000;
 let inactivityTimer = null;
 
 function base64UrlDecode(str){
@@ -92,6 +81,12 @@ function signOut(){
   if(window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
   document.getElementById('appRoot').style.display = 'none';
   document.getElementById('authGate').style.display = 'flex';
+}
+
+// Link "Fazer login novamente" — recarrega a página pra reiniciar o fluxo de login do zero,
+// caso o botão do Google não tenha renderizado corretamente por algum motivo.
+function retryLogin(){
+  window.location.reload();
 }
 
 function touchActivity(){
