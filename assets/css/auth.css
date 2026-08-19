@@ -1,3 +1,5 @@
+#appRoot{display:flex; min-height:100vh; width:100%;}
+
 .auth-gate{
   position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center;
   background:linear-gradient(160deg, var(--c1) 0%, #1D0E40 100%); padding:24px;
