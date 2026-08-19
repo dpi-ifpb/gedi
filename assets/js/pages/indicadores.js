@@ -64,13 +64,13 @@ function getUnitSeries(unitRow){
 }
 
 function buildIndicatorChartSVG(campusNome){
-  const ifpb = RFEPCT_DATA.find(u => u.unidade === 'IFPB');
-  const isIfpb = campusNome === 'IFPB';
+  const ifpb = RFEPCT_DATA.find(u => u.unidade === '- Institucional -');
+  const isIfpb = campusNome === '- Institucional -';
   const campus = isIfpb ? null : RFEPCT_DATA.find(u => u.unidade === campusNome);
 
   const series = [
     {nome: 'Rede (referência)', valores: getBaselineSeries(), cor: '#8E1774'},
-    {nome: 'IFPB', valores: ifpb ? getUnitSeries(ifpb) : [0,0,0,0,0], cor: '#1E8E5A'},
+    {nome: '- Institucional -', valores: ifpb ? getUnitSeries(ifpb) : [0,0,0,0,0], cor: '#1E8E5A'},
   ];
   if(!isIfpb){
     series.push({nome: campusNome, valores: campus ? getUnitSeries(campus) : [0,0,0,0,0], cor: '#E88A3A'});
@@ -136,7 +136,7 @@ function buildIndicatorChartSVG(campusNome){
 }
 
 function openIndicatorChart(unidade){
-  document.getElementById('chartModalTitle').textContent = `Indicadores — ${unidade}`;
+  document.getElementById('chartModalTitle').textContent = `Indicadores da Unidade: ${unidade}`;
   document.getElementById('chartModalBody').innerHTML = buildIndicatorChartSVG(unidade);
   document.getElementById('chartModalCard').classList.remove('zoomed');
   document.getElementById('chartZoomBtn').textContent = 'Ampliar';

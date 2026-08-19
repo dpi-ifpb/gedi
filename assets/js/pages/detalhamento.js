@@ -65,11 +65,13 @@ function buildDetalheFilters(){
   if(document.getElementById('fNatureza')) document.getElementById('fNatureza').value = currentFilters.natureza;
   if(document.getElementById('fSituacao')) document.getElementById('fSituacao').value = currentFilters.situacao;
 
-  // delegação de clique: abrir popup de detalhe ao clicar na descrição
-  document.getElementById('detalheBody').addEventListener('click', (e) => {
-    const link = e.target.closest('.desc-link');
-    if(link) openDetail(link.dataset.id);
-  });
+  // Popup de detalhe da despesa removido por enquanto (descrição não é mais clicável).
+  // Código de openDetail()/closeDetail() e o modal em si continuam no arquivo/HTML,
+  // só não há mais nada acionando-os — reative religando o listener abaixo se precisar:
+  // document.getElementById('detalheBody').addEventListener('click', (e) => {
+  //   const link = e.target.closest('.desc-link');
+  //   if(link) openDetail(link.dataset.id);
+  // });
 }
 
 function origemBadgeClass(origem){
@@ -110,7 +112,7 @@ function buildDetalheTable(){
   const rows = filtrados.map(it => `
     <tr>
       <td>${it.unidade}</td>
-      <td class="desc-cell"><span class="desc-link" data-id="${escapeAttr(it.id)}">${it.descricao}</span></td>
+      <td class="desc-cell">${it.descricao}</td>
       <td><span class="badge ${origemBadgeClass(it.origem)}">${it.origem || '—'}</span></td>
       <td><span class="tipo-tag ${naturezaTagClass(it.natureza)}">${it.natureza || '—'}</span></td>
       <td><span class="sit-tag ${situacaoTagClass(it.situacao)}">${it.situacao || '—'}</span></td>
