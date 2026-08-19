@@ -1,0 +1,104 @@
+  /* Panels */
+  .section-label{
+    font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px;
+    color:var(--ink-soft); margin:26px 2px 10px;
+  }
+  .section-label:first-of-type{margin-top:0;}
+  .panel{background:var(--surface); border:none; border-radius:0; overflow-x:auto; overflow-y:clip; max-width:100%;}
+  .panel + .panel{margin-top:14px;}
+  .panel-pad{padding:24px 26px;}
+
+  /* Table */
+  table{width:100%; border-collapse:separate; border-spacing:0; font-size:13px;}
+  thead th{
+    text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.4px;
+    color:#EDE6F5; font-weight:600; padding:12px 26px;
+    background:var(--c1); position:sticky; top:0; z-index:5;
+  }
+  thead th.num, tbody td.num{text-align:right;}
+  thead th.th-center{text-align:center;}
+  .pares-center{text-align:center !important;}
+  .extra-table thead th{height:40px; box-sizing:border-box; vertical-align:middle;}
+  .extra-table .proposta-group{background:#5B3B99;}
+  tbody td{padding:13px 26px; color:var(--ink);}
+  tbody tr:nth-child(even){background:#FAF6F2;}
+  tbody tr:hover{background:#F5ECE3;}
+  td.num, th.num{font-variant-numeric:tabular-nums; white-space:nowrap;}
+  .muted{color:var(--ink-soft);}
+  tfoot td{
+    padding:13px 26px; font-weight:600; background:#EAD9C4; color:var(--c1);
+  }
+
+  /* Valor: símbolo à esquerda, número alinhado à direita */
+  .cur-cell{display:flex; align-items:baseline; justify-content:space-between; gap:8px; width:100%;}
+  .cur-cell .cur-sym{color:var(--ink-soft); font-weight:600; font-size:.92em;}
+  tfoot .cur-cell .cur-sym, thead .cur-cell .cur-sym{color:inherit; opacity:.7;}
+
+  .badge{
+    display:inline-block; font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px;
+    background:#F0E7E0; color:var(--c1); white-space:nowrap;
+  }
+  .badge.origem-rp2{background:#F0E7FA; color:var(--c1-soft);}
+  .badge.origem-rtc{background:#FBEAF6; color:var(--c2);}
+  .badge.origem-outra{background:#F0E7E0; color:var(--ink-soft);}
+
+  .tipo-tag{
+    display:inline-block; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.3px;
+    padding:2px 7px; border-radius:20px; white-space:nowrap;
+  }
+  .tipo-tag.tipo-custeio{background:rgba(58,30,114,.12); color:var(--c1-soft);}
+  .tipo-tag.tipo-investimento{background:rgba(21,128,61,.14); color:#15803D;}
+
+  .sit-tag{
+    display:inline-block; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.3px;
+    padding:2px 7px; border-radius:20px; white-space:nowrap;
+  }
+  .sit-tag.sit-atendida{background:rgba(30,142,90,.14); color:#1E8E5A;}
+  .sit-tag.sit-comprometida{background:rgba(37,99,235,.13); color:#2563EB;}
+  .sit-tag.sit-prevista{background:rgba(202,138,4,.15); color:#CA8A04;}
+  .sit-tag.sit-outra{background:#F0E7E0; color:var(--ink-soft);}
+
+  /* Tabela pivô (Totais) */
+  .pivot-wrap{overflow-x:auto; overflow-y:clip;}
+  .pivot-table{border-collapse:separate; border-spacing:0; font-size:12.5px; white-space:nowrap;}
+  .pivot-table th, .pivot-table td{border:none; padding:9px 14px;}
+  .pivot-th{text-align:center; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; font-weight:600; color:#EDE6F5; background:var(--c1); position:sticky; z-index:5; height:36px; box-sizing:border-box; vertical-align:middle;}
+  .pivot-th.group-origem{background:#5B3B99; font-size:11.5px;}
+  .pivot-th.group-situacao{background:#41267E;}
+  .pivot-table thead th.num{text-align:center;}
+  .pivot-table tbody td, .pivot-table tfoot td{text-align:right; font-variant-numeric:tabular-nums;}
+  .pivot-unit-col{
+    text-align:left !important; font-weight:600; position:sticky; left:0; background:var(--surface);
+    z-index:2; width:190px; min-width:190px; max-width:190px; overflow:hidden; text-overflow:ellipsis;
+  }
+  .pivot-total-col{
+    position:sticky; left:190px; font-weight:600; background:var(--surface);
+    z-index:2; width:150px; min-width:150px; max-width:150px;
+  }
+  .pivot-val{width:150px; min-width:150px; max-width:150px;}
+  thead .pivot-unit-col{z-index:7; background:var(--c1); text-align:left !important;}
+  thead .pivot-total-col{z-index:7; background:var(--c1);}
+  tfoot .pivot-unit-col{background:#EAD9C4; color:var(--c1); font-weight:600;}
+  tfoot .pivot-total-col{background:#EAD9C4; color:var(--c1); font-weight:600;}
+  .pivot-table tfoot td{background:#EAD9C4; color:var(--c1); font-weight:600;}
+  .pivot-table tbody tr:nth-child(even) td{background:#FAF6F2;}
+  .pivot-table tbody tr:hover td{background:#F5ECE3;}
+
+  @media (max-width:900px){
+    .kpi-row{grid-template-columns:repeat(2,1fr);}
+  }
+
+  /* Tabela de indicadores RFEPCT / PNP */
+  .rfepct-table{border-collapse:separate; border-spacing:0; font-size:13px; width:100%;}
+  .rfepct-table th, .rfepct-table td{padding:10px 18px;}
+  .rfepct-table thead th{height:38px; box-sizing:border-box; vertical-align:middle;}
+  .rfepct-table tbody td.num{text-align:center;}
+  .pnp-group{background:#5B3B99 !important; text-align:center;}
+  .rfepct-baseline td{background:#E4D6F0; color:var(--c1); font-weight:600;}
+  .rfepct-cell{color:var(--ink-soft);}
+  .rfepct-cell.rfepct-red{background:#F4CCCC; color:#CC0000; font-weight:600;}
+  .rfepct-cell.rfepct-green{background:#D9EAD3; color:#38761D; font-weight:600;}
+  .rfepct-cell.rfepct-blue{background:#C9DAF8; color:#1155CC; font-weight:600;}
+  .rfepct-cell.rfepct-orange{background:#FCE5CD; color:#B45F06; font-weight:600;}
+  .rfepct-cell.rfepct-yellow{background:#FFF2CC; color:#BF9000; font-weight:600;}
+

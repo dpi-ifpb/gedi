@@ -1,0 +1,40 @@
+  /* Modal de detalhe (Descrição da despesa) */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(42,20,88,.45); z-index:50;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.hidden{display:none;}
+  .modal-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    box-shadow:0 24px 60px rgba(42,20,88,.28); max-width:540px; width:100%;
+    padding:28px 30px; position:relative; max-height:85vh; overflow-y:auto;
+  }
+  .modal-card-wide{max-width:620px; transition:max-width .18s ease;}
+  .modal-card-wide.zoomed{max-width:900px;}
+  .modal-card-wide.zoomed .indicator-radar-svg{max-width:800px !important;}
+  .modal-actions{position:absolute; top:16px; right:18px; display:flex; gap:8px;}
+  .modal-zoom{
+    font-family:'Inter'; font-weight:600;
+    background:var(--bg); border:1px solid var(--border); border-radius:6px;
+    font-size:12px; padding:5px 12px; cursor:pointer; color:var(--ink); white-space:nowrap;
+  }
+  .modal-zoom:hover{background:#F0E7DE;}
+  .modal-chart-title{font-size:15px; font-weight:600; color:var(--c1); margin:0 0 16px; padding-right:190px;}
+  .modal-close{
+    font-family:'Inter'; font-weight:600;
+    background:var(--c1); border:1px solid var(--c1); border-radius:6px;
+    font-size:12px; padding:5px 12px; cursor:pointer; color:#fff; white-space:nowrap;
+  }
+  .modal-close:hover{background:var(--c1-soft); border-color:var(--c1-soft);}
+  .modal-dl{margin:0; padding-right:80px;}
+  .modal-dl dt{
+    font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.4px;
+    color:var(--c2); margin:16px 0 4px;
+  }
+  .modal-dl dt:first-child{margin-top:0;}
+  .modal-dl dd{margin:0; font-size:14.5px; color:var(--ink); line-height:1.55;}
+  .desc-link{
+    color:var(--c2); font-weight:600; cursor:pointer; text-decoration:underline;
+    text-decoration-color:transparent; transition:text-decoration-color .15s ease;
+  }
+  .desc-link:hover{text-decoration-color:var(--c2);}
