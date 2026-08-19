@@ -9,7 +9,11 @@
     box-shadow:0 24px 60px rgba(42,20,88,.28); max-width:540px; width:100%;
     padding:28px 30px; position:relative; max-height:85vh; overflow-y:auto;
   }
-  .modal-card-wide{max-width:620px; transition:max-width .18s ease;}
+  .modal-card-wide{
+    max-width:620px; max-height:85vh; overflow-y:hidden; display:flex; flex-direction:column;
+    transition:max-width .18s ease;
+  }
+  .modal-chart-scroll{overflow-y:auto; flex:1; min-height:0;}
   .modal-card-wide.zoomed{max-width:900px;}
   .modal-card-wide.zoomed .indicator-radar-svg{max-width:800px !important;}
   .modal-actions{position:absolute; top:16px; right:18px; display:flex; gap:8px;}
@@ -19,7 +23,7 @@
     font-size:12px; padding:5px 12px; cursor:pointer; color:var(--ink); white-space:nowrap;
   }
   .modal-zoom:hover{background:#F0E7DE;}
-  .modal-chart-title{font-size:15px; font-weight:600; color:var(--c1); margin:0 0 16px; padding-right:190px;}
+  .modal-chart-title{font-size:15px; font-weight:600; color:var(--c1); margin:0 0 16px; padding-right:190px; flex-shrink:0;}
   .modal-close{
     font-family:'Plus Jakarta Sans'; font-weight:600;
     background:var(--c1); border:1px solid var(--c1); border-radius:6px;
