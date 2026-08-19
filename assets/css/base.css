@@ -44,19 +44,23 @@
   }
   .nav-section-label:first-of-type{margin-top:0;}
   .sidebar.collapsed .nav-section-label{display:none;}
-  .brand-top{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+  .brand-top{display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0;}
   .sidebar.collapsed .brand-top{justify-content:center;}
-  .brand-text{font-weight:400; font-size:14.5px; letter-spacing:.2px; white-space:nowrap;}
+  .brand-text{min-width:0; overflow:hidden;}
+  .brand-acronym{display:block; font-weight:700; font-size:15px; letter-spacing:.3px; color:#fff;}
+  .brand-meaning{
+    display:block; font-weight:400; font-size:9.5px; color:#B8A8D4; letter-spacing:.1px;
+    line-height:1.25; white-space:normal; overflow-wrap:break-word; margin-top:1px;
+  }
   /* Menu com a logo do IFPB como marca d'água de fundo */
   .nav-list-wrap{position:relative; flex:1; display:flex; flex-direction:column; overflow:hidden;}
   .nav-bg-logo{
-    position:absolute; left:50%; top:40%; transform:translate(-50%,-50%);
-    width:240px; max-width:none; height:auto; opacity:.3; pointer-events:none; z-index:0;
+    position:absolute; right:16px; bottom:50px; left:auto; top:auto; transform:none;
+    width:130px; max-width:none; height:auto; opacity:.15; pointer-events:none; z-index:0;
   }
   .sidebar.collapsed .nav-bg-logo{display:none;}
   .nav-list-wrap .nav-section-label,
   .nav-list-wrap .nav-item{position:relative; z-index:1;}
-  .brand-text strong{font-weight:700;}
   .brand-sub{font-weight:400; font-size:10.5px; color:#C7B8DE; letter-spacing:.4px; text-transform:uppercase; margin-top:5px; white-space:nowrap; overflow:hidden;}
 
   .collapse-btn{
