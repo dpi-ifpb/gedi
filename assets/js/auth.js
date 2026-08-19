@@ -9,11 +9,11 @@
  * poderia inspecionar o código e contornar. Não é adequado para dados ultrassensíveis sem
  * um backend validando o token também.
  */
-const GOOGLE_CLIENT_ID = 'SEU_CLIENT_ID_AQUI.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '807358818690-rg7qcv6bs38ltlgaf26qq228pdcuhie6.apps.googleusercontent.com';
 const ALLOWED_DOMAIN = 'ifpb.edu.br';
 // Opcional: restrinja a e-mails específicos, além do domínio. Deixe [] para liberar
 // qualquer conta @ifpb.edu.br. Ex.: ['fulano@ifpb.edu.br', 'ciclana@ifpb.edu.br']
-const ALLOWED_EMAILS = [];
+const ALLOWED_EMAILS = ['anderson.silva@ifpb.edu.br'];
 // Tempo de inatividade até pedir login de novo (ms). 30 minutos por padrão.
 const INACTIVITY_LIMIT_MS = 30 * 60 * 1000;
 let inactivityTimer = null;
