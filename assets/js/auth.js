@@ -9,11 +9,14 @@
  * poderia inspecionar o código e contornar. Não é adequado para dados ultrassensíveis sem
  * um backend validando o token também.
  */
-const GOOGLE_CLIENT_ID = '807358818690-rg7qcv6bs38ltlgaf26qq228pdcuhie6.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = 'SEU_CLIENT_ID_AQUI.apps.googleusercontent.com';
 const ALLOWED_DOMAIN = 'ifpb.edu.br';
 // Opcional: restrinja a e-mails específicos, além do domínio. Deixe [] para liberar
 // qualquer conta @ifpb.edu.br. Ex.: ['fulano@ifpb.edu.br', 'ciclana@ifpb.edu.br']
-const ALLOWED_EMAILS = ['anderson.silva@ifpb.edu.br'];
+const ALLOWED_EMAILS = [];
+// Tempo de inatividade até pedir login de novo (ms). 30 minutos por padrão.
+const INACTIVITY_LIMIT_MS = 30 * 60 * 1000;
+let inactivityTimer = null;
 
 function base64UrlDecode(str){
   str = str.replace(/-/g, '+').replace(/_/g, '/');
@@ -54,7 +57,14 @@ function handleCredentialResponse(response){
 
   sessionStorage.setItem('gedi_auth_email', claims.email || '');
   sessionStorage.setItem('gedi_auth_name', claims.name || claims.email || '');
+  touchActivity();
   showApp(claims.name || claims.email || '');
+}
+
+function initials(name){
+  const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+  if(parts.length === 0) return '?';
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length-1][0] : '')).toUpperCase();
 }
 
 function showApp(label){
@@ -62,22 +72,54 @@ function showApp(label){
   document.getElementById('appRoot').style.display = '';
   const el = document.getElementById('authUserLabel');
   if(el) el.textContent = label || '';
+  const av = document.getElementById('authUserAvatar');
+  if(av) av.textContent = initials(label);
+  startInactivityWatch();
 }
 
 function signOut(){
   sessionStorage.removeItem('gedi_auth_email');
   sessionStorage.removeItem('gedi_auth_name');
+  sessionStorage.removeItem('gedi_auth_last_active');
+  if(inactivityTimer) clearInterval(inactivityTimer);
   if(window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
   document.getElementById('appRoot').style.display = 'none';
   document.getElementById('authGate').style.display = 'flex';
 }
 
+function touchActivity(){
+  sessionStorage.setItem('gedi_auth_last_active', String(Date.now()));
+}
+
+function startInactivityWatch(){
+  // qualquer interação do usuário renova o prazo
+  ['click','keydown','mousemove','scroll'].forEach(evt =>
+    document.addEventListener(evt, touchActivity, { passive: true })
+  );
+  touchActivity();
+  if(inactivityTimer) clearInterval(inactivityTimer);
+  inactivityTimer = setInterval(() => {
+    const last = parseInt(sessionStorage.getItem('gedi_auth_last_active') || '0', 10);
+    if(Date.now() - last > INACTIVITY_LIMIT_MS){
+      signOut();
+    }
+  }, 30 * 1000); // confere a cada 30s
+}
+
 function initAuthGate(){
-  // já logado nesta aba (sessão do navegador) — evita pedir login de novo a cada navegação interna
+  // já logado nesta aba (sessão do navegador) — evita pedir login de novo a cada navegação interna,
+  // mas expira depois de INACTIVITY_LIMIT_MS sem interação
   const savedEmail = sessionStorage.getItem('gedi_auth_email');
-  if(savedEmail){
+  const lastActive = parseInt(sessionStorage.getItem('gedi_auth_last_active') || '0', 10);
+  const expired = savedEmail && (Date.now() - lastActive > INACTIVITY_LIMIT_MS);
+  if(savedEmail && !expired){
     showApp(sessionStorage.getItem('gedi_auth_name') || savedEmail);
     return;
+  }
+  if(expired){
+    sessionStorage.removeItem('gedi_auth_email');
+    sessionStorage.removeItem('gedi_auth_name');
+    sessionStorage.removeItem('gedi_auth_last_active');
   }
   if(!window.google || !google.accounts || !google.accounts.id){
     setTimeout(initAuthGate, 200); // biblioteca do Google ainda carregando
