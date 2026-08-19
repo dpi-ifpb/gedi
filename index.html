@@ -9,9 +9,23 @@
 <link rel="stylesheet" href="assets/css/base.css">
 <link rel="stylesheet" href="assets/css/tables.css">
 <link rel="stylesheet" href="assets/css/modal.css">
+<link rel="stylesheet" href="assets/css/auth.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
+<!-- ============ PORTÃO DE LOGIN (Google, restrito a @ifpb.edu.br) ============ -->
+<div class="auth-gate" id="authGate">
+  <div class="auth-card">
+    <img src="assets/img/ifpb-logo-vertical-branco.png" alt="IFPB" class="auth-logo" />
+    <h1>Gestão e Transparência</h1>
+    <p>Acesso restrito a contas do domínio <strong>@ifpb.edu.br</strong>.</p>
+    <div id="googleSignInButton" class="auth-btn-wrap"></div>
+    <p class="auth-error" id="authError" style="display:none;"></p>
+  </div>
+</div>
+
+<div id="appRoot" style="display:none;">
 
 <div class="sidebar collapsed" id="sidebar">
   <div class="brand">
@@ -55,6 +69,10 @@
     <span class="nav-label">Simulador Funcionamento</span>
   </div>
 
+  <div class="auth-user" id="authUser">
+    <span class="auth-user-name" id="authUserLabel"></span>
+    <button type="button" class="auth-signout" onclick="signOut()">Sair</button>
+  </div>
   <div class="sidebar-logo">
     <img src="assets/img/ifpb-logo-vertical-branco.png" alt="IFPB" />
   </div>
@@ -183,7 +201,9 @@
   </div>
 </div>
 
+</div><!-- /#appRoot -->
 
+<script src="assets/js/auth.js"></script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/data/matricula.js"></script>
 <script src="assets/js/data/network.js"></script>
