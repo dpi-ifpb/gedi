@@ -84,12 +84,6 @@ function signOut(){
   document.getElementById('authGate').style.display = 'flex';
 }
 
-// Link "Fazer login novamente" — recarrega a página pra reiniciar o fluxo de login do zero,
-// caso o botão do Google não tenha renderizado corretamente por algum motivo.
-function retryLogin(){
-  window.location.reload();
-}
-
 function touchActivity(){
   sessionStorage.setItem('gedi_auth_last_active', String(Date.now()));
 }
