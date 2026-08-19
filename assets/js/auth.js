@@ -13,7 +13,14 @@ const GOOGLE_CLIENT_ID = '807358818690-rg7qcv6bs38ltlgaf26qq228pdcuhie6.apps.goo
 const ALLOWED_DOMAIN = 'ifpb.edu.br';
 // Opcional: restrinja a e-mails específicos, além do domínio. Deixe [] para liberar
 // qualquer conta @ifpb.edu.br. Ex.: ['fulano@ifpb.edu.br', 'ciclana@ifpb.edu.br']
-const ALLOWED_EMAILS = ['anderson.silva@ifpb.edu.br'];
+const ALLOWED_EMAILS = [
+  'anderson.silva@ifpb.edu.br', 
+  'mary.marinho@ifpb.edu.br', 
+  'cleidenedia@ifpb.edu.br', 
+  'maria.melo@ifpb.edu.br', 
+  'silvana@ifpb.edu.br',
+  'anna.mendonca@ifpb.edu.br'
+];
 // Tempo de inatividade até pedir login de novo (ms). 30 minutos por padrão.
 const INACTIVITY_LIMIT_MS = 30 * 60 * 1000;
 let inactivityTimer = null;
