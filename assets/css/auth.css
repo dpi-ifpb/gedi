@@ -1,0 +1,30 @@
+.auth-gate{
+  position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(160deg, var(--c1) 0%, #1D0E40 100%); padding:24px;
+}
+.auth-card{
+  background:var(--surface); border-radius:16px; box-shadow:0 24px 60px rgba(0,0,0,.28);
+  padding:40px 36px; max-width:360px; width:100%; text-align:center;
+}
+.auth-logo{width:90px; height:auto; margin:0 auto 20px; display:block;}
+.auth-card h1{font-size:19px; font-weight:600; color:var(--c1); margin-bottom:8px;}
+.auth-card > p{font-size:13px; color:var(--ink-soft); line-height:1.5; margin-bottom:24px;}
+.auth-btn-wrap{display:flex; justify-content:center;}
+.auth-error{
+  margin-top:16px; font-size:12.5px; color:#CC0000; background:#F4CCCC; border-radius:8px;
+  padding:10px 12px; line-height:1.4;
+}
+
+.auth-user{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:10px 12px; margin:0 2px 4px; border-top:1px solid rgba(255,255,255,.1);
+}
+.auth-user-name{
+  font-size:11.5px; color:#D9CFEA; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.auth-signout{
+  font-family:'Inter'; font-size:11px; font-weight:600; color:#D9CFEA; background:transparent;
+  border:1px solid rgba(255,255,255,.18); border-radius:6px; padding:3px 9px; cursor:pointer; flex-shrink:0;
+}
+.auth-signout:hover{background:rgba(255,255,255,.09); color:#fff;}
+.sidebar.collapsed .auth-user{display:none;}
