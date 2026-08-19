@@ -20,14 +20,14 @@
   *{box-sizing:border-box; margin:0; padding:0;}
   html,body{height:100%;}
   body{
-    font-family:'Inter', system-ui, sans-serif;
+    font-family:'Plus Jakarta Sans', system-ui, sans-serif;
     background:var(--bg);
     color:var(--ink);
     display:flex;
     min-height:100vh;
     overflow-x:hidden;
   }
-  h1,h2,h3,.brand,.nav-label,.kpi-value{font-family:'Sora','Inter',sans-serif;}
+  h1,h2,h3,.brand,.nav-label,.kpi-value{font-family:'Plus Jakarta Sans',sans-serif;}
 
   /* ---------- SIDEBAR ---------- */
   .sidebar{
@@ -93,7 +93,7 @@
   }
   .update-pill.err{color:#C0392B; background:#FBEAEA; border-color:#F2D3D3;}
   .refresh-btn{
-    font-family:'Inter'; font-size:12.5px; font-weight:600; color:#fff; background:var(--c1);
+    font-family:'Plus Jakarta Sans'; font-size:12.5px; font-weight:600; color:#fff; background:var(--c1);
     border:1px solid var(--c1); border-radius:20px; padding:8px 14px; cursor:pointer;
     display:flex; align-items:center; gap:6px;
   }
@@ -122,12 +122,12 @@
   .filter-field{display:flex; flex-direction:column; gap:5px; min-width:150px;}
   .filter-field label{font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--c1); font-weight:500;}
   .filter-field input, .filter-field select{
-    font-family:'Inter'; font-size:12.5px; color:var(--ink); background:var(--surface);
+    font-family:'Plus Jakarta Sans'; font-size:12.5px; color:var(--ink); background:var(--surface);
     border:1px solid var(--border); border-radius:9px; padding:8px 10px; outline:none;
   }
   .filter-field input:focus, .filter-field select:focus{border-color:var(--c2);}
   .filter-clear{
-    font-family:'Inter'; font-size:12.5px; font-weight:600; color:#fff; background:var(--c2);
+    font-family:'Plus Jakarta Sans'; font-size:12.5px; font-weight:600; color:#fff; background:var(--c2);
     border:1px solid var(--c2); border-radius:9px; padding:8px 14px; cursor:pointer; white-space:nowrap;
   }
   .filter-clear:hover{background:#75125F; border-color:#75125F;}
