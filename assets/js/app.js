@@ -1,5 +1,5 @@
 /* ================= Navegação ================= */
-const PAGES = ['totais', 'detalhe', 'extra', 'indicadores', 'pares', 'simulador', 'simuladorF'];
+const PAGES = ['totais', 'detalhe', 'extra', 'indicadores', 'pares', 'simulador', 'simuladorF', 'sobre'];
 function switchPage(page){
   PAGES.forEach(p => {
     document.getElementById('page-' + p).style.display = (p === page) ? 'block' : 'none';
