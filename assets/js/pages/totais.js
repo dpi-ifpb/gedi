@@ -47,7 +47,7 @@ function flattenLeafCols(structure){
 function renderPivotTable(itens){
   const structure = buildPivotStructure(itens);
   const leafCols = flattenLeafCols(structure);
-  const unidades = uniqueSorted(itens, i=>i.unidade);
+  const unidades = sortUnidadesList(uniqueSorted(itens, i=>i.unidade));
 
   if(leafCols.length === 0 || unidades.length === 0){
     return `<div class="panel"><div class="state-box"><h3>Sem dados para os filtros selecionados</h3></div></div>`;

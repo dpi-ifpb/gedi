@@ -1,6 +1,6 @@
 /* ================= Tela 2 · Detalhamento ================= */
 function buildDetalheFilters(){
-  const unidades = uniqueSorted(ITENS, i=>i.unidade);
+  const unidades = sortUnidadesList(uniqueSorted(ITENS, i=>i.unidade));
   const origens = uniqueSorted(ITENS, i=>i.origem);
   const naturezas = uniqueSorted(ITENS, i=>i.natureza);
   const situacoes = uniqueSorted(ITENS, i=>i.situacao);
