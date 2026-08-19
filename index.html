@@ -16,14 +16,15 @@
 
 <!-- ============ PORTÃO DE LOGIN (Google, restrito a @ifpb.edu.br) ============ -->
 <div class="auth-gate" id="authGate">
+  <img src="assets/img/ifpb-logo-vertical.png" alt="IFPB" class="auth-logo-corner" />
   <div class="auth-card">
-    <img src="assets/img/ifpb-logo-vertical.png" alt="IFPB" class="auth-logo" />
-    <h1 class="auth-title">GEDI</h1>
     <p class="auth-subtitle">Ferramenta de apoio à Gestão Estratégica e ao Desenvolvimento Institucional</p>
-    <p class="auth-desc">Acesso restrito a contas do domínio <strong>@ifpb.edu.br</strong>.</p>
     <div id="googleSignInButton" class="auth-btn-wrap"></div>
     <p class="auth-error" id="authError" style="display:none;"></p>
     <a href="#" class="auth-retry-link" onclick="retryLogin(); return false;">Fazer login novamente</a>
+  </div>
+  <div class="auth-warning">
+    <p>Acesso restrito a contas do domínio <strong>@ifpb.edu.br</strong>.</p>
   </div>
 </div>
 
