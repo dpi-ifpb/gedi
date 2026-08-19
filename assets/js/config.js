@@ -9,5 +9,5 @@ const EXTRA_HEAD_ROW_H = 40; // px — altura fixa de cada linha do cabeçalho d
 const RFEPCT_HEAD_ROW_H = 38; // px — altura fixa de cada linha do cabeçalho da tabela de Indicadores
 // Origens de recurso válidas, na ordem da validação da planilha — usado na tela de Totais
 // para mostrar toda Origem possível (mesmo sem nenhuma despesa lançada ainda).
-const ORIGENS_VALIDAS = ['LOA', 'PAC', 'RP2', 'RP6', 'RP7', 'RTC'];
+const ORIGENS_VALIDAS = ['EFQ', 'LOA', 'PAC', 'RP2', 'RP6', 'RP7', 'RTC']; // EFQ adicionada em ordem alfabética — confirmar posição real na validação, se diferente
 

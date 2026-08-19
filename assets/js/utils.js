@@ -108,6 +108,14 @@ function uniqueSorted(itens, keyFn){
   return [...set].sort((a,b) => a.localeCompare(b,'pt-BR'));
 }
 
+// "- Institucional -" deve sempre aparecer primeiro nas listas de Unidade (não uma unidade de
+// campus como as demais). Usar depois de uniqueSorted() para as listas de unidade especificamente.
+const UNIDADE_INSTITUCIONAL = '- Institucional -';
+function sortUnidadesList(list){
+  if(!list.includes(UNIDADE_INSTITUCIONAL)) return list;
+  return [UNIDADE_INSTITUCIONAL, ...list.filter(u => u !== UNIDADE_INSTITUCIONAL)];
+}
+
 function escapeAttr(s){
   return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
 }
