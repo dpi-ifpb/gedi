@@ -16,14 +16,12 @@
 
 <!-- ============ PORTÃO DE LOGIN (Google, restrito a @ifpb.edu.br) ============ -->
 <div class="auth-gate" id="authGate">
-  <img src="assets/img/ifpb-logo-vertical-branco.png" alt="IFPB" class="auth-logo-corner" />
+  <img src="assets/img/ifpb-logo-vertical.png" alt="IFPB" class="auth-logo-corner" />
   <p class="auth-subtitle">Ferramenta de apoio à Gestão Estratégica e ao Desenvolvimento Institucional</p>
   <div class="auth-panel">
-    <div class="auth-card">
-      <p class="auth-card-label">Acesso:</p>
-      <div id="googleSignInButton" class="auth-btn-wrap"></div>
-      <p class="auth-error" id="authError" style="display:none;"></p>
-    </div>
+    <p class="auth-card-label">Acesso:</p>
+    <div id="googleSignInButton" class="auth-btn-wrap"></div>
+    <p class="auth-error" id="authError" style="display:none;"></p>
     <div class="auth-warning">
       <p>Acesso restrito a contas do domínio <strong>@ifpb.edu.br</strong>.</p>
     </div>
@@ -38,7 +36,6 @@
       <span class="brand-acronym">GEDI</span>
       <button type="button" class="collapse-btn" id="collapseBtn"></button>
     </div>
-    <div class="brand-meaning">Gestão Estratégica e Des. Institucional</div>
   </div>
 
   <div class="nav-list-wrap">
@@ -75,6 +72,12 @@
     <div class="nav-item" id="navSimuladorF" onclick="switchPage('simuladorF')" style="display:none;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l5-4 5 4v11"/><path d="M15 21V13l4-2v10"/></svg>
       <span class="nav-label">Simulador Funcionamento</span>
+    </div>
+
+    <div class="nav-section-label">Sobre</div>
+    <div class="nav-item" id="navSobre" onclick="switchPage('sobre')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.8" r="0.9" fill="currentColor" stroke="none"/></svg>
+      <span class="nav-label">Sobre o GEDI</span>
     </div>
   </div>
 
@@ -175,6 +178,37 @@
       </div>
     </div>
     <div class="content" id="contentSimuladorF"></div>
+  </div>
+
+  <!-- ============ TELA · SOBRE O GEDI ============ -->
+  <div id="page-sobre" style="display:none;">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>Sobre o GEDI</h1>
+      </div>
+    </div>
+    <div class="content">
+      <div class="panel sobre-panel">
+        <p>O <strong>GEDI — Gestão Estratégica e Desenvolvimento Institucional</strong> é uma ferramenta desenvolvida para apoiar o planejamento, o acompanhamento orçamentário e a tomada de decisão no Instituto Federal da Paraíba (IFPB), reunindo, em um único ambiente, informações operacionais, indicadores institucionais e recursos de análise aplicados à gestão.</p>
+
+        <p>A iniciativa foi proposta pela Diretoria de Planejamento, Desenvolvimento Institucional e Interiorização (DPI/REITORIA) a partir da necessidade de ampliar a integração das informações utilizadas no acompanhamento da execução orçamentária e no planejamento institucional, transformando dados provenientes de diferentes fontes em informações organizadas, comparáveis e úteis ao processo decisório.</p>
+
+        <p>Mais do que apresentar dados, o GEDI busca facilitar sua leitura e interpretação. O painel permite acompanhar despesas e demandas das unidades, consultar informações detalhadas, analisar distribuições de recursos e visualizar indicadores relacionados à Rede Federal de Educação Profissional, Científica e Tecnológica. A ferramenta também foi concebida para incorporar progressivamente recursos de análise estratégica e simulação, permitindo explorar cenários e compreender os possíveis efeitos da evolução de determinados indicadores sobre a distribuição orçamentária institucional.</p>
+
+        <p>Parte importante dessa abordagem está na integração entre planejamento, orçamento e indicadores. Ao aproximar informações sobre despesas, recursos, matrículas, desempenho e critérios da Matriz de Distribuição Orçamentária da Rede Federal, o GEDI contribui para uma compreensão mais ampla das condições de funcionamento das unidades e dos fatores que podem influenciar o planejamento e o financiamento institucional.</p>
+
+        <p>A ferramenta também favorece uma gestão orientada por evidências. A consolidação e a visualização estruturada das informações reduzem a dispersão dos dados, facilitam análises comparativas e oferecem melhores condições para identificar tendências, necessidades, prioridades e possíveis impactos das decisões adotadas.</p>
+
+        <p>O GEDI deve ser compreendido como uma ferramenta em desenvolvimento contínuo. Novas funcionalidades, indicadores, bases de dados e mecanismos de análise poderão ser incorporados à medida que surgirem novas necessidades institucionais e que forem atualizados os referenciais utilizados pela Rede Federal. Os recursos de simulação disponíveis possuem finalidade analítica e prospectiva e, portanto, seus resultados devem ser interpretados como subsídios à análise e ao planejamento, e não como projeções oficiais de orçamento.</p>
+
+        <p>Ao reunir acompanhamento operacional e análise estratégica em um mesmo ambiente, o GEDI busca contribuir para o fortalecimento de uma cultura institucional baseada em planejamento, transparência, integração da informação e tomada de decisão orientada por dados.</p>
+
+        <h3>Construção colaborativa</h3>
+        <p>O aprimoramento do GEDI depende também da experiência de seus usuários. Sugestões de novas funcionalidades, indicadores, análises, melhorias de usabilidade ou correções podem ser encaminhadas à Diretoria de Planejamento, Desenvolvimento Institucional e Interiorização (DPI) pelo e-mail <a href="mailto:dpi@ifpb.edu.br">dpi@ifpb.edu.br</a>.</p>
+
+        <p class="sobre-footer"><strong>GEDI — Gestão Estratégica e Desenvolvimento Institucional</strong><br>Uma iniciativa proposta pela Diretoria de Planejamento, Desenvolvimento Institucional e Interiorização (DPI/REITORIA) do Instituto Federal da Paraíba.</p>
+      </div>
+    </div>
   </div>
 
 </div>
