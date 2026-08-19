@@ -29,4 +29,4 @@ setInterval(() => { refreshData(false); refreshExtraData(); }, AUTO_REFRESH_MS);
 renderIndicadoresTable();
 buildParesScreen();buildSimuladorScreen();
 buildSimuladorFScreen();
-switchPage('totais');
+switchPage('sobre');
