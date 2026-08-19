@@ -5,7 +5,7 @@
   background-image:url('../img/login-bg.jpg'); background-size:155% auto; background-position:left bottom; background-repeat:no-repeat;
 }
 .auth-logo-corner{
-  position:absolute; left:32px; bottom:32px; width:130px; height:auto; opacity:.95; z-index:1;
+  position:absolute; right:32px; bottom:32px; width:130px; height:auto; opacity:.95; z-index:1;
 }
 .auth-subtitle{
   position:absolute; top:44px; left:50%; transform:translateX(-50%);
@@ -15,15 +15,10 @@
 
 .auth-panel{
   position:absolute; top:50%; right:100px; transform:translateY(-50%);
-  max-width:340px; width:100%; display:flex; flex-direction:column;
+  max-width:340px; width:100%; display:flex; flex-direction:column; text-align:left;
 }
-.auth-card{
-  background:rgba(255,255,255,.65); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
-  border:1.5px solid #A98FD2; border-radius:16px;
-  box-shadow:0 12px 40px rgba(42,20,88,.18); padding:32px 32px; width:100%; text-align:center;
-}
-.auth-card-label{font-size:13px; font-weight:700; color:var(--c1); text-align:left; margin-bottom:16px;}
-.auth-btn-wrap{display:flex; justify-content:center;}
+.auth-card-label{font-size:15px; font-weight:700; color:#240E4A; margin-bottom:16px;}
+.auth-btn-wrap{display:flex; justify-content:flex-start;}
 .auth-error{
   margin-top:16px; font-size:12.5px; color:#CC0000; background:#F4CCCC; border-radius:8px;
   padding:10px 12px; line-height:1.4;
@@ -32,7 +27,7 @@
 .auth-warning{
   background:rgba(255,247,222,.88); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
   border:1px solid #F0DFA0; border-radius:10px;
-  padding:14px 18px; margin-top:16px; width:100%;
+  padding:14px 18px; margin-top:24px; width:100%;
 }
 .auth-warning p{font-size:12.5px; color:#5C4A00; line-height:1.5; margin:0; text-align:center;}
 
