@@ -1,5 +1,5 @@
 /* ================= Navegação ================= */
-const PAGES = ['totais', 'detalhe', 'extra', 'indicadores', 'pares', 'simulador', 'simuladorF', 'sobre'];
+const PAGES = ['totais', 'detalhe', 'extra', 'formacao', 'indicadores', 'pares', 'simulador', 'simuladorF', 'sobre'];
 function switchPage(page){
   PAGES.forEach(p => {
     document.getElementById('page-' + p).style.display = (p === page) ? 'block' : 'none';
@@ -41,6 +41,18 @@ const NOTES_CONTENT = {
       <dd>Reforço Orçamentário em análise pela Reitoria, no valor total de R$ 800.000,00, distribuída a todas as unidades (não só as com déficit orçamentário).</dd>
     </dl>
   `,
+  formacao: `
+    <h3>Sobre esta tela</h3>
+    <p>O orçamento do ano de uma unidade é a soma de todas as colunas da planilha de origem, com exceção da PLOA (que é só uma referência interna de projeção, não compõe o valor final e por isso não aparece nesta tela).</p>
+    <dl class="notes-dl">
+      <dt>LOA</dt>
+      <dd>Recurso derivado e devido à unidade a partir da Matriz de Distribuição Orçamentária — corresponde ao Bloco Funcionamento (80% do orçamento da rede).</dd>
+      <dt>EF. e Qualidade</dt>
+      <dd>Resultado da forma de distribuição colegiada — corresponde ao Bloco Qualidade e Eficiência (10% do orçamento da rede).</dd>
+      <dt>Reforços do Ano</dt>
+      <dd>Soma dos 12 meses (Janeiro a Dezembro) — cada um fruto de decisões institucionais pontuais ao longo do ano, não de uma fórmula fixa da Matriz.</dd>
+    </dl>
+  `,
 };
 function openNotesModal(key){
   document.getElementById('notesModalBody').innerHTML = NOTES_CONTENT[key] || '';
@@ -53,7 +65,8 @@ function closeNotesModal(){
 /* ================= Inicialização ================= */
 refreshData(false);
 refreshExtraData();
-setInterval(() => { refreshData(false); refreshExtraData(); }, AUTO_REFRESH_MS);
+refreshFormacaoData();
+setInterval(() => { refreshData(false); refreshExtraData(); refreshFormacaoData(); }, AUTO_REFRESH_MS);
 renderIndicadoresTable();
 buildParesScreen();buildSimuladorScreen();
 buildSimuladorFScreen();
