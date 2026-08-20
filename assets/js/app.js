@@ -22,6 +22,34 @@ function updateCollapseIcon(){
 document.getElementById('collapseBtn').addEventListener('click', updateCollapseIcon);
 updateCollapseIcon();
 
+/* ================= Modal reutilizável de notas explicativas ================= */
+const NOTES_CONTENT = {
+  indicadores: `
+    <h3>Sobre estes indicadores</h3>
+    <p>Percentuais que orientaram a composição orçamentária das unidades, tanto na projeção da PLOA quanto na identificação dos valores das propostas em análise pela Reitoria. A linha "RFEPCT (referência)" é o valor médio/base da rede, usado como comparação para as unidades abaixo. Clique no nome de uma unidade para comparar seu perfil de indicadores com a Rede e o IFPB.</p>
+  `,
+  extra: `
+    <h3>Sobre as colunas</h3>
+    <dl class="notes-dl">
+      <dt>2026 - 2024</dt>
+      <dd>Diferença entre o orçamento previsto para 2026 e o de 2024. Valores definidos pelo governo federal: desde 2025 a distribuição orçamentária da Rede Federal usa a Matriz de Distribuição Orçamentária da SETEC/MEC — metodologia já vigente desde a Portaria MEC nº 646/2022, atualizada pela Portaria MEC nº 243, de 10/03/2026.</dd>
+      <dt>DIST. EM JANEIRO</dt>
+      <dd>Recursos distribuídos de forma extraorçamentária, a partir de recursos recebidos via índices de qualidade.</dd>
+      <dt>UNIDADES DE RECOMP.</dt>
+      <dd>Reforço Orçamentário em análise pela Reitoria, da ordem de R$ 1.000.000,00, para as unidades que tiveram redução orçamentária em relação a 2024 — baseada na matriz orçamentária, cujo principal parâmetro é a quantidade de matrículas da unidade.</dd>
+      <dt>TODAS AS UNIDADES</dt>
+      <dd>Reforço Orçamentário em análise pela Reitoria, no valor total de R$ 800.000,00, distribuída a todas as unidades (não só as com déficit orçamentário).</dd>
+    </dl>
+  `,
+};
+function openNotesModal(key){
+  document.getElementById('notesModalBody').innerHTML = NOTES_CONTENT[key] || '';
+  document.getElementById('notesModal').classList.remove('hidden');
+}
+function closeNotesModal(){
+  document.getElementById('notesModal').classList.add('hidden');
+}
+
 /* ================= Inicialização ================= */
 refreshData(false);
 refreshExtraData();
