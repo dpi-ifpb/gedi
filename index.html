@@ -46,6 +46,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-9"/><path d="M10 20v-6h4v6"/></svg>
       <span class="nav-label">Início</span>
     </div>
+    <div class="nav-item" id="navFormacao" onclick="switchPage('formacao')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 8c0-2 2-3 4-2s2 4 0 4-4-1-4-3"/><path d="M15 15c0 2 2 3 4 2s2-4 0-4-4 1-4 3"/></svg>
+      <span class="nav-label">Formação do Orçamento</span>
+    </div>
 
     <div class="nav-section-label">Despesas e Demandas</div>
     <div class="nav-item" id="navTotais" onclick="switchPage('totais')">
@@ -59,10 +63,6 @@
     <div class="nav-item" id="navExtra" onclick="switchPage('extra')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="M16 21l4-4-4-4"/><path d="M20 17H4"/></svg>
       <span class="nav-label">Nova Dist. de Custeio</span>
-    </div>
-    <div class="nav-item" id="navFormacao" onclick="switchPage('formacao')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 8c0-2 2-3 4-2s2 4 0 4-4-1-4-3"/><path d="M15 15c0 2 2 3 4 2s2-4 0-4-4 1-4 3"/></svg>
-      <span class="nav-label">Formação do Orçamento</span>
     </div>
 
     <div class="nav-section-label">Indicadores</div>
@@ -84,6 +84,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l5-4 5 4v11"/><path d="M15 21V13l4-2v10"/></svg>
       <span class="nav-label">Simulador Funcionamento</span>
     </div>
+  </div>
+
+  <div class="sidebar-logo">
+    <img src="assets/img/ifpb-logo-vertical.png" alt="IFPB" />
   </div>
 
   <div class="auth-user" id="authUser" title="Clique em Sair para encerrar a sessão">
@@ -166,6 +170,10 @@
         <div class="update-pill" id="updatePillFormacao">Carregando…</div>
         <button class="refresh-btn" id="refreshBtnFormacao" onclick="refreshFormacaoData()"><span class="ic">⟳</span> Atualizar</button>
       </div>
+    </div>
+
+    <div class="global-warning">
+      <p>As unidades de Sapé, Mamanguape, Alagoa Grande e Queimadas, integrantes da expansão da Rede Federal no âmbito do Novo PAC, não estão identificadas nesta distribuição por se encontrarem em processo de implantação e ainda não integrarem a estrutura considerada no momento da elaboração da LOA em questão.</p>
     </div>
 
     <div class="content" id="contentFormacao">
