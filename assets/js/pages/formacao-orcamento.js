@@ -41,7 +41,7 @@ function buildFormacaoOrcamento(){
         <div class="kpi-value">${fmtBRL(totais.loa)}</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Total EF. e Qualidade</div>
+        <div class="kpi-label">Total Eficiência e Qualidade</div>
         <div class="kpi-value">${fmtBRL(totais.efQualidade)}</div>
       </div>
       <div class="kpi-card">
@@ -59,7 +59,7 @@ function buildFormacaoOrcamento(){
           <tr>
             <th style="top:0">Unidade</th>
             <th class="num th-center" style="top:0">LOA</th>
-            <th class="num th-center" style="top:0">EF. e Qualidade</th>
+            <th class="num th-center" style="top:0">Eficiência e Qualidade</th>
             <th class="num th-center" style="top:0">Reforços do Ano</th>
             <th class="num th-center" style="top:0">Total do Ano</th>
           </tr>
