@@ -46,11 +46,11 @@ const NOTES_CONTENT = {
     <p>O orçamento do ano de uma unidade é a soma de todas as colunas da planilha de origem, com exceção da PLOA (que é só uma referência interna de projeção, não compõe o valor final e por isso não aparece nesta tela).</p>
     <dl class="notes-dl">
       <dt>LOA</dt>
-      <dd>Recurso derivado e devido à unidade a partir da Matriz de Distribuição Orçamentária — corresponde ao Bloco Funcionamento (80% do orçamento da rede).</dd>
-      <dt>EF. e Qualidade</dt>
-      <dd>Resultado da forma de distribuição colegiada — corresponde ao Bloco Qualidade e Eficiência (10% do orçamento da rede).</dd>
+      <dd>Recursos destinados com base na Matriz de Distribuição Orçamentária — correspondem ao Bloco de Funcionamento (80%) e ao Bloco de Reitorias (10%) do orçamento distribuído pela Matriz.</dd>
+      <dt>Eficiência e Qualidade</dt>
+      <dd>Recursos destinados às unidades a partir dos critérios de distribuição definidos institucionalmente de forma colegiada — correspondem ao Bloco Qualidade e Eficiência (10%) do orçamento distribuído pela Matriz.</dd>
       <dt>Reforços do Ano</dt>
-      <dd>Soma dos 12 meses (Janeiro a Dezembro) — cada um fruto de decisões institucionais pontuais ao longo do ano, não de uma fórmula fixa da Matriz.</dd>
+      <dd>Recursos adicionais destinados às unidades ao longo do exercício, resultantes de decisões institucionais específicas, conforme necessidades e prioridades identificadas. O valor apresentado corresponde à soma dos reforços realizados de janeiro a dezembro e não decorre de fórmula fixa da Matriz de Distribuição Orçamentária.</dd>
     </dl>
   `,
 };
