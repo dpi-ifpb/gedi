@@ -114,6 +114,7 @@ function updateExtraPill(){
 function manualRefresh(){
   refreshData(true);
   refreshExtraData();
+  refreshFormacaoData();
 }
 
 function updatePills(){
@@ -143,3 +144,67 @@ function renderError(){
   document.getElementById('contentDetalhe').innerHTML = html;
 }
 
+
+/*
+ * Planilha "Bases e reforços orçamentários": colunas fixas por posição.
+ * A (0) Unidade, B (1) em branco, C (2) PLOA — ignorada por pedido (não compõe
+ * o orçamento do ano, é só referência interna), D (3) LOA, E (4) EF. E QUALIDADE,
+ * F a Q (5 a 16) os 12 meses (reforços pontuais ao longo do ano).
+ */
+async function loadFormacaoData(){
+  const table = await fetchGvizTable(FORMACAO_SHEET_ID, FORMACAO_GID, 1);
+  if(!table.rows) throw new Error('A planilha foi lida, mas não retornou linhas de dados.');
+
+  const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const dados = [];
+  table.rows.forEach(row => {
+    if(!row || !row.c) return;
+    const unidade = cellText(row, 0);
+    if(!unidade) return; // ignora linhas vazias (unidades sem base lançada ainda)
+
+    const loa = cellNumber(row, 3);
+    const efQualidade = cellNumber(row, 4);
+    const meses = MESES.map((nome, i) => ({ nome, valor: cellNumber(row, 5 + i) }));
+    const reforcos = meses.reduce((s, m) => s + m.valor, 0);
+
+    dados.push({
+      unidade,
+      loa,
+      efQualidade,
+      meses,
+      reforcos,
+      total: loa + efQualidade + reforcos,
+    });
+  });
+  return dados;
+}
+
+let FORMACAO_DATA = [];
+let formacaoLastError = null;
+
+async function refreshFormacaoData(){
+  const btn = document.getElementById('refreshBtnFormacao');
+  if(btn) btn.classList.add('spinning');
+  try{
+    FORMACAO_DATA = await loadFormacaoData();
+    formacaoLastError = null;
+  } catch(e){
+    formacaoLastError = e.message || 'Erro ao carregar a planilha.';
+  }
+  if(btn) btn.classList.remove('spinning');
+  updateFormacaoPill();
+  buildFormacaoOrcamento();
+}
+
+function updateFormacaoPill(){
+  const p = document.getElementById('updatePillFormacao');
+  if(!p) return;
+  if(formacaoLastError){
+    p.textContent = 'Falha ao atualizar';
+    p.classList.add('err');
+  } else {
+    const hora = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    p.textContent = `Atualizado às ${hora}`;
+    p.classList.remove('err');
+  }
+}
