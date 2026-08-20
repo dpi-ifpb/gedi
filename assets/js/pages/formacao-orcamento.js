@@ -12,11 +12,7 @@ function buildFormacaoOrcamento(){
     return;
   }
 
-  const dados = FORMACAO_DATA.slice().sort((a,b) => {
-    if(a.unidade === 'Reitoria') return -1;
-    if(b.unidade === 'Reitoria') return 1;
-    return a.unidade.localeCompare(b.unidade, 'pt-BR');
-  });
+  const dados = FORMACAO_DATA.slice().sort((a,b) => a.unidade.localeCompare(b.unidade, 'pt-BR'));
 
   const totais = dados.reduce((acc, u) => ({
     loa: acc.loa + u.loa,
@@ -35,24 +31,6 @@ function buildFormacaoOrcamento(){
     </tr>`).join('');
 
   el.innerHTML = `
-    <div class="kpi-row">
-      <div class="kpi-card">
-        <div class="kpi-label">Total LOA</div>
-        <div class="kpi-value">${fmtBRL(totais.loa)}</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Total Eficiência e Qualidade</div>
-        <div class="kpi-value">${fmtBRL(totais.efQualidade)}</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Total Reforços do Ano</div>
-        <div class="kpi-value">${fmtBRL(totais.reforcos)}</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Total Geral</div>
-        <div class="kpi-value">${fmtBRL(totais.total)}</div>
-      </div>
-    </div>
     <div class="panel">
       <table>
         <thead>
@@ -61,7 +39,7 @@ function buildFormacaoOrcamento(){
             <th class="num th-center" style="top:0">LOA</th>
             <th class="num th-center" style="top:0">Eficiência e Qualidade</th>
             <th class="num th-center" style="top:0">Reforços do Ano</th>
-            <th class="num th-center" style="top:0">Total do Ano</th>
+            <th class="num th-center" style="top:0">Total</th>
           </tr>
         </thead>
         <tbody>${rows || `<tr><td colspan="5" class="muted" style="padding:20px 26px;">Nenhuma unidade com base lançada ainda.</td></tr>`}</tbody>
