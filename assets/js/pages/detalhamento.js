@@ -122,7 +122,7 @@ function buildDetalheTable(){
   body.innerHTML = rows || `<tr><td colspan="6" class="muted" style="padding:24px 26px;">Nenhum registro para os filtros selecionados.</td></tr>`;
 
   const totalFiltrado = filtrados.reduce((s,i)=>s+i.valor,0);
-  foot.innerHTML = `<tr><td colspan="5">Total filtrado</td><td class="num">${fmtBRLCell(totalFiltrado)}</td></tr>`;
+  foot.innerHTML = `<tr><td colspan="5">Total</td><td class="num">${fmtBRLCell(totalFiltrado)}</td></tr>`;
 }
 
 function onFilterChange(){

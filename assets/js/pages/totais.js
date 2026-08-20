@@ -101,7 +101,7 @@ function renderPivotTable(itens){
         </thead>
         <tbody>${bodyRows}</tbody>
         <tfoot>
-          <tr><td class="pivot-unit-col">Total geral</td><td class="num pivot-total-col">${fmtBRLCell(grandTotal)}</td>${footCells}</tr>
+          <tr><td class="pivot-unit-col">Total</td><td class="num pivot-total-col">${fmtBRLCell(grandTotal)}</td>${footCells}</tr>
         </tfoot>
       </table>
     </div>`;

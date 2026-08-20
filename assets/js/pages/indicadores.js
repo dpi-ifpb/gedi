@@ -43,9 +43,6 @@ function renderIndicadoresTable(){
           ${rows}
         </tbody>
       </table>
-    </div>
-    <div class="notes-panel">
-      <p>Percentuais que orientaram a composição orçamentária das unidades, tanto na projeção da PLOA quanto na identificação dos valores das propostas em análise pela Reitoria. A linha "RFEPCT (referência)" é o valor médio/base da rede, usado como comparação para as unidades abaixo. Clique no nome de uma unidade para comparar seu perfil de indicadores com a Rede e o IFPB.</p>
     </div>`;
   document.getElementById('contentIndicadores').innerHTML = html;
   document.getElementById('contentIndicadores').addEventListener('click', (e) => {

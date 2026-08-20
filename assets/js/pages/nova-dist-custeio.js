@@ -31,19 +31,6 @@ function renderExtraTable(){
           </tr>
         </tfoot>
       </table>
-    </div>
-    <div class="notes-panel">
-      <h3>Sobre as colunas</h3>
-      <dl class="notes-dl">
-        <dt>2026 - 2024</dt>
-        <dd>Diferença entre o orçamento previsto para 2026 e o de 2024. Valores definidos pelo governo federal: desde 2025 a distribuição orçamentária da Rede Federal usa a Matriz de Distribuição Orçamentária da SETEC/MEC — metodologia já vigente desde a Portaria MEC nº 646/2022, atualizada pela Portaria MEC nº 243, de 10/03/2026.</dd>
-        <dt>DIST. EM JANEIRO</dt>
-        <dd>Recursos distribuídos de forma extraorçamentária, a partir de recursos recebidos via índices de qualidade.</dd>
-        <dt>UNIDADES DE RECOMP. (Proposta)</dt>
-        <dd>Proposta em análise pela Reitoria, da ordem de R$ 1.000.000,00, para as unidades que tiveram redução orçamentária em relação a 2024 — baseada na matriz orçamentária, cujo principal parâmetro é a quantidade de matrículas da unidade.</dd>
-        <dt>TODAS AS UNIDADES (Proposta)</dt>
-        <dd>Proposta em análise pela Reitoria, no valor total de R$ 800.000,00, distribuída a todas as unidades (não só as com déficit orçamentário).</dd>
-      </dl>
     </div>`;
   document.getElementById('contentExtra').innerHTML = html;
 }
