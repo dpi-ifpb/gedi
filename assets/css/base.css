@@ -55,6 +55,9 @@
   .nav-list-wrap{position:relative; flex:1; display:flex; flex-direction:column; overflow:hidden;}
   .nav-list-wrap .nav-section-label,
   .nav-list-wrap .nav-item{position:relative; z-index:1;}
+  .sidebar-logo{padding:16px 24px 8px; display:flex; justify-content:center;}
+  .sidebar-logo img{width:100%; max-width:120px; height:auto; opacity:.35;}
+  .sidebar.collapsed .sidebar-logo{display:none;}
   .brand-sub{font-weight:400; font-size:10.5px; color:#C7B8DE; letter-spacing:.4px; text-transform:uppercase; margin-top:5px; white-space:nowrap; overflow:hidden;}
 
   .collapse-btn{
