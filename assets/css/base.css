@@ -99,6 +99,14 @@
   }
   .refresh-btn:hover{background:var(--c1-soft); border-color:var(--c1-soft);}
   .refresh-btn.spinning .ic{display:inline-block; animation:spin .8s linear infinite;}
+
+  .info-btn{
+    width:32px; height:32px; border-radius:50%; flex-shrink:0;
+    background:transparent; border:1.5px solid var(--border); color:var(--ink-soft);
+    font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .info-btn:hover{background:var(--c4); color:var(--c1); border-color:var(--c1);}
   @keyframes spin{from{transform:rotate(0deg);} to{transform:rotate(360deg);}}
 
   .content{padding:14px 36px 48px; min-width:0;}
@@ -163,5 +171,31 @@
   .notes-dl dt{font-size:12.5px; font-weight:600; color:#8A6D00; margin:14px 0 3px;}
   .notes-dl dt:first-child{margin-top:0;}
   .notes-dl dd{font-size:13px; color:#5C4A00; line-height:1.6; margin:0;}
+
+  #notesModalBody h3{font-size:15px; font-weight:600; color:var(--c1); margin-bottom:12px;}
+  #notesModalBody > p{font-size:13px; color:var(--ink); line-height:1.6;}
   .notes-footer{margin-top:16px; padding-top:14px; border-top:1px solid #F0DFA0; font-size:12px; color:#8A6D00;}
+
+  /* ================= Responsividade mobile ================= */
+  @media (max-width: 768px){
+    /* a barra lateral, quando expandida, vira uma sobreposição (overlay) em vez de
+       empurrar o conteúdo — senão o layout quebra em telas estreitas */
+    .sidebar{
+      position:fixed; top:0; left:0; height:100vh; z-index:50;
+      box-shadow:0 0 28px rgba(0,0,0,.28);
+    }
+    .sidebar:not(.collapsed){width:250px;}
+    .main{width:100%; min-width:0;}
+    .content{padding:14px 16px 40px;}
+    .topbar{padding:20px 16px 10px;}
+    .global-warning{margin:14px 16px 0;}
+    .kpi-row{grid-template-columns:1fr 1fr; gap:10px;}
+    .filter-bar{padding:12px;}
+    .modal-card{padding:20px; max-width:92vw;}
+    .modal-card-wide{max-width:92vw;}
+    .auth-subtitle{top:24px;}
+    #appRoot:has(.sidebar:not(.collapsed))::before{
+      content:''; position:fixed; inset:0; background:rgba(20,10,40,.4); z-index:40;
+    }
+  }
 
