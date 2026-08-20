@@ -94,10 +94,7 @@
 
   <!-- ============ TELA 1 · TOTAIS ============ -->
   <div id="page-totais" style="display:none;">
-        <div class="global-warning">
-      <p>Os recursos de emendas de bancada (RP7) ainda não foram repassados pelo Governo Federal. O planejamento das demandas para utilização desses recursos será incluído posteriormente no painel. Apenas as despesas que precisam complementar algumas obras foram destacadas como previstas para RP7.</p>
-    </div>
-    <div class="topbar">
+        <div class="topbar">
       <div class="topbar-left">
         <h1>Totais de Despesas</h1>
       </div>
@@ -107,6 +104,10 @@
       </div>
     </div>
 
+    <div class="global-warning">
+      <p>Os recursos de emendas de bancada (RP7) ainda não foram repassados pelo Governo Federal. O planejamento das demandas para utilização desses recursos será incluído posteriormente no painel. Apenas as despesas que precisam complementar algumas obras foram destacadas como previstas para RP7.</p>
+    </div>
+
     <div class="content" id="contentTotais">
       <div class="state-box"><div class="spinner"></div><h3>Carregando dados da planilha…</h3></div>
     </div>
@@ -114,10 +115,7 @@
 
   <!-- ============ TELA 2 · DETALHAMENTO ============ -->
   <div id="page-detalhe" style="display:none;">
-        <div class="global-warning">
-      <p>Os recursos de emendas de bancada (RP7) ainda não foram repassados pelo Governo Federal. O planejamento das demandas para utilização desses recursos será incluído posteriormente no painel. Apenas as despesas que precisam complementar algumas obras foram destacadas como previstas para RP7.</p>
-    </div>
-    <div class="topbar">
+        <div class="topbar">
       <div class="topbar-left">
         <h1>Detalhamento das Despesas</h1>
       </div>
@@ -127,6 +125,10 @@
       </div>
     </div>
 
+    <div class="global-warning">
+      <p>Os recursos de emendas de bancada (RP7) ainda não foram repassados pelo Governo Federal. O planejamento das demandas para utilização desses recursos será incluído posteriormente no painel. Apenas as despesas que precisam complementar algumas obras foram destacadas como previstas para RP7.</p>
+    </div>
+
     <div class="content" id="contentDetalhe">
       <div class="state-box"><div class="spinner"></div><h3>Carregando dados da planilha…</h3></div>
     </div>
@@ -134,17 +136,19 @@
 
   <!-- ============ TELA 3 · EXTRAORÇAMENTÁRIO ============ -->
   <div id="page-extra" style="display:none;">
-        <div class="global-warning">
-      <p>Os recursos de emendas de bancada (RP7) ainda não foram repassados pelo Governo Federal. O planejamento das demandas para utilização desses recursos será incluído posteriormente no painel. Apenas as despesas que precisam complementar algumas obras foram destacadas como previstas para RP7.</p>
-    </div>
-    <div class="topbar">
+        <div class="topbar">
       <div class="topbar-left">
         <h1>Recursos Extraorçamentários às Unidades</h1>
       </div>
       <div class="topbar-right">
+        <button type="button" class="info-btn" onclick="openNotesModal('extra')" title="Sobre esta tela">ⓘ</button>
         <div class="update-pill" id="updatePillExtra">Carregando…</div>
         <button class="refresh-btn" id="refreshBtnExtra" onclick="manualRefresh()"><span class="ic">⟳</span> Atualizar</button>
       </div>
+    </div>
+
+    <div class="global-warning">
+      <p>Os recursos de emendas de bancada (RP7) ainda não foram repassados pelo Governo Federal. O planejamento das demandas para utilização desses recursos será incluído posteriormente no painel. Apenas as despesas que precisam complementar algumas obras foram destacadas como previstas para RP7.</p>
     </div>
     <div class="content" id="contentExtra">
       <div class="state-box"><div class="spinner"></div><h3>Carregando dados da planilha…</h3></div>
@@ -153,84 +157,88 @@
 
   <!-- ============ TELA 4 · INDICADORES RFEPCT ============ -->
   <div id="page-indicadores" style="display:none;">
-        <div class="global-warning">
-      <p>Os recursos de emendas de bancada (RP7) ainda não foram repassados pelo Governo Federal. O planejamento das demandas para utilização desses recursos será incluído posteriormente no painel. Apenas as despesas que precisam complementar algumas obras foram destacadas como previstas para RP7.</p>
-    </div>
-    <div class="topbar">
+        <div class="topbar">
       <div class="topbar-left">
         <h1>Indicadores da Matriz Orçamentária (PNP)</h1>
       </div>
+      <div class="topbar-right">
+        <button type="button" class="info-btn" onclick="openNotesModal('indicadores')" title="Sobre estes indicadores">ⓘ</button>
+      </div>
+    </div>
+
+    <div class="global-warning">
+      <p>Os recursos de emendas de bancada (RP7) ainda não foram repassados pelo Governo Federal. O planejamento das demandas para utilização desses recursos será incluído posteriormente no painel. Apenas as despesas que precisam complementar algumas obras foram destacadas como previstas para RP7.</p>
     </div>
     <div class="content" id="contentIndicadores"></div>
   </div>
 
   <!-- ============ TELA 5 · COMPARAÇÃO DE PARES ============ -->
   <div id="page-pares" style="display:none;">
-        <div class="global-warning">
-      <p>Os recursos de emendas de bancada (RP7) ainda não foram repassados pelo Governo Federal. O planejamento das demandas para utilização desses recursos será incluído posteriormente no painel. Apenas as despesas que precisam complementar algumas obras foram destacadas como previstas para RP7.</p>
-    </div>
-    <div class="topbar">
+        <div class="topbar">
       <div class="topbar-left">
         <h1>Análise dos Pares (matrícula semelhante)</h1>
       </div>
+    </div>
+
+    <div class="global-warning">
+      <p>Os recursos de emendas de bancada (RP7) ainda não foram repassados pelo Governo Federal. O planejamento das demandas para utilização desses recursos será incluído posteriormente no painel. Apenas as despesas que precisam complementar algumas obras foram destacadas como previstas para RP7.</p>
     </div>
     <div class="content" id="contentPares"></div>
   </div>
 
   <!-- ============ TELA 6 · SIMULADOR BLOCO QUALIDADE E EFICIÊNCIA ============ -->
   <div id="page-simulador" style="display:none;">
-        <div class="global-warning">
-      <p>Os recursos de emendas de bancada (RP7) ainda não foram repassados pelo Governo Federal. O planejamento das demandas para utilização desses recursos será incluído posteriormente no painel. Apenas as despesas que precisam complementar algumas obras foram destacadas como previstas para RP7.</p>
-    </div>
-    <div class="topbar">
+        <div class="topbar">
       <div class="topbar-left">
         <h1>Simulador — Bloco Qualidade e Eficiência</h1>
       </div>
+    </div>
+
+    <div class="global-warning">
+      <p>Os recursos de emendas de bancada (RP7) ainda não foram repassados pelo Governo Federal. O planejamento das demandas para utilização desses recursos será incluído posteriormente no painel. Apenas as despesas que precisam complementar algumas obras foram destacadas como previstas para RP7.</p>
     </div>
     <div class="content" id="contentSimulador"></div>
   </div>
 
   <!-- ============ TELA 7 · SIMULADOR BLOCO FUNCIONAMENTO (APROXIMADO) ============ -->
   <div id="page-simuladorF" style="display:none;">
-        <div class="global-warning">
-      <p>Os recursos de emendas de bancada (RP7) ainda não foram repassados pelo Governo Federal. O planejamento das demandas para utilização desses recursos será incluído posteriormente no painel. Apenas as despesas que precisam complementar algumas obras foram destacadas como previstas para RP7.</p>
-    </div>
-    <div class="topbar">
+        <div class="topbar">
       <div class="topbar-left">
         <h1>Simulador — Bloco Funcionamento (aproximado)</h1>
       </div>
+    </div>
+
+    <div class="global-warning">
+      <p>Os recursos de emendas de bancada (RP7) ainda não foram repassados pelo Governo Federal. O planejamento das demandas para utilização desses recursos será incluído posteriormente no painel. Apenas as despesas que precisam complementar algumas obras foram destacadas como previstas para RP7.</p>
     </div>
     <div class="content" id="contentSimuladorF"></div>
   </div>
 
   <!-- ============ TELA · SOBRE O GEDI ============ -->
   <div id="page-sobre">
-        <div class="global-warning">
-      <p>Os recursos de emendas de bancada (RP7) ainda não foram repassados pelo Governo Federal. O planejamento das demandas para utilização desses recursos será incluído posteriormente no painel. Apenas as despesas que precisam complementar algumas obras foram destacadas como previstas para RP7.</p>
-    </div>
-    <div class="topbar">
+        <div class="topbar">
       <div class="topbar-left">
         <h1>Sobre o GEDI</h1>
       </div>
     </div>
+
+    <div class="global-warning">
+      <p>Os recursos de emendas de bancada (RP7) ainda não foram repassados pelo Governo Federal. O planejamento das demandas para utilização desses recursos será incluído posteriormente no painel. Apenas as despesas que precisam complementar algumas obras foram destacadas como previstas para RP7.</p>
+    </div>
     <div class="content">
       <div class="sobre-panel-full">
-        <p>O <strong>GEDI — Gestão Estratégica e Desenvolvimento Institucional</strong> é uma ferramenta desenvolvida para apoiar o planejamento, o acompanhamento orçamentário e a tomada de decisão no Instituto Federal da Paraíba (IFPB), reunindo, em um único ambiente, informações operacionais, indicadores institucionais e recursos de análise aplicados à gestão.</p>
+        <p>O <strong>GEDI — Gestão Estratégica e Desenvolvimento Institucional</strong> é uma ferramenta desenvolvida para apoiar o planejamento, o acompanhamento orçamentário e a tomada de decisão no Instituto Federal da Paraíba (IFPB), reunindo, em um único ambiente, informações, indicadores e recursos de análise aplicados à gestão.</p>
 
-        <p>A iniciativa foi proposta pela Diretoria de Planejamento, Desenvolvimento Institucional e Interiorização (DPI/REITORIA) a partir da necessidade de ampliar a integração das informações utilizadas no acompanhamento da execução orçamentária e no planejamento institucional, transformando dados provenientes de diferentes fontes em informações organizadas, comparáveis e úteis ao processo decisório.</p>
+        <p>Proposto pela Diretoria de Planejamento, Desenvolvimento Institucional e Interiorização (DPI/REITORIA), o GEDI busca transformar dados provenientes de diferentes fontes em informações organizadas, comparáveis e úteis ao processo decisório.</p>
 
-        <p>Mais do que apresentar dados, o GEDI busca facilitar sua leitura e interpretação. O painel permite acompanhar despesas e demandas das unidades, consultar informações detalhadas, analisar distribuições de recursos e visualizar indicadores relacionados à Rede Federal de Educação Profissional, Científica e Tecnológica. A ferramenta também foi concebida para incorporar progressivamente recursos de análise estratégica e simulação, permitindo explorar cenários e compreender os possíveis efeitos da evolução de determinados indicadores sobre a distribuição orçamentária institucional.</p>
+        <p>A ferramenta permite acompanhar despesas e demandas das unidades, analisar a distribuição de recursos e visualizar indicadores institucionais e da Rede Federal. Também incorpora recursos de análise e simulação que auxiliam na compreensão dos fatores relacionados ao planejamento e à distribuição orçamentária.</p>
 
-        <p>Parte importante dessa abordagem está na integração entre planejamento, orçamento e indicadores. Ao aproximar informações sobre despesas, recursos, matrículas, desempenho e critérios da Matriz de Distribuição Orçamentária da Rede Federal, o GEDI contribui para uma compreensão mais ampla das condições de funcionamento das unidades e dos fatores que podem influenciar o planejamento e o financiamento institucional.</p>
+        <p>Ao integrar planejamento, orçamento e indicadores, o GEDI contribui para reduzir a dispersão das informações, facilitar análises comparativas e apoiar a identificação de tendências, necessidades e prioridades, fortalecendo uma gestão orientada por dados e evidências.</p>
 
-        <p>A ferramenta também favorece uma gestão orientada por evidências. A consolidação e a visualização estruturada das informações reduzem a dispersão dos dados, facilitam análises comparativas e oferecem melhores condições para identificar tendências, necessidades, prioridades e possíveis impactos das decisões adotadas.</p>
-
-        <p>O GEDI deve ser compreendido como uma ferramenta em desenvolvimento contínuo. Novas funcionalidades, indicadores, bases de dados e mecanismos de análise poderão ser incorporados à medida que surgirem novas necessidades institucionais e que forem atualizados os referenciais utilizados pela Rede Federal. Os recursos de simulação disponíveis possuem finalidade analítica e prospectiva e, portanto, seus resultados devem ser interpretados como subsídios à análise e ao planejamento, e não como projeções oficiais de orçamento.</p>
-
-        <p>Ao reunir acompanhamento operacional e análise estratégica em um mesmo ambiente, o GEDI busca contribuir para o fortalecimento de uma cultura institucional baseada em planejamento, transparência, integração da informação e tomada de decisão orientada por dados.</p>
+        <p>O GEDI está em desenvolvimento contínuo e poderá incorporar novas bases de dados, indicadores e funcionalidades. Os recursos de simulação possuem finalidade analítica e prospectiva e devem ser compreendidos como subsídios ao planejamento, não como projeções oficiais de orçamento.</p>
 
         <h3>Construção colaborativa</h3>
-        <p>O aprimoramento do GEDI depende também da experiência de seus usuários. Sugestões de novas funcionalidades, indicadores, análises, melhorias de usabilidade ou correções podem ser encaminhadas à Diretoria de Planejamento, Desenvolvimento Institucional e Interiorização (DPI) pelo e-mail <a href="mailto:dpi@ifpb.edu.br">dpi@ifpb.edu.br</a>.</p>
+        <p>Sugestões de funcionalidades, indicadores, análises, melhorias ou correções podem ser encaminhadas à Diretoria de Planejamento, Desenvolvimento Institucional e Interiorização (DPI) pelo e-mail <a href="mailto:dpi@ifpb.edu.br">dpi@ifpb.edu.br</a>.</p>
 
         <p class="sobre-footer"><strong>GEDI — Gestão Estratégica e Desenvolvimento Institucional</strong><br>Uma iniciativa proposta pela Diretoria de Planejamento, Desenvolvimento Institucional e Interiorização (DPI/REITORIA) do Instituto Federal da Paraíba.</p>
       </div>
@@ -258,6 +266,16 @@
     </div>
     <h3 class="modal-chart-title" id="chartModalTitle"></h3>
     <div class="modal-chart-scroll" id="chartModalBody"></div>
+  </div>
+</div>
+
+<!-- ============ MODAL · NOTAS EXPLICATIVAS (reutilizável) ============ -->
+<div class="modal-overlay hidden" id="notesModal" onclick="if(event.target===this) closeNotesModal()">
+  <div class="modal-card" id="notesModalCard">
+    <div class="modal-actions">
+      <button type="button" class="modal-close" onclick="closeNotesModal()">Fechar ✕</button>
+    </div>
+    <div id="notesModalBody"></div>
   </div>
 </div>
 
