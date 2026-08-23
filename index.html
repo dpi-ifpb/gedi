@@ -100,10 +100,6 @@
     </div>
   </div>
 
-  <div class="sidebar-logo">
-    <img src="assets/img/ifpb-logo-vertical-branco.png" alt="IFPB" />
-  </div>
-
   <div class="auth-user" id="authUser" title="Clique em Sair para encerrar a sessão">
     <span class="auth-user-avatar" id="authUserAvatar"></span>
     <span class="auth-user-name" id="authUserLabel"></span>
@@ -202,6 +198,12 @@
         <h1>Estrutura Organizacional</h1>
         <p>Clique numa unidade pra ver os servidores em exercício nela. Base atual: apenas exercício SUAP.</p>
       </div>
+      <div class="topbar-right">
+        <div class="view-toggle" id="estruturaViewToggle">
+          <button type="button" class="view-toggle-btn active" data-view="tabela" onclick="setEstruturaView('tabela')">Tabela</button>
+          <button type="button" class="view-toggle-btn" data-view="treemap" onclick="setEstruturaView('treemap')">Treemap</button>
+        </div>
+      </div>
     </div>
 
     <div class="content" id="contentEstrutura"></div>
@@ -215,6 +217,11 @@
       </div>
       <div class="topbar-right">
         <button type="button" class="info-btn" onclick="openNotesModal('funcoes')" title="Sobre a tipologia">ⓘ</button>
+        <div class="view-toggle" id="funcoesViewToggle">
+          <button type="button" class="view-toggle-btn active" data-view="tabela" onclick="setFuncoesView('tabela')">Tabela</button>
+          <button type="button" class="view-toggle-btn" data-view="grafico" onclick="setFuncoesView('grafico')">Gráfico</button>
+          <button type="button" class="view-toggle-btn" data-view="ranking" onclick="setFuncoesView('ranking')">Ranking</button>
+        </div>
       </div>
     </div>
 
