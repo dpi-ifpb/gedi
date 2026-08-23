@@ -176,7 +176,7 @@ function openServidoresSetor(sigla){
   document.getElementById('notesModalBody').innerHTML = `
     <h3>${label}</h3>
     <p style="margin-bottom:14px; color:var(--ink-soft); font-size:13px;">${lista.length} servidor${lista.length===1?'':'es'} em exercício neste setor.</p>
-    <div class="panel" style="max-height:50vh; overflow-y:auto;">
+    <div class="panel">
       <table>
         <thead><tr><th style="top:0">Nome</th><th style="top:0">Cargo</th><th style="top:0">Função</th></tr></thead>
         <tbody>${rows || '<tr><td colspan="3" class="muted" style="padding:16px;">Nenhum servidor em exercício neste setor.</td></tr>'}</tbody>
