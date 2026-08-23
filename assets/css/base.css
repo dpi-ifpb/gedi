@@ -134,12 +134,18 @@
 
   /* Filter bar */
   .filter-bar{
+    position:relative;
     display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; justify-content:flex-start;
     margin-bottom:18px; background:#F0E7F7; border:1px solid #DCC9EC; border-radius:10px;
     padding:14px 16px;
   }
+  .filter-bar:has(.view-toggle){padding-right:220px;}
+  .filter-bar .view-toggle{position:absolute; top:14px; right:16px; margin-left:0 !important;}
   .filter-field{display:flex; flex-direction:column; gap:5px; min-width:150px;}
-  .filter-field label{font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--c1); font-weight:500;}
+  .filter-field > label{font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--c1); font-weight:500;}
+  .filter-field label.checkbox-item{
+    text-transform:none; letter-spacing:normal; font-size:12.5px; font-weight:400; color:var(--ink);
+  }
   .filter-field input, .filter-field select{
     font-family:'Plus Jakarta Sans'; font-size:12.5px; color:var(--ink); background:var(--surface);
     border:1px solid var(--border); border-radius:9px; padding:8px 10px; outline:none;
