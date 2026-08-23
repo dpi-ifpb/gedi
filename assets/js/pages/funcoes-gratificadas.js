@@ -1,6 +1,5 @@
-let funcoesFiltros = { uos: [], tipos: [], compararTipologia: true };
+let funcoesFiltros = { uos: [], tipos: [], compararTipologia: true, quadroResumo: false };
 let funcoesView = 'tabela';
-let funcoesTabelaModo = 'nominal'; // 'nominal' | 'resumo'
 let funcoesChartInstance = null;
 
 function uoRaizDoSetor(sigla){
@@ -25,6 +24,54 @@ function listaUOsComTipologia(){
     });
 }
 
+/* ================= Componente: dropdown de múltipla seleção =================
+   Fica fechado como um <select> comum; ao clicar, abre um painel com
+   checkboxes permitindo marcar vários itens ao mesmo tempo. */
+function renderMultiSelect(idPrefix, options, selecionados, onChangeFnName){
+  const labelsSelecionados = options.filter(o => selecionados.includes(o.value)).map(o => o.label);
+  const textoTrigger = selecionados.length === 0
+    ? 'Todas'
+    : (selecionados.length === 1 ? labelsSelecionados[0] : `${selecionados.length} selecionadas`);
+  const itens = options.map(o => {
+    const checked = selecionados.includes(o.value) ? 'checked' : '';
+    return `<label class="checkbox-item"><input type="checkbox" value="${String(o.value).replace(/"/g,'&quot;')}" ${checked} onchange="${onChangeFnName}(this)"> ${o.label}</label>`;
+  }).join('');
+  return `
+    <div class="multiselect" id="${idPrefix}Wrap">
+      <button type="button" class="multiselect-trigger" onclick="toggleMultiselect('${idPrefix}Wrap', event)">
+        <span id="${idPrefix}TriggerText">${textoTrigger}</span><span class="multiselect-arrow">▾</span>
+      </button>
+      <div class="multiselect-panel" onclick="event.stopPropagation()">${itens}</div>
+    </div>`;
+}
+
+function toggleMultiselect(wrapId, evt){
+  if(evt) evt.stopPropagation();
+  document.querySelectorAll('.multiselect.open').forEach(w => { if(w.id !== wrapId) w.classList.remove('open'); });
+  document.getElementById(wrapId).classList.toggle('open');
+}
+if(typeof window !== 'undefined'){
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.multiselect.open').forEach(w => w.classList.remove('open'));
+  });
+}
+
+function atualizarTriggerMultiselect(idPrefix, options, selecionados){
+  const labelsSelecionados = options.filter(o => selecionados.includes(o.value)).map(o => o.label);
+  const texto = selecionados.length === 0
+    ? 'Todas'
+    : (selecionados.length === 1 ? labelsSelecionados[0] : `${selecionados.length} selecionadas`);
+  const el = document.getElementById(idPrefix + 'TriggerText');
+  if(el) el.textContent = texto;
+}
+
+function funcoesUOOptions(){
+  return listaUOsComTipologia().map(u => ({ value: u.sigla || u.nome, label: u.nome }));
+}
+function funcoesTipoOptions(){
+  return [['FG','FG'], ['CD','CD'], ['FUC','FUC (Coord. de Curso)']].map(([value,label]) => ({ value, label }));
+}
+
 function funcoesToggleHTML(){
   return `
     <div class="view-toggle" id="funcoesViewToggle" style="margin-left:auto;">
@@ -35,35 +82,27 @@ function funcoesToggleHTML(){
 }
 
 function buildFuncoesFilters(){
-  const uos = listaUOsComTipologia();
-  const uoOpts = uos.map(u => {
-    const valor = u.sigla || u.nome;
-    const sel = funcoesFiltros.uos.includes(valor) ? 'selected' : '';
-    return `<option value="${valor}" ${sel}>${u.nome}</option>`;
-  }).join('');
-
-  const TIPOS = [['FG','FG'], ['CD','CD'], ['FUC','FUC (Coord. de Curso)']];
-  const tipoOpts = TIPOS.map(([valor,label]) => {
-    const sel = funcoesFiltros.tipos.includes(valor) ? 'selected' : '';
-    return `<option value="${valor}" ${sel}>${label}</option>`;
-  }).join('');
-
-  const mostrarComparar = funcoesView === 'grafico' || funcoesView === 'ranking';
-
   return `
     <div class="filter-bar" style="align-items:flex-end;">
       <div class="filter-field">
         <label>Unidade</label>
-        <select id="fFuncoesUO" multiple size="4" onchange="onFuncoesFilterChange()" style="min-width:220px;">${uoOpts}</select>
+        ${renderMultiSelect('fFuncoesUO', funcoesUOOptions(), funcoesFiltros.uos, 'onFuncoesUOCheck')}
       </div>
       <div class="filter-field">
         <label>Tipo</label>
-        <select id="fFuncoesTipo" multiple size="4" onchange="onFuncoesFilterChange()" style="min-width:170px;">${tipoOpts}</select>
+        ${renderMultiSelect('fFuncoesTipo', funcoesTipoOptions(), funcoesFiltros.tipos, 'onFuncoesTipoCheck')}
       </div>
-      ${mostrarComparar ? `
+      ${funcoesView === 'tabela' ? `
       <div class="filter-field" style="justify-content:flex-end;">
         <label class="checkbox-item" style="margin-bottom:9px;">
-          <input type="checkbox" id="fFuncoesComparar" ${funcoesFiltros.compararTipologia?'checked':''} onchange="onFuncoesFilterChange()">
+          <input type="checkbox" id="fFuncoesResumo" ${funcoesFiltros.quadroResumo?'checked':''} onchange="onFuncoesResumoCheck(this)">
+          Quadro resumo
+        </label>
+      </div>` : ''}
+      ${(funcoesView === 'grafico' || funcoesView === 'ranking') ? `
+      <div class="filter-field" style="justify-content:flex-end;">
+        <label class="checkbox-item" style="margin-bottom:9px;">
+          <input type="checkbox" id="fFuncoesComparar" ${funcoesFiltros.compararTipologia?'checked':''} onchange="onFuncoesCompararCheck(this)">
           Comparar com Tipologia
         </label>
       </div>` : ''}
@@ -72,22 +111,46 @@ function buildFuncoesFilters(){
     </div>`;
 }
 
-function onFuncoesFilterChange(){
-  funcoesFiltros.uos = Array.from(document.getElementById('fFuncoesUO').selectedOptions).map(o => o.value);
-  funcoesFiltros.tipos = Array.from(document.getElementById('fFuncoesTipo').selectedOptions).map(o => o.value);
-  const comparar = document.getElementById('fFuncoesComparar');
-  if(comparar) funcoesFiltros.compararTipologia = comparar.checked;
+function onFuncoesUOCheck(checkbox){
+  const valor = checkbox.value;
+  if(checkbox.checked){
+    if(!funcoesFiltros.uos.includes(valor)) funcoesFiltros.uos.push(valor);
+  } else {
+    funcoesFiltros.uos = funcoesFiltros.uos.filter(v => v !== valor);
+  }
+  atualizarTriggerMultiselect('fFuncoesUO', funcoesUOOptions(), funcoesFiltros.uos);
+  renderFuncoesConteudo();
+}
+
+function onFuncoesTipoCheck(checkbox){
+  const valor = checkbox.value;
+  if(checkbox.checked){
+    if(!funcoesFiltros.tipos.includes(valor)) funcoesFiltros.tipos.push(valor);
+  } else {
+    funcoesFiltros.tipos = funcoesFiltros.tipos.filter(v => v !== valor);
+  }
+  atualizarTriggerMultiselect('fFuncoesTipo', funcoesTipoOptions(), funcoesFiltros.tipos);
+  renderFuncoesConteudo();
+}
+
+function onFuncoesResumoCheck(checkbox){
+  funcoesFiltros.quadroResumo = checkbox.checked;
+  renderFuncoesConteudo();
+}
+
+function onFuncoesCompararCheck(checkbox){
+  funcoesFiltros.compararTipologia = checkbox.checked;
   renderFuncoesConteudo();
 }
 
 function clearFuncoesFilters(){
-  funcoesFiltros = { uos: [], tipos: [], compararTipologia: true };
+  funcoesFiltros = { uos: [], tipos: [], compararTipologia: true, quadroResumo: false };
   renderFuncoesGratificadas();
 }
 
 function setFuncoesView(view){
   funcoesView = view;
-  renderFuncoesGratificadas(); // refaz a barra de filtro também (o checkbox "Comparar" só existe em Gráfico/Ranking)
+  renderFuncoesGratificadas(); // a barra de filtro muda (checkbox de resumo/comparar depende da view)
 }
 
 function funcoesTipoBate(funcao){
@@ -126,30 +189,14 @@ function renderFuncoesConteudo(){
     renderFuncoesGrafico(el);
   } else if(funcoesView === 'ranking'){
     renderFuncoesRanking(el);
+  } else if(funcoesFiltros.quadroResumo){
+    renderFuncoesQuadroResumo(el);
   } else {
     renderFuncoesTabela(el);
   }
 }
 
-function funcoesTabelaToggleHTML(){
-  return `
-    <div class="view-toggle" style="margin-bottom:14px;">
-      <button type="button" class="view-toggle-btn${funcoesTabelaModo==='nominal'?' active':''}" onclick="setFuncoesTabelaModo('nominal')">Nominal</button>
-      <button type="button" class="view-toggle-btn${funcoesTabelaModo==='resumo'?' active':''}" onclick="setFuncoesTabelaModo('resumo')">Quadro resumo</button>
-    </div>`;
-}
-
-function setFuncoesTabelaModo(modo){
-  funcoesTabelaModo = modo;
-  renderFuncoesConteudo();
-}
-
 function renderFuncoesTabela(el){
-  if(funcoesTabelaModo === 'resumo'){
-    renderFuncoesQuadroResumo(el);
-    return;
-  }
-
   const lista = funcoesServidoresFiltrados()
     .map(sv => ({ ...sv, uo: uoRaizDoSetor(sv.exercicio_suap_sigla) }))
     .sort((a,b) => (a.uo?.nome || '').localeCompare(b.uo?.nome || '', 'pt-BR') || a.nome.localeCompare(b.nome, 'pt-BR'));
@@ -161,23 +208,23 @@ function renderFuncoesTabela(el){
     const setor = setorPorSigla[sv.exercicio_suap_sigla];
     const setorLabel = setor ? (setor.eh_uo ? setor.nome : `${setor.sigla} - ${setor.nome}`) : sv.exercicio_suap_sigla;
     return `<tr>
-      <td>${sv.nome}</td>
+      <td style="text-align:center;">${sv.nome}</td>
       <td>${sv.uo ? sv.uo.nome : '—'}</td>
-      <td>${setorLabel}</td>
-      <td class="num th-center">${sv.funcao}</td>
+      <td style="text-align:center;">${setorLabel}</td>
+      <td style="text-align:center;">${sv.funcao}</td>
     </tr>`;
   }).join('');
 
-  el.innerHTML = funcoesTabelaToggleHTML() + `
+  el.innerHTML = `
     <div class="panel">
       <table>
         <thead><tr>
-          <th style="top:0">Nome</th>
-          <th style="top:0">Unidade</th>
-          <th style="top:0">Setor</th>
-          <th class="num th-center" style="top:0">Função</th>
+          <th style="top:0; text-align:center;">Nome</th>
+          <th style="top:0;">Unidade</th>
+          <th style="top:0; text-align:center;">Setor</th>
+          <th style="top:0; text-align:center;">Função</th>
         </tr></thead>
-        <tbody>${rows || `<tr><td colspan="4" class="muted" style="padding:20px 26px;">Nenhum servidor encontrado para os filtros selecionados.</td></tr>`}</tbody>
+        <tbody>${rows || `<tr><td colspan="4" class="muted" style="padding:20px 26px; text-align:center;">Nenhum servidor encontrado para os filtros selecionados.</td></tr>`}</tbody>
       </table>
     </div>`;
 }
@@ -222,9 +269,6 @@ function funcoesUnidadesAlvo(){
   return funcoesFiltros.uos.length ? todas.filter(u => funcoesFiltros.uos.includes(u.sigla || u.nome)) : todas;
 }
 
-/* Quadro resumo: comparação direta, função por função, entre o ocupado e a
-   tipologia — sem rótulo de "conforme/divergente", só os números lado a lado,
-   pra leitura própria de quem está analisando. */
 function renderFuncoesQuadroResumo(el){
   const categorias = funcoesCategoriasAtivas();
   const porUo = contagemFuncoesPorUO();
@@ -238,20 +282,20 @@ function renderFuncoesQuadroResumo(el){
     const celulas = categorias.map(c => {
       const ocupado = dados ? (dados.contagem[c]||0) : 0;
       const permitido = tip ? (tip[c.toLowerCase()]||0) : 0;
-      if(ocupado===0 && permitido===0) return `<td class="num muted">—</td>`;
-      return `<td class="num">${ocupado} / ${permitido}</td>`;
+      if(ocupado===0 && permitido===0) return `<td class="muted" style="text-align:center;">—</td>`;
+      return `<td style="text-align:center;">${ocupado} / ${permitido}</td>`;
     }).join('');
     return `<tr><td>${u.nome}</td>${celulas}</tr>`;
   }).filter(Boolean).join('');
 
-  el.innerHTML = funcoesTabelaToggleHTML() + `
+  el.innerHTML = `
     <div class="panel">
       <table>
         <thead><tr>
-          <th style="top:0">Unidade</th>
-          ${categorias.map(c => `<th class="num th-center" style="top:0">${c}</th>`).join('')}
+          <th style="top:0;">Unidade</th>
+          ${categorias.map(c => `<th style="top:0; text-align:center;">${c}</th>`).join('')}
         </tr></thead>
-        <tbody>${rows || `<tr><td colspan="${categorias.length+1}" class="muted" style="padding:20px 26px;">Nenhuma unidade com dado para os filtros selecionados.</td></tr>`}</tbody>
+        <tbody>${rows || `<tr><td colspan="${categorias.length+1}" class="muted" style="padding:20px 26px; text-align:center;">Nenhuma unidade com dado para os filtros selecionados.</td></tr>`}</tbody>
       </table>
       <p style="padding:12px 20px; font-size:12px; color:var(--ink-soft);">Cada célula mostra <strong>ocupado / tipologia</strong>.</p>
     </div>`;
@@ -311,16 +355,21 @@ function renderFuncoesRanking(el){
   }));
 
   if(funcoesFiltros.compararTipologia){
-    const tipologiaData = linhas.map(l => {
-      const chave = l.setor.sigla || l.setor.nome;
-      const tip = tipologiaPorChaveUO(chave);
-      return tip ? categorias.reduce((s,c) => s + (tip[c.toLowerCase()]||0), 0) : 0;
-    });
-    datasets.push({
-      label: 'Tipologia',
-      data: tipologiaData,
-      backgroundColor: '#DCC9EC',
-      stack: 'tipologia',
+    // mesma paleta de cores por categoria das barras "Ocupadas", só que na
+    // pilha "tipologia" — permite comparar segmento a segmento, categoria a categoria
+    categorias.forEach(c => {
+      datasets.push({
+        label: c + ' (tipologia)',
+        data: linhas.map(l => {
+          const chave = l.setor.sigla || l.setor.nome;
+          const tip = tipologiaPorChaveUO(chave);
+          return tip ? (tip[c.toLowerCase()] || 0) : 0;
+        }),
+        backgroundColor: CORES_FUNCAO[c],
+        stack: 'tipologia',
+        // esconde da legenda pra não duplicar a mesma cor já explicada pela pilha "ocupado"
+        hidden: false,
+      });
     });
   }
 
@@ -330,7 +379,13 @@ function renderFuncoesRanking(el){
     options: {
       responsive: true,
       plugins: {
-        legend: { position: 'right', title: { display: true, text: 'Função' } },
+        legend: {
+          position: 'right',
+          title: { display: true, text: 'Função' },
+          labels: {
+            filter(item){ return !item.text.endsWith('(tipologia)'); },
+          },
+        },
       },
       scales: {
         x: { stacked: true, ticks: { autoSkip: false, maxRotation: 60, minRotation: 40 } },
@@ -346,6 +401,7 @@ function renderFuncoesGrafico(el){
   if(funcoesChartInstance){ funcoesChartInstance.destroy(); funcoesChartInstance = null; }
 
   const categorias = funcoesCategoriasAtivas();
+  const legendaSemToggle = { onClick(){} };
 
   if(funcoesFiltros.uos.length === 1){
     const chave = funcoesFiltros.uos[0];
@@ -364,7 +420,7 @@ function renderFuncoesGrafico(el){
       data: { labels: categorias, datasets },
       options: {
         responsive: true,
-        plugins: { legend: { position: 'bottom' } },
+        plugins: { legend: { position: 'bottom', ...legendaSemToggle } },
         scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
       }
     });
@@ -396,7 +452,7 @@ function renderFuncoesGrafico(el){
       data: { labels, datasets },
       options: {
         responsive: true,
-        plugins: { legend: { position: 'bottom' } },
+        plugins: { legend: { position: 'bottom', ...legendaSemToggle } },
         scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { ticks: { autoSkip: false, maxRotation: 60, minRotation: 40 } } }
       }
     });
