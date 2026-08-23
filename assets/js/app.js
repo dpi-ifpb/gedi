@@ -1,5 +1,5 @@
 /* ================= Navegação ================= */
-const PAGES = ['totais', 'detalhe', 'extra', 'formacao', 'estrutura', 'indicadores', 'pares', 'simulador', 'simuladorF', 'sobre'];
+const PAGES = ['totais', 'detalhe', 'extra', 'formacao', 'estrutura', 'funcoes', 'indicadores', 'pares', 'simulador', 'simuladorF', 'sobre'];
 function switchPage(page){
   PAGES.forEach(p => {
     document.getElementById('page-' + p).style.display = (p === page) ? 'block' : 'none';
@@ -53,6 +53,31 @@ const NOTES_CONTENT = {
       <dd>Recursos adicionais destinados às unidades ao longo do exercício, resultantes de decisões institucionais específicas, conforme necessidades e prioridades identificadas. O valor apresentado corresponde à soma dos reforços realizados de janeiro a dezembro e não decorre de fórmula fixa da Matriz de Distribuição Orçamentária.</dd>
     </dl>
   `,
+  funcoes: `
+    <h3>Tipologia de referência</h3>
+    <p>Cada unidade tem uma tipologia associada, definida pela Portaria MEC nº 327, de 15 de abril de 2026 (Anexos I e II), que estabelece quantos cargos de direção (CD) e funções gratificadas (FG) a unidade pode ter.</p>
+    <p style="margin-top:10px;"><strong>Ressalva:</strong> Cajazeiras, Catolé do Rocha, Itaporanga, Patos, Princesa Isabel, Santa Luzia e Sousa aparecem na Portaria como unidades do "Instituto Federal do Sertão Paraibano", uma reitoria distinta da do IFPB. Neste painel, essas unidades continuam junto às demais do IFPB, refletindo a estrutura ainda em uso no SUAP.</p>
+    <div class="panel" style="margin-top:14px; overflow-x:auto;">
+      <table>
+        <thead><tr>
+          <th style="top:0">Tipologia</th>
+          <th class="num th-center" style="top:0">CD1</th>
+          <th class="num th-center" style="top:0">CD2</th>
+          <th class="num th-center" style="top:0">CD3</th>
+          <th class="num th-center" style="top:0">CD4</th>
+          <th class="num th-center" style="top:0">FG1</th>
+          <th class="num th-center" style="top:0">FG2</th>
+        </tr></thead>
+        <tbody>
+          ${TIPOLOGIA_DATA.tipologias.map(t => `<tr>
+            <td>${t.tipologia}</td>
+            <td class="num">${t.cd1}</td><td class="num">${t.cd2}</td><td class="num">${t.cd3}</td><td class="num">${t.cd4}</td>
+            <td class="num">${t.fg1}</td><td class="num">${t.fg2}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `,
 };
 function openNotesModal(key){
   document.getElementById('notesModalBody').innerHTML = NOTES_CONTENT[key] || '';
@@ -71,4 +96,5 @@ renderIndicadoresTable();
 buildParesScreen();buildSimuladorScreen();
 buildSimuladorFScreen();
 renderEstruturaOrganizacional();
+renderFuncoesGratificadas();
 switchPage('sobre');
