@@ -1,5 +1,6 @@
-let funcoesFiltros = { uos: [], tipos: [] };
+let funcoesFiltros = { uos: [], tipos: [], compararTipologia: true };
 let funcoesView = 'tabela';
+let funcoesTabelaModo = 'nominal'; // 'nominal' | 'resumo'
 let funcoesChartInstance = null;
 
 function uoRaizDoSetor(sigla){
@@ -35,65 +36,58 @@ function funcoesToggleHTML(){
 
 function buildFuncoesFilters(){
   const uos = listaUOsComTipologia();
-  const uoChecks = uos.map(u => {
+  const uoOpts = uos.map(u => {
     const valor = u.sigla || u.nome;
-    const checked = funcoesFiltros.uos.includes(valor) ? 'checked' : '';
-    return `<label class="checkbox-item"><input type="checkbox" value="${valor.replace(/"/g,'&quot;')}" onchange="onFuncoesUOCheck(this)" ${checked}> ${u.nome}</label>`;
+    const sel = funcoesFiltros.uos.includes(valor) ? 'selected' : '';
+    return `<option value="${valor}" ${sel}>${u.nome}</option>`;
   }).join('');
 
   const TIPOS = [['FG','FG'], ['CD','CD'], ['FUC','FUC (Coord. de Curso)']];
-  const tipoChecks = TIPOS.map(([valor,label]) => {
-    const checked = funcoesFiltros.tipos.includes(valor) ? 'checked' : '';
-    return `<label class="checkbox-item"><input type="checkbox" value="${valor}" onchange="onFuncoesTipoCheck(this)" ${checked}> ${label}</label>`;
+  const tipoOpts = TIPOS.map(([valor,label]) => {
+    const sel = funcoesFiltros.tipos.includes(valor) ? 'selected' : '';
+    return `<option value="${valor}" ${sel}>${label}</option>`;
   }).join('');
 
+  const mostrarComparar = funcoesView === 'grafico' || funcoesView === 'ranking';
+
   return `
-    <div class="filter-bar" style="align-items:flex-start;">
+    <div class="filter-bar" style="align-items:flex-end;">
       <div class="filter-field">
-        <label id="funcoesUOCountLabel">Unidade (${funcoesFiltros.uos.length || 'todas'})</label>
-        <div class="checkbox-group checkbox-group-scroll">${uoChecks}</div>
+        <label>Unidade</label>
+        <select id="fFuncoesUO" multiple size="4" onchange="onFuncoesFilterChange()" style="min-width:220px;">${uoOpts}</select>
       </div>
       <div class="filter-field">
         <label>Tipo</label>
-        <div class="checkbox-group">${tipoChecks}</div>
+        <select id="fFuncoesTipo" multiple size="4" onchange="onFuncoesFilterChange()" style="min-width:170px;">${tipoOpts}</select>
       </div>
+      ${mostrarComparar ? `
+      <div class="filter-field" style="justify-content:flex-end;">
+        <label class="checkbox-item" style="margin-bottom:9px;">
+          <input type="checkbox" id="fFuncoesComparar" ${funcoesFiltros.compararTipologia?'checked':''} onchange="onFuncoesFilterChange()">
+          Comparar com Tipologia
+        </label>
+      </div>` : ''}
       <button class="filter-clear" onclick="clearFuncoesFilters()">Limpar filtros</button>
       ${funcoesToggleHTML()}
     </div>`;
 }
 
-function onFuncoesUOCheck(checkbox){
-  const valor = checkbox.value;
-  if(checkbox.checked){
-    if(!funcoesFiltros.uos.includes(valor)) funcoesFiltros.uos.push(valor);
-  } else {
-    funcoesFiltros.uos = funcoesFiltros.uos.filter(v => v !== valor);
-  }
-  document.getElementById('funcoesUOCountLabel').textContent = `Unidade (${funcoesFiltros.uos.length || 'todas'})`;
-  renderFuncoesConteudo();
-}
-
-function onFuncoesTipoCheck(checkbox){
-  const valor = checkbox.value;
-  if(checkbox.checked){
-    if(!funcoesFiltros.tipos.includes(valor)) funcoesFiltros.tipos.push(valor);
-  } else {
-    funcoesFiltros.tipos = funcoesFiltros.tipos.filter(v => v !== valor);
-  }
+function onFuncoesFilterChange(){
+  funcoesFiltros.uos = Array.from(document.getElementById('fFuncoesUO').selectedOptions).map(o => o.value);
+  funcoesFiltros.tipos = Array.from(document.getElementById('fFuncoesTipo').selectedOptions).map(o => o.value);
+  const comparar = document.getElementById('fFuncoesComparar');
+  if(comparar) funcoesFiltros.compararTipologia = comparar.checked;
   renderFuncoesConteudo();
 }
 
 function clearFuncoesFilters(){
-  funcoesFiltros = { uos: [], tipos: [] };
+  funcoesFiltros = { uos: [], tipos: [], compararTipologia: true };
   renderFuncoesGratificadas();
 }
 
 function setFuncoesView(view){
   funcoesView = view;
-  document.querySelectorAll('#funcoesViewToggle .view-toggle-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.view === view);
-  });
-  renderFuncoesConteudo();
+  renderFuncoesGratificadas(); // refaz a barra de filtro também (o checkbox "Comparar" só existe em Gráfico/Ranking)
 }
 
 function funcoesTipoBate(funcao){
@@ -137,7 +131,25 @@ function renderFuncoesConteudo(){
   }
 }
 
+function funcoesTabelaToggleHTML(){
+  return `
+    <div class="view-toggle" style="margin-bottom:14px;">
+      <button type="button" class="view-toggle-btn${funcoesTabelaModo==='nominal'?' active':''}" onclick="setFuncoesTabelaModo('nominal')">Nominal</button>
+      <button type="button" class="view-toggle-btn${funcoesTabelaModo==='resumo'?' active':''}" onclick="setFuncoesTabelaModo('resumo')">Quadro resumo</button>
+    </div>`;
+}
+
+function setFuncoesTabelaModo(modo){
+  funcoesTabelaModo = modo;
+  renderFuncoesConteudo();
+}
+
 function renderFuncoesTabela(el){
+  if(funcoesTabelaModo === 'resumo'){
+    renderFuncoesQuadroResumo(el);
+    return;
+  }
+
   const lista = funcoesServidoresFiltrados()
     .map(sv => ({ ...sv, uo: uoRaizDoSetor(sv.exercicio_suap_sigla) }))
     .sort((a,b) => (a.uo?.nome || '').localeCompare(b.uo?.nome || '', 'pt-BR') || a.nome.localeCompare(b.nome, 'pt-BR'));
@@ -156,7 +168,7 @@ function renderFuncoesTabela(el){
     </tr>`;
   }).join('');
 
-  el.innerHTML = renderConformidadePainel() + `
+  el.innerHTML = funcoesTabelaToggleHTML() + `
     <div class="panel">
       <table>
         <thead><tr>
@@ -199,99 +211,49 @@ const CORES_FUNCAO = {
   FG1:'#7FB443', FG2:'#F2B705', FG3:'#E8863A', FG4:'#C2453D', FG5:'#8E1774', FUC1:'#B5A0C9',
 };
 
-/* ================= Conformidade por categoria =================
-   Compara, categoria a categoria (não em total agregado), quantas
-   funções a unidade OCUPA de fato contra quantas a tipologia PERMITE.
-   Um total agregado igual pode esconder um desvio real (ex.: tipologia
-   prevê 1×CD3 + 1×CD4, mas a unidade tem 2×CD4 e 0×CD3) — por isso a
-   checagem é sempre por categoria individual, nunca pela soma. */
-function conformidadeDaUnidade(chave){
-  const porUo = contagemFuncoesPorUO();
-  const dados = porUo[chave];
-  const tip = tipologiaPorChaveUO(chave);
-  if(!tip) return null; // sem tipologia definida (ex.: Soledade, aguardando números)
-
-  const categorias = funcoesFiltros.tipos.length
+function funcoesCategoriasAtivas(){
+  return funcoesFiltros.tipos.length
     ? CATEGORIAS_FUNCAO.filter(c => funcoesFiltros.tipos.some(t => c.startsWith(t)))
     : CATEGORIAS_FUNCAO;
-
-  const linhas = categorias.map(c => {
-    const ocupado = dados ? (dados.contagem[c] || 0) : 0;
-    const permitido = tip[c.toLowerCase()] || 0;
-    const diferenca = ocupado - permitido;
-    let status = 'conforme';
-    if(diferenca > 0) status = 'excedente';
-    else if(diferenca < 0) status = 'faltante';
-    return { categoria: c, ocupado, permitido, diferenca, status };
-  }).filter(l => l.ocupado > 0 || l.permitido > 0);
-
-  const divergente = linhas.some(l => l.status !== 'conforme');
-  return { linhas, divergente };
 }
 
-function renderConformidadePainel(){
-  const chavesAlvo = funcoesFiltros.uos.length ? funcoesFiltros.uos : listaUOsComTipologia().map(u => u.sigla || u.nome);
+function funcoesUnidadesAlvo(){
+  const todas = listaUOsComTipologia();
+  return funcoesFiltros.uos.length ? todas.filter(u => funcoesFiltros.uos.includes(u.sigla || u.nome)) : todas;
+}
 
-  if(funcoesFiltros.uos.length === 1){
-    const chave = funcoesFiltros.uos[0];
-    const conf = conformidadeDaUnidade(chave);
-    const unidade = SETORES_DATA.find(s => (s.sigla||s.nome) === chave);
-    if(!conf){
-      return `<div class="notes-panel"><p>Esta unidade ainda não tem tipologia definida pela Portaria — sem base de comparação disponível.</p></div>`;
-    }
-    const rows = conf.linhas.map(l => `
-      <tr>
-        <td>${l.categoria}</td>
-        <td class="num">${l.permitido}</td>
-        <td class="num">${l.ocupado}</td>
-        <td class="num" style="font-weight:600; color:${l.status==='conforme'?'#1E8E5A':(l.status==='excedente'?'#C2453D':'#8A6D00')};">
-          ${l.diferenca > 0 ? '+'+l.diferenca : l.diferenca}
-        </td>
-        <td>${l.status==='conforme' ? '✓ Conforme' : (l.status==='excedente' ? '⚠ Excedente' : '⚠ Faltante')}</td>
-      </tr>`).join('');
-    return `
-      <div class="panel" style="margin-bottom:14px;">
-        <table>
-          <thead><tr>
-            <th style="top:0">Categoria</th>
-            <th class="num th-center" style="top:0">Permitido</th>
-            <th class="num th-center" style="top:0">Ocupado</th>
-            <th class="num th-center" style="top:0">Diferença</th>
-            <th style="top:0">Situação</th>
-          </tr></thead>
-          <tbody>${rows || `<tr><td colspan="5" class="muted" style="padding:16px;">Nenhuma categoria com dado para esta unidade.</td></tr>`}</tbody>
-        </table>
-      </div>`;
-  }
+/* Quadro resumo: comparação direta, função por função, entre o ocupado e a
+   tipologia — sem rótulo de "conforme/divergente", só os números lado a lado,
+   pra leitura própria de quem está analisando. */
+function renderFuncoesQuadroResumo(el){
+  const categorias = funcoesCategoriasAtivas();
+  const porUo = contagemFuncoesPorUO();
+  const unidades = funcoesUnidadesAlvo();
 
-  // várias unidades (ou nenhuma selecionada): um resumo de situação por unidade
-  const linhasResumo = chavesAlvo.map(chave => {
-    const conf = conformidadeDaUnidade(chave);
-    const unidade = SETORES_DATA.find(s => (s.sigla||s.nome) === chave);
-    if(!unidade) return null;
-    if(!conf) return { nome: unidade.nome, situacao: 'sem tipologia', detalhe: '—' };
-    const divergentes = conf.linhas.filter(l => l.status !== 'conforme');
-    const detalhe = divergentes.map(l => `${l.categoria}: ${l.status==='excedente' ? 'excedente de '+l.diferenca : 'falta '+Math.abs(l.diferenca)}`).join('; ');
-    return { nome: unidade.nome, situacao: conf.divergente ? 'divergente' : 'conforme', detalhe: detalhe || '—' };
-  }).filter(Boolean);
+  const rows = unidades.map(u => {
+    const chave = u.sigla || u.nome;
+    const dados = porUo[chave];
+    const tip = tipologiaPorChaveUO(chave);
+    if(!dados && !tip) return '';
+    const celulas = categorias.map(c => {
+      const ocupado = dados ? (dados.contagem[c]||0) : 0;
+      const permitido = tip ? (tip[c.toLowerCase()]||0) : 0;
+      if(ocupado===0 && permitido===0) return `<td class="num muted">—</td>`;
+      return `<td class="num">${ocupado} / ${permitido}</td>`;
+    }).join('');
+    return `<tr><td>${u.nome}</td>${celulas}</tr>`;
+  }).filter(Boolean).join('');
 
-  const rows = linhasResumo.map(l => `
-    <tr>
-      <td>${l.nome}</td>
-      <td>${l.situacao==='conforme' ? '✓ Conforme' : (l.situacao==='sem tipologia' ? '— Sem tipologia' : '⚠ Divergente')}</td>
-      <td style="color:#8A6D00;">${l.situacao==='divergente' ? l.detalhe : '—'}</td>
-    </tr>`).join('');
-
-  return `
-    <div class="panel" style="margin-bottom:14px;">
+  el.innerHTML = funcoesTabelaToggleHTML() + `
+    <div class="panel">
       <table>
         <thead><tr>
           <th style="top:0">Unidade</th>
-          <th style="top:0">Situação (por categoria, não por total)</th>
-          <th style="top:0">Detalhe</th>
+          ${categorias.map(c => `<th class="num th-center" style="top:0">${c}</th>`).join('')}
         </tr></thead>
-        <tbody>${rows}</tbody>
+        <tbody>${rows || `<tr><td colspan="${categorias.length+1}" class="muted" style="padding:20px 26px;">Nenhuma unidade com dado para os filtros selecionados.</td></tr>`}</tbody>
       </table>
+      <p style="padding:12px 20px; font-size:12px; color:var(--ink-soft);">Cada célula mostra <strong>ocupado / tipologia</strong>.</p>
     </div>`;
 }
 
@@ -299,10 +261,7 @@ function escopoSetoresFuncoes(){
   if(funcoesFiltros.uos.length === 1){
     return SETORES_DATA.filter(s => s.superior_sigla === funcoesFiltros.uos[0]);
   }
-  const todas = listaUOsComTipologia();
-  return funcoesFiltros.uos.length
-    ? todas.filter(u => funcoesFiltros.uos.includes(u.sigla || u.nome))
-    : todas;
+  return funcoesUnidadesAlvo();
 }
 
 function escopoRaizDoSetorGenerico(sigla, escopoSiglas){
@@ -324,15 +283,13 @@ function renderFuncoesRanking(el){
 
   const escopo = escopoSetoresFuncoes();
   const escopoSiglas = new Set(escopo.map(s => s.sigla).filter(Boolean));
-  const categorias = funcoesFiltros.tipos.length
-    ? ORDEM_HIERARQUICA.filter(c => funcoesFiltros.tipos.some(t => c.startsWith(t)))
-    : ORDEM_HIERARQUICA;
+  const categorias = funcoesCategoriasAtivas();
 
   const porSetor = {};
   SERVIDORES_DATA.forEach(sv => {
     if(!sv.funcao) return;
     const tipo = sv.funcao.toUpperCase();
-    if(!ORDEM_HIERARQUICA.includes(tipo)) return; // fora do modelo da Portaria (ex.: FUC1 é tratado à parte)
+    if(!ORDEM_HIERARQUICA.includes(tipo)) return;
     if(!funcoesTipoBate(sv.funcao)) return;
     const raiz = escopoRaizDoSetorGenerico(sv.exercicio_suap_sigla, escopoSiglas);
     if(!raiz) return;
@@ -350,7 +307,22 @@ function renderFuncoesRanking(el){
     label: c,
     data: linhas.map(l => l.contagem[c] || 0),
     backgroundColor: CORES_FUNCAO[c],
+    stack: 'ocupado',
   }));
+
+  if(funcoesFiltros.compararTipologia){
+    const tipologiaData = linhas.map(l => {
+      const chave = l.setor.sigla || l.setor.nome;
+      const tip = tipologiaPorChaveUO(chave);
+      return tip ? categorias.reduce((s,c) => s + (tip[c.toLowerCase()]||0), 0) : 0;
+    });
+    datasets.push({
+      label: 'Tipologia',
+      data: tipologiaData,
+      backgroundColor: '#DCC9EC',
+      stack: 'tipologia',
+    });
+  }
 
   funcoesChartInstance = new Chart(ctx, {
     type: 'bar',
@@ -373,28 +345,23 @@ function renderFuncoesGrafico(el){
   const ctx = document.getElementById('funcoesChart').getContext('2d');
   if(funcoesChartInstance){ funcoesChartInstance.destroy(); funcoesChartInstance = null; }
 
-  const categorias = funcoesFiltros.tipos.length
-    ? CATEGORIAS_FUNCAO.filter(c => funcoesFiltros.tipos.some(t => c.startsWith(t)))
-    : CATEGORIAS_FUNCAO;
+  const categorias = funcoesCategoriasAtivas();
 
   if(funcoesFiltros.uos.length === 1){
-    // uma UO específica: comparar cada categoria (CD1..FG2) ocupada x permitida
     const chave = funcoesFiltros.uos[0];
     const porUo = contagemFuncoesPorUO();
     const dadosUo = porUo[chave] || { contagem: {} };
     const tip = tipologiaPorChaveUO(chave);
     const ocupadas = categorias.map(c => dadosUo.contagem[c] || 0);
-    const permitidas = categorias.map(c => tip ? (tip[c.toLowerCase()] || 0) : 0);
+
+    const datasets = [{ label: 'Ocupadas', data: ocupadas, backgroundColor: '#2A1458' }];
+    if(funcoesFiltros.compararTipologia){
+      datasets.push({ label: 'Tipologia', data: categorias.map(c => tip ? (tip[c.toLowerCase()] || 0) : 0), backgroundColor: '#DCC9EC' });
+    }
 
     funcoesChartInstance = new Chart(ctx, {
       type: 'bar',
-      data: {
-        labels: categorias,
-        datasets: [
-          { label: 'Ocupadas', data: ocupadas, backgroundColor: '#2A1458' },
-          { label: 'Permitidas (tipologia)', data: permitidas, backgroundColor: '#DCC9EC' },
-        ]
-      },
+      data: { labels: categorias, datasets },
       options: {
         responsive: true,
         plugins: { legend: { position: 'bottom' } },
@@ -402,12 +369,8 @@ function renderFuncoesGrafico(el){
       }
     });
   } else {
-    // nenhuma ou várias UOs selecionadas: total ocupado x total permitido, por unidade
-    // (atenção: total agregado — para saber se a distribuição por categoria bate, veja o painel de Conformidade na Tabela)
     const porUo = contagemFuncoesPorUO();
-    const uos = funcoesFiltros.uos.length
-      ? listaUOsComTipologia().filter(u => funcoesFiltros.uos.includes(u.sigla || u.nome))
-      : listaUOsComTipologia();
+    const uos = funcoesUnidadesAlvo();
     const labels = [];
     const ocupadas = [];
     const permitidas = [];
@@ -417,21 +380,20 @@ function renderFuncoesGrafico(el){
       const tip = tipologiaPorChaveUO(chave);
       const totalOcupado = dados ? categorias.reduce((s,c) => s + (dados.contagem[c]||0), 0) : 0;
       const totalPermitido = tip ? categorias.reduce((s,c) => s + (tip[c.toLowerCase()]||0), 0) : null;
-      if(!dados && totalPermitido === null) return; // unidade sem nenhum dado (ex: Novo PAC)
+      if(!dados && totalPermitido === null) return;
       labels.push(u.nome.replace('Campus ', ''));
       ocupadas.push(totalOcupado);
       permitidas.push(totalPermitido || 0);
     });
 
+    const datasets = [{ label: 'Ocupadas', data: ocupadas, backgroundColor: '#2A1458' }];
+    if(funcoesFiltros.compararTipologia){
+      datasets.push({ label: 'Tipologia', data: permitidas, backgroundColor: '#DCC9EC' });
+    }
+
     funcoesChartInstance = new Chart(ctx, {
       type: 'bar',
-      data: {
-        labels,
-        datasets: [
-          { label: 'Ocupadas', data: ocupadas, backgroundColor: '#2A1458' },
-          { label: 'Permitidas (tipologia)', data: permitidas, backgroundColor: '#DCC9EC' },
-        ]
-      },
+      data: { labels, datasets },
       options: {
         responsive: true,
         plugins: { legend: { position: 'bottom' } },
