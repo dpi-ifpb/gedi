@@ -101,6 +101,14 @@
     display:flex; align-items:center; gap:6px;
   }
   .refresh-btn:hover{background:var(--c1-soft); border-color:var(--c1-soft);}
+
+  .view-toggle{display:flex; border:1px solid var(--border); border-radius:20px; padding:2px; background:var(--surface);}
+  .view-toggle-btn{
+    font-family:'Plus Jakarta Sans'; font-size:12.5px; font-weight:600; color:var(--ink-soft);
+    background:transparent; border:none; border-radius:18px; padding:6px 14px; cursor:pointer;
+  }
+  .view-toggle-btn.active{background:var(--c1); color:#fff;}
+  .view-toggle-btn:not(.active):hover{background:var(--c4);}
   .refresh-btn.spinning .ic{display:inline-block; animation:spin .8s linear infinite;}
 
   .info-btn{

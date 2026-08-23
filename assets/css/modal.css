@@ -10,7 +10,7 @@
     padding:28px 30px; position:relative; max-height:85vh; overflow-y:auto;
   }
   .modal-card-wide{
-    max-width:680px; max-height:85vh; overflow-y:hidden; display:flex; flex-direction:column;
+    max-width:min(900px, 92vw); max-height:85vh; overflow-y:hidden; display:flex; flex-direction:column;
     transition:max-width .18s ease;
   }
   .modal-chart-scroll{overflow-y:auto; flex:1; min-height:0;}
