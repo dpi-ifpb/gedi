@@ -15,9 +15,13 @@ function uoRaizDoSetor(sigla){
 }
 
 function listaUOsComTipologia(){
-  const uos = SETORES_DATA.filter(s => s.eh_uo).sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-  const reitoria = SETORES_DATA.find(s => s.sigla === 'REITORIA');
-  return reitoria ? [reitoria, ...uos] : uos;
+  return SETORES_DATA
+    .filter(s => s.eh_uo)
+    .sort((a,b) => {
+      if(a.sigla === 'REITORIA') return -1;
+      if(b.sigla === 'REITORIA') return 1;
+      return a.nome.localeCompare(b.nome, 'pt-BR');
+    });
 }
 
 function funcoesToggleHTML(){
