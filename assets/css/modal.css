@@ -10,10 +10,12 @@
     padding:28px 30px; position:relative; max-height:85vh; overflow-y:auto;
   }
   .modal-card-wide{
-    max-width:620px; max-height:85vh; overflow-y:hidden; display:flex; flex-direction:column;
+    max-width:680px; max-height:85vh; overflow-y:hidden; display:flex; flex-direction:column;
     transition:max-width .18s ease;
   }
   .modal-chart-scroll{overflow-y:auto; flex:1; min-height:0;}
+  #notesModalBody{overflow-y:auto; flex:1; min-height:0; padding-right:2px;}
+  #notesModalBody h3{padding-right:110px;}
   .modal-card-wide.zoomed{max-width:900px;}
   .modal-card-wide.zoomed .indicator-radar-svg{max-width:800px !important;}
   .modal-actions{position:absolute; top:16px; right:18px; display:flex; gap:8px;}
