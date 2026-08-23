@@ -52,6 +52,15 @@ function estruturaSubarvoreCombina(setor, termo, children){
   return kids.some(k => estruturaSubarvoreCombina(k, termo, children));
 }
 
+function estruturaToggleHTML(){
+  return `
+    <div class="view-toggle" id="estruturaViewToggle" style="margin-left:auto;">
+      <button type="button" class="view-toggle-btn${estruturaView==='tabela'?' active':''}" data-view="tabela" onclick="setEstruturaView('tabela')">Tabela</button>
+      <button type="button" class="view-toggle-btn${estruturaView==='mapa'?' active':''}" data-view="mapa" onclick="setEstruturaView('mapa')">Mapa</button>
+      <button type="button" class="view-toggle-btn${estruturaView==='treemap'?' active':''}" data-view="treemap" onclick="setEstruturaView('treemap')">Treemap</button>
+    </div>`;
+}
+
 function buildEstruturaFilters(){
   const { raizes } = buildEstruturaTree();
   const opts = raizes.map(r => {
@@ -72,6 +81,7 @@ function buildEstruturaFilters(){
         </select>
       </div>
       <button class="filter-clear" onclick="clearEstruturaFilters()">Limpar filtros</button>
+      ${estruturaToggleHTML()}
     </div>`;
 }
 
@@ -121,7 +131,9 @@ function setEstruturaView(view){
 }
 
 function renderEstruturaMapa(el){
-  el.innerHTML = `<div class="panel" style="padding:0;"><div id="estruturaMapaEl" style="height:560px; border-radius:var(--radius); overflow:hidden;"></div></div>`;
+  el.innerHTML = `
+    <div class="filter-bar">${estruturaToggleHTML()}</div>
+    <div id="estruturaMapaEl" style="height:560px; border-radius:var(--radius); overflow:hidden;"></div>`;
 
   const { raizes } = buildEstruturaTree();
   const pontos = raizes.map(r => {
@@ -183,11 +195,12 @@ function buildEstruturaFiltroUOSimples(onchangeFn){
           <option value="">Todas</option>${opts}
         </select>
       </div>
+      ${estruturaToggleHTML()}
     </div>`;
 }
 
 function renderEstruturaTreemap(el){
-  el.innerHTML = buildEstruturaFiltroUOSimples('onEstruturaTreemapUOChange') + `<div class="panel" style="padding:24px;"><canvas id="estruturaTreemapChart" height="140"></canvas></div>`;
+  el.innerHTML = buildEstruturaFiltroUOSimples('onEstruturaTreemapUOChange') + `<canvas id="estruturaTreemapChart" height="130"></canvas>`;
   desenharEstruturaTreemap();
 }
 
@@ -219,10 +232,6 @@ function desenharEstruturaTreemap(){
     return { label, value: total(s) };
   }).filter(d => d.value > 0);
 
-  const tituloEscopo = estruturaFiltros.uo
-    ? (SETORES_DATA.find(s => (s.sigla||s.nome) === estruturaFiltros.uo) || {}).nome
-    : 'todas as Unidades Organizacionais';
-
   estruturaTreemapInstance = new Chart(ctx, {
     type: 'treemap',
     data: {
@@ -249,7 +258,6 @@ function desenharEstruturaTreemap(){
       responsive: true,
       plugins: {
         legend: { display: false },
-        title: { display: true, text: `Dimensão e proporção da força de trabalho (${tituloEscopo})` },
         tooltip: {
           callbacks: {
             title(){ return ''; },

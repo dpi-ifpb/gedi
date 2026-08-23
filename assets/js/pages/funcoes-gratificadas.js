@@ -20,6 +20,15 @@ function listaUOsComTipologia(){
     .sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 }
 
+function funcoesToggleHTML(){
+  return `
+    <div class="view-toggle" id="funcoesViewToggle" style="margin-left:auto;">
+      <button type="button" class="view-toggle-btn${funcoesView==='tabela'?' active':''}" data-view="tabela" onclick="setFuncoesView('tabela')">Tabela</button>
+      <button type="button" class="view-toggle-btn${funcoesView==='grafico'?' active':''}" data-view="grafico" onclick="setFuncoesView('grafico')">Gráfico</button>
+      <button type="button" class="view-toggle-btn${funcoesView==='ranking'?' active':''}" data-view="ranking" onclick="setFuncoesView('ranking')">Ranking</button>
+    </div>`;
+}
+
 function buildFuncoesFilters(){
   const uos = listaUOsComTipologia();
   const opts = uos.map(u => `<option value="${u.sigla || u.nome}">${u.nome}</option>`).join('');
@@ -34,12 +43,14 @@ function buildFuncoesFilters(){
       <div class="filter-field">
         <label>Tipo</label>
         <select id="fFuncoesTipo" onchange="onFuncoesFilterChange()">
-          <option value="">FG e CD</option>
+          <option value="">Todos os tipos</option>
           <option value="FG">Apenas FG</option>
           <option value="CD">Apenas CD</option>
+          <option value="FUC">Apenas FUC (Coord. de Curso)</option>
         </select>
       </div>
       <button class="filter-clear" onclick="clearFuncoesFilters()">Limpar filtros</button>
+      ${funcoesToggleHTML()}
     </div>`;
 }
 
@@ -148,12 +159,12 @@ function tipologiaPorChaveUO(chave){
   return TIPOLOGIA_DATA.tipologias.find(t => t.tipologia === nomeTip) || null;
 }
 
-const CATEGORIAS_FUNCAO = ['CD1','CD2','CD3','CD4','FG1','FG2'];
-const ORDEM_HIERARQUICA = ['CD1','CD2','CD3','CD4','FG1','FG2','FG3','FG4','FG5'];
-const PESO_HIERARQUICO = { CD1:9, CD2:8, CD3:7, CD4:6, FG1:5, FG2:4, FG3:3, FG4:2, FG5:1 };
+const CATEGORIAS_FUNCAO = ['CD1','CD2','CD3','CD4','FG1','FG2','FG3','FG4','FG5','FUC1'];
+const ORDEM_HIERARQUICA = ['CD1','CD2','CD3','CD4','FG1','FG2','FG3','FG4','FG5','FUC1'];
+const PESO_HIERARQUICO = { CD1:10, CD2:9, CD3:8, CD4:7, FG1:6, FG2:5, FG3:4, FG4:3, FG5:2, FUC1:1 };
 const CORES_FUNCAO = {
   CD1:'#3B2F6B', CD2:'#1B5E82', CD3:'#1E9B9B', CD4:'#1E8E5A',
-  FG1:'#7FB443', FG2:'#F2B705', FG3:'#E8863A', FG4:'#C2453D', FG5:'#8E1774',
+  FG1:'#7FB443', FG2:'#F2B705', FG3:'#E8863A', FG4:'#C2453D', FG5:'#8E1774', FUC1:'#B5A0C9',
 };
 
 function escopoSetoresFuncoes(){
@@ -176,7 +187,7 @@ function escopoRaizDoSetorGenerico(sigla, escopoSiglas){
 }
 
 function renderFuncoesRanking(el){
-  el.innerHTML = `<div class="panel" style="padding:24px;"><canvas id="funcoesRankingChart" height="120"></canvas></div>`;
+  el.innerHTML = `<canvas id="funcoesRankingChart" height="120"></canvas>`;
   const ctx = document.getElementById('funcoesRankingChart').getContext('2d');
   if(funcoesChartInstance){ funcoesChartInstance.destroy(); funcoesChartInstance = null; }
 
@@ -210,10 +221,6 @@ function renderFuncoesRanking(el){
     backgroundColor: CORES_FUNCAO[c],
   }));
 
-  const tituloEscopo = funcoesFiltros.uo
-    ? (SETORES_DATA.find(s => (s.sigla||s.nome) === funcoesFiltros.uo) || {}).nome
-    : 'todas as Unidades Organizacionais';
-
   funcoesChartInstance = new Chart(ctx, {
     type: 'bar',
     data: { labels, datasets },
@@ -221,7 +228,6 @@ function renderFuncoesRanking(el){
       responsive: true,
       plugins: {
         legend: { position: 'right', title: { display: true, text: 'Função' } },
-        title: { display: true, text: `Ranking de impacto da estrutura de chefia (${tituloEscopo}) — ordenado por peso hierárquico` },
       },
       scales: {
         x: { stacked: true, ticks: { autoSkip: false, maxRotation: 60, minRotation: 40 } },
@@ -232,7 +238,7 @@ function renderFuncoesRanking(el){
 }
 
 function renderFuncoesGrafico(el){
-  el.innerHTML = `<div class="panel" style="padding:24px;"><canvas id="funcoesChart" height="110"></canvas></div>`;
+  el.innerHTML = `<canvas id="funcoesChart" height="110"></canvas>`;
   const ctx = document.getElementById('funcoesChart').getContext('2d');
   if(funcoesChartInstance){ funcoesChartInstance.destroy(); funcoesChartInstance = null; }
 
@@ -259,7 +265,7 @@ function renderFuncoesGrafico(el){
       },
       options: {
         responsive: true,
-        plugins: { legend: { position: 'bottom' }, title: { display: true, text: tip ? `Tipologia: ${tip.tipologia}` : 'Tipologia não identificada para esta unidade' } },
+        plugins: { legend: { position: 'bottom' } },
         scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
       }
     });
@@ -293,7 +299,7 @@ function renderFuncoesGrafico(el){
       },
       options: {
         responsive: true,
-        plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Funções ocupadas x permitidas pela tipologia, por unidade' } },
+        plugins: { legend: { position: 'bottom' } },
         scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { ticks: { autoSkip: false, maxRotation: 60, minRotation: 40 } } }
       }
     });
