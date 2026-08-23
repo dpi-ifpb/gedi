@@ -15,9 +15,9 @@ function uoRaizDoSetor(sigla){
 }
 
 function listaUOsComTipologia(){
-  return SETORES_DATA
-    .filter(s => s.eh_uo)
-    .sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const uos = SETORES_DATA.filter(s => s.eh_uo).sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const reitoria = SETORES_DATA.find(s => s.sigla === 'REITORIA');
+  return reitoria ? [reitoria, ...uos] : uos;
 }
 
 function funcoesToggleHTML(){
@@ -171,7 +171,7 @@ function escopoSetoresFuncoes(){
   if(funcoesFiltros.uo){
     return SETORES_DATA.filter(s => s.superior_sigla === funcoesFiltros.uo);
   }
-  return SETORES_DATA.filter(s => s.eh_uo);
+  return listaUOsComTipologia();
 }
 
 function escopoRaizDoSetorGenerico(sigla, escopoSiglas){

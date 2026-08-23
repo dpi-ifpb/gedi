@@ -284,7 +284,7 @@ function renderEstruturaTabela(){
     const isMatch = filtrando && estruturaSetorCombina(setor, termo);
     const isOpen = filtrando ? true : ESTRUTURA_EXPANDED.has(key);
     const label = estruturaSetorLabel(setor);
-    const rowStyle = setor.eh_uo ? ' style="background:#F3EDFA; font-weight:600;"' : '';
+    const rowStyle = setor.eh_uo ? ' style="font-weight:600;"' : '';
     const toggle = hasKids
       ? `<span class="tree-toggle${isOpen ? ' is-open' : ''}" data-key="${key.replace(/"/g,'&quot;')}"></span>`
       : `<span class="tree-toggle tree-toggle-leaf">•</span>`;
