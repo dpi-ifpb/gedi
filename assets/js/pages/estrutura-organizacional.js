@@ -1,7 +1,6 @@
 let ESTRUTURA_EXPANDED = new Set();
 let estruturaFiltros = { busca: '', uo: '' };
 let estruturaView = 'tabela';
-let estruturaMapaInstance = null;
 
 function buildEstruturaTree(){
   const bySigla = {};
@@ -52,15 +51,6 @@ function estruturaSubarvoreCombina(setor, termo, children){
   return kids.some(k => estruturaSubarvoreCombina(k, termo, children));
 }
 
-function estruturaToggleHTML(){
-  return `
-    <div class="view-toggle" id="estruturaViewToggle" style="margin-left:auto;">
-      <button type="button" class="view-toggle-btn${estruturaView==='tabela'?' active':''}" data-view="tabela" onclick="setEstruturaView('tabela')">Tabela</button>
-      <button type="button" class="view-toggle-btn${estruturaView==='mapa'?' active':''}" data-view="mapa" onclick="setEstruturaView('mapa')">Mapa</button>
-      <button type="button" class="view-toggle-btn${estruturaView==='treemap'?' active':''}" data-view="treemap" onclick="setEstruturaView('treemap')">Treemap</button>
-    </div>`;
-}
-
 function nomeUnidadeCurto(nome){
   return nome.replace(/^Campus\s+/i, '');
 }
@@ -85,7 +75,6 @@ function buildEstruturaFilters(){
         </select>
       </div>
       <button class="filter-clear" onclick="clearEstruturaFilters()">Limpar filtros</button>
-      ${estruturaToggleHTML()}
     </div>`;
 }
 
@@ -103,10 +92,6 @@ function clearEstruturaFilters(){
 function renderEstruturaOrganizacional(){
   const el = document.getElementById('contentEstrutura');
   if(!el) return;
-  if(estruturaView === 'mapa'){
-    renderEstruturaMapa(el);
-    return;
-  }
   if(estruturaView === 'treemap'){
     renderEstruturaTreemap(el);
     return;
@@ -132,36 +117,6 @@ function setEstruturaView(view){
     b.classList.toggle('active', b.dataset.view === view);
   });
   renderEstruturaOrganizacional();
-}
-
-function renderEstruturaMapa(el){
-  el.innerHTML = `
-    <div class="filter-bar">${estruturaToggleHTML()}</div>
-    <div id="estruturaMapaEl" style="height:560px; border-radius:var(--radius); overflow:hidden;"></div>`;
-
-  const { raizes } = buildEstruturaTree();
-  const pontos = raizes.map(r => {
-    const chave = r.sigla;
-    const coord = (chave && COORDENADAS_UO.por_sigla[chave]) || COORDENADAS_UO.por_nome[r.nome];
-    return coord ? { nome: r.nome, total: r._total || 0, coord } : null;
-  }).filter(Boolean);
-
-  if(estruturaMapaInstance){ estruturaMapaInstance.remove(); estruturaMapaInstance = null; }
-  const mapa = L.map('estruturaMapaEl', { scrollWheelZoom: false }).setView([-7.15, -36.3], 8);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap',
-    maxZoom: 18,
-  }).addTo(mapa);
-
-  const maxTotal = Math.max(1, ...pontos.map(p => p.total));
-  pontos.forEach(p => {
-    const raio = 6 + Math.sqrt(p.total / maxTotal) * 26;
-    L.circleMarker(p.coord, {
-      radius: raio, color: '#2A1458', weight: 1.5, fillColor: '#8E1774', fillOpacity: .55,
-    }).addTo(mapa).bindTooltip(`<strong>${p.nome}</strong><br>${p.total} servidor${p.total===1?'':'es'}`, { direction: 'top' });
-  });
-
-  estruturaMapaInstance = mapa;
 }
 
 function estruturaEscopoSetores(){
@@ -199,7 +154,6 @@ function buildEstruturaFiltroUOSimples(onchangeFn){
           <option value="">Todas</option>${opts}
         </select>
       </div>
-      ${estruturaToggleHTML()}
     </div>`;
 }
 
@@ -321,7 +275,7 @@ function renderEstruturaTabela(){
   tbody.querySelectorAll('.tree-toggle:not(.tree-toggle-leaf)').forEach(t => {
     t.addEventListener('click', (e) => {
       e.stopPropagation();
-      if(filtrando) return; // navegação de expandir/recolher fica desativada durante a busca
+      if(filtrando) return;
       const key = t.dataset.key;
       if(ESTRUTURA_EXPANDED.has(key)) ESTRUTURA_EXPANDED.delete(key);
       else ESTRUTURA_EXPANDED.add(key);

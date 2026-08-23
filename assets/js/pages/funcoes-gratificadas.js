@@ -1,4 +1,4 @@
-let funcoesFiltros = { uos: [], tipos: [], compararTipologia: true, quadroResumo: false };
+let funcoesFiltros = { uos: [], tipos: ['FG','CD'], compararTipologia: true, quadroResumo: false };
 let funcoesView = 'tabela';
 let funcoesChartInstance = null;
 
@@ -76,15 +76,6 @@ function funcoesTipoOptions(){
   return [['FG','FG'], ['CD','CD'], ['FUC','FUC (Coord. de Curso)']].map(([value,label]) => ({ value, label }));
 }
 
-function funcoesToggleHTML(){
-  return `
-    <div class="view-toggle" id="funcoesViewToggle" style="margin-left:auto;">
-      <button type="button" class="view-toggle-btn${funcoesView==='tabela'?' active':''}" data-view="tabela" onclick="setFuncoesView('tabela')">Tabela</button>
-      <button type="button" class="view-toggle-btn${funcoesView==='grafico'?' active':''}" data-view="grafico" onclick="setFuncoesView('grafico')">Gráfico</button>
-      <button type="button" class="view-toggle-btn${funcoesView==='ranking'?' active':''}" data-view="ranking" onclick="setFuncoesView('ranking')">Ranking</button>
-    </div>`;
-}
-
 function buildFuncoesFilters(){
   return `
     <div class="filter-bar" style="align-items:flex-end;">
@@ -111,7 +102,6 @@ function buildFuncoesFilters(){
         </label>
       </div>` : ''}
       <button class="filter-clear" onclick="clearFuncoesFilters()">Limpar filtros</button>
-      ${funcoesToggleHTML()}
     </div>`;
 }
 
@@ -148,12 +138,15 @@ function onFuncoesCompararCheck(checkbox){
 }
 
 function clearFuncoesFilters(){
-  funcoesFiltros = { uos: [], tipos: [], compararTipologia: true, quadroResumo: false };
+  funcoesFiltros = { uos: [], tipos: ['FG','CD'], compararTipologia: true, quadroResumo: false };
   renderFuncoesGratificadas();
 }
 
 function setFuncoesView(view){
   funcoesView = view;
+  document.querySelectorAll('#funcoesViewToggle .view-toggle-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === view);
+  });
   renderFuncoesGratificadas(); // a barra de filtro muda (checkbox de resumo/comparar depende da view)
 }
 
