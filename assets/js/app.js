@@ -1,5 +1,5 @@
 /* ================= Navegação ================= */
-const PAGES = ['totais', 'detalhe', 'extra', 'formacao', 'indicadores', 'pares', 'simulador', 'simuladorF', 'sobre'];
+const PAGES = ['totais', 'detalhe', 'extra', 'formacao', 'estrutura', 'indicadores', 'pares', 'simulador', 'simuladorF', 'sobre'];
 function switchPage(page){
   PAGES.forEach(p => {
     document.getElementById('page-' + p).style.display = (p === page) ? 'block' : 'none';
@@ -70,4 +70,5 @@ setInterval(() => { refreshData(false); refreshExtraData(); refreshFormacaoData(
 renderIndicadoresTable();
 buildParesScreen();buildSimuladorScreen();
 buildSimuladorFScreen();
+renderEstruturaOrganizacional();
 switchPage('sobre');
