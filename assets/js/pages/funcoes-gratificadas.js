@@ -14,6 +14,10 @@ function uoRaizDoSetor(sigla){
   return atual || null;
 }
 
+function nomeUnidadeCurto(nome){
+  return nome.replace(/^Campus\s+/i, '');
+}
+
 function listaUOsComTipologia(){
   return SETORES_DATA
     .filter(s => s.eh_uo)
@@ -66,7 +70,7 @@ function atualizarTriggerMultiselect(idPrefix, options, selecionados){
 }
 
 function funcoesUOOptions(){
-  return listaUOsComTipologia().map(u => ({ value: u.sigla || u.nome, label: u.nome }));
+  return listaUOsComTipologia().map(u => ({ value: u.sigla || u.nome, label: nomeUnidadeCurto(u.nome) }));
 }
 function funcoesTipoOptions(){
   return [['FG','FG'], ['CD','CD'], ['FUC','FUC (Coord. de Curso)']].map(([value,label]) => ({ value, label }));
@@ -208,9 +212,9 @@ function renderFuncoesTabela(el){
     const setor = setorPorSigla[sv.exercicio_suap_sigla];
     const setorLabel = setor ? (setor.eh_uo ? setor.nome : `${setor.sigla} - ${setor.nome}`) : sv.exercicio_suap_sigla;
     return `<tr>
-      <td style="text-align:center;">${sv.nome}</td>
-      <td>${sv.uo ? sv.uo.nome : '—'}</td>
-      <td style="text-align:center;">${setorLabel}</td>
+      <td>${sv.nome}</td>
+      <td>${sv.uo ? nomeUnidadeCurto(sv.uo.nome) : '—'}</td>
+      <td>${setorLabel}</td>
       <td style="text-align:center;">${sv.funcao}</td>
     </tr>`;
   }).join('');
@@ -219,12 +223,12 @@ function renderFuncoesTabela(el){
     <div class="panel">
       <table>
         <thead><tr>
-          <th style="top:0; text-align:center;">Nome</th>
+          <th style="top:0;">Nome</th>
           <th style="top:0;">Unidade</th>
-          <th style="top:0; text-align:center;">Setor</th>
+          <th style="top:0;">Setor</th>
           <th style="top:0; text-align:center;">Função</th>
         </tr></thead>
-        <tbody>${rows || `<tr><td colspan="4" class="muted" style="padding:20px 26px; text-align:center;">Nenhum servidor encontrado para os filtros selecionados.</td></tr>`}</tbody>
+        <tbody>${rows || `<tr><td colspan="4" class="muted" style="padding:20px 26px;">Nenhum servidor encontrado para os filtros selecionados.</td></tr>`}</tbody>
       </table>
     </div>`;
 }
@@ -283,12 +287,15 @@ function renderFuncoesQuadroResumo(el){
       const ocupado = dados ? (dados.contagem[c]||0) : 0;
       const permitido = tip ? (tip[c.toLowerCase()]||0) : 0;
       if(ocupado===0 && permitido===0) return `<td class="muted" style="text-align:center;">—</td>`;
-      return `<td style="text-align:center;">${ocupado} / ${permitido}</td>`;
+      const divergente = ocupado !== permitido;
+      const estilo = divergente ? ` style="text-align:center; font-weight:700; color:var(--c2);"` : ` style="text-align:center;"`;
+      return `<td${estilo}>${ocupado} / ${permitido}</td>`;
     }).join('');
-    return `<tr><td>${u.nome}</td>${celulas}</tr>`;
+    return `<tr><td>${nomeUnidadeCurto(u.nome)}</td>${celulas}</tr>`;
   }).filter(Boolean).join('');
 
   el.innerHTML = `
+    <p style="margin-bottom:10px; font-size:12px; color:var(--ink-soft);">Cada célula mostra <strong>ocupado / tipologia</strong>.</p>
     <div class="panel">
       <table>
         <thead><tr>
@@ -297,7 +304,6 @@ function renderFuncoesQuadroResumo(el){
         </tr></thead>
         <tbody>${rows || `<tr><td colspan="${categorias.length+1}" class="muted" style="padding:20px 26px; text-align:center;">Nenhuma unidade com dado para os filtros selecionados.</td></tr>`}</tbody>
       </table>
-      <p style="padding:12px 20px; font-size:12px; color:var(--ink-soft);">Cada célula mostra <strong>ocupado / tipologia</strong>.</p>
     </div>`;
 }
 

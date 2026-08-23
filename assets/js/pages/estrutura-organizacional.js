@@ -1,4 +1,4 @@
-let ESTRUTURA_EXPANDED = new Set(['REITORIA']);
+let ESTRUTURA_EXPANDED = new Set();
 let estruturaFiltros = { busca: '', uo: '' };
 let estruturaView = 'tabela';
 let estruturaMapaInstance = null;
@@ -61,11 +61,15 @@ function estruturaToggleHTML(){
     </div>`;
 }
 
+function nomeUnidadeCurto(nome){
+  return nome.replace(/^Campus\s+/i, '');
+}
+
 function buildEstruturaFilters(){
   const { raizes } = buildEstruturaTree();
   const opts = raizes.map(r => {
     const valor = r.sigla || r.nome;
-    return `<option value="${valor}">${r.nome}</option>`;
+    return `<option value="${valor}">${nomeUnidadeCurto(r.nome)}</option>`;
   }).join('');
 
   return `
@@ -185,7 +189,7 @@ function buildEstruturaFiltroUOSimples(onchangeFn){
   const { raizes } = buildEstruturaTree();
   const opts = raizes.map(r => {
     const valor = r.sigla || r.nome;
-    return `<option value="${valor}" ${estruturaFiltros.uo===valor?'selected':''}>${r.nome}</option>`;
+    return `<option value="${valor}" ${estruturaFiltros.uo===valor?'selected':''}>${nomeUnidadeCurto(r.nome)}</option>`;
   }).join('');
   return `
     <div class="filter-bar">
