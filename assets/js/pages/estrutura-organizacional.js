@@ -298,8 +298,8 @@ function openServidoresSetor(sigla){
       <td>${sv.funcao || '—'}</td>
     </tr>`).join('');
 
+  document.getElementById('notesModalTitle').textContent = label;
   document.getElementById('notesModalBody').innerHTML = `
-    <h3>${label}</h3>
     <p style="margin-bottom:14px; color:var(--ink-soft); font-size:13px;">${lista.length} servidor${lista.length===1?'':'es'} em exercício neste setor.</p>
     <div class="panel">
       <table>

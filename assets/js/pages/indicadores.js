@@ -136,7 +136,7 @@ function openIndicatorChart(unidade){
   document.getElementById('chartModalTitle').textContent = `Indicadores da Unidade: ${unidade}`;
   document.getElementById('chartModalBody').innerHTML = buildIndicatorChartSVG(unidade);
   document.getElementById('chartModalCard').classList.remove('zoomed');
-  document.getElementById('chartZoomBtn').textContent = 'Ampliar';
+  document.getElementById('chartZoomBtn').setAttribute('data-tooltip', 'Ampliar');
   document.getElementById('chartModal').classList.remove('hidden');
 }
 
@@ -147,6 +147,6 @@ function closeChartModal(){
 function toggleChartZoom(){
   const card = document.getElementById('chartModalCard');
   const zoomed = card.classList.toggle('zoomed');
-  document.getElementById('chartZoomBtn').textContent = zoomed ? 'Reduzir' : 'Ampliar';
+  document.getElementById('chartZoomBtn').setAttribute('data-tooltip', zoomed ? 'Reduzir' : 'Ampliar');
 }
 
