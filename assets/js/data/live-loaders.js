@@ -147,10 +147,9 @@ function renderError(){
 
 /*
  * Planilha "Bases e reforços orçamentários": colunas fixas por posição.
- * A (0) Unidade, B (1) coluna em branco (espaçamento da planilha, sem dado),
- * C (2) PLOA — ignorada por pedido (não compõe o orçamento do ano, é só
- * referência interna), D (3) LOA, E (4) EF. E QUALIDADE,
- * F a Q (5 a 16) os 12 meses (reforços pontuais ao longo do ano).
+ * A (0) Unidade, B (1) PLOA — ignorada por pedido (não compõe o orçamento do
+ * ano, é só referência interna), C (2) LOA, D (3) EF. E QUALIDADE,
+ * E a P (4 a 15) os 12 meses (reforços pontuais ao longo do ano).
  */
 async function loadFormacaoData(){
   const table = await fetchGvizTable(FORMACAO_SHEET_ID, FORMACAO_GID, 1);
@@ -163,9 +162,9 @@ async function loadFormacaoData(){
     const unidade = cellText(row, 0);
     if(!unidade) return; // ignora linhas vazias (unidades sem base lançada ainda)
 
-    const loa = cellNumber(row, 3);
-    const efQualidade = cellNumber(row, 4);
-    const meses = MESES.map((nome, i) => ({ nome, valor: cellNumber(row, 5 + i) }));
+    const loa = cellNumber(row, 2);
+    const efQualidade = cellNumber(row, 3);
+    const meses = MESES.map((nome, i) => ({ nome, valor: cellNumber(row, 4 + i) }));
     const reforcos = meses.reduce((s, m) => s + m.valor, 0);
 
     dados.push({
