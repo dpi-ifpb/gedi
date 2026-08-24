@@ -320,7 +320,11 @@ function escopoRaizDoSetorGenerico(sigla, escopoSiglas){
 }
 
 function renderFuncoesRanking(el){
-  el.innerHTML = `<canvas id="funcoesRankingChart" height="120"></canvas>`;
+  const dentroDeUmaUnidadePreview = funcoesFiltros.uos.length === 1;
+  const avisoTipologia = (funcoesFiltros.compararTipologia && dentroDeUmaUnidadePreview)
+    ? `<p style="margin-bottom:10px; font-size:12px; color:var(--ink-soft); font-style:italic;">A comparação com a tipologia não se aplica aqui: com uma única unidade selecionada, o ranking mostra os setores internos dela, e a tipologia da Portaria é definida por unidade, não por setor. Selecione nenhuma ou mais de uma unidade para comparar com a tipologia.</p>`
+    : '';
+  el.innerHTML = avisoTipologia + `<canvas id="funcoesRankingChart" height="120"></canvas>`;
   const ctx = document.getElementById('funcoesRankingChart').getContext('2d');
   if(funcoesChartInstance){ funcoesChartInstance.destroy(); funcoesChartInstance = null; }
 
@@ -353,7 +357,9 @@ function renderFuncoesRanking(el){
     stack: 'ocupado',
   }));
 
-  if(funcoesFiltros.compararTipologia){
+  const dentroDeUmaUnidade = funcoesFiltros.uos.length === 1;
+
+  if(funcoesFiltros.compararTipologia && !dentroDeUmaUnidade){
     // mesma paleta de cores por categoria das barras "Ocupadas", só que na
     // pilha "tipologia" — permite comparar segmento a segmento, categoria a categoria
     categorias.forEach(c => {
