@@ -11,8 +11,8 @@
  */
 const GOOGLE_CLIENT_ID = '807358818690-rg7qcv6bs38ltlgaf26qq228pdcuhie6.apps.googleusercontent.com';
 const ALLOWED_DOMAIN = 'ifpb.edu.br';
-// Opcional: restrinja a e-mails específicos, além do domínio. Deixe [] para liberar
-// qualquer conta @ifpb.edu.br. Ex.: ['fulano@ifpb.edu.br', 'ciclana@ifpb.edu.br']
+// Acesso é definido inteiramente por estas duas listas — quem não estiver em
+// nenhuma delas não entra, mesmo com uma conta @ifpb.edu.br válida.
 const EMAILS_ACESSO_COMPLETO = [
   'anderson.silva@ifpb.edu.br', 
   'mary.marinho@ifpb.edu.br', 
@@ -39,7 +39,8 @@ const EMAILS_ACESSO_LIMITADO = [
 //   totais      -> Totais
 //   detalhe     -> Detalhamento
 //   extra       -> Nova Dist. de Custeio      (hoje já oculta do menu por outro motivo)
-//   indicadores -> Indicadores
+//   indicadores -> Base
+//   historico   -> Série Histórica
 //   pares       -> Análise dos Pares          (hoje já oculta do menu)
 //   simulador   -> Simulador QE               (hoje já oculta do menu)
 //   simuladorF  -> Simulador Funcionamento    (hoje já oculta do menu)
