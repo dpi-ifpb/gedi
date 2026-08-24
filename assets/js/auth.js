@@ -9,16 +9,22 @@
  * poderia inspecionar o código e contornar. Não é adequado para dados ultrassensíveis sem
  * um backend validando o token também.
  */
-const GOOGLE_CLIENT_ID = 'SEU_CLIENT_ID_AQUI.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '807358818690-rg7qcv6bs38ltlgaf26qq228pdcuhie6.apps.googleusercontent.com';
 const ALLOWED_DOMAIN = 'ifpb.edu.br';
-// Acesso é definido inteiramente por estas duas listas — quem não estiver em
-// nenhuma delas não entra, mesmo com uma conta @ifpb.edu.br válida.
+// Opcional: restrinja a e-mails específicos, além do domínio. Deixe [] para liberar
+// qualquer conta @ifpb.edu.br. Ex.: ['fulano@ifpb.edu.br', 'ciclana@ifpb.edu.br']
 const EMAILS_ACESSO_COMPLETO = [
-  // 'fulano@ifpb.edu.br',
-  // 'ciclana@ifpb.edu.br',
+  'anderson.silva@ifpb.edu.br', 
+  'mary.marinho@ifpb.edu.br', 
+  'cleidenedia@ifpb.edu.br', 
+  'maria.melo@ifpb.edu.br', 
+  'silvana@ifpb.edu.br',
+  'anna.mendonca@ifpb.edu.br',
+  'erick.melo@ifpb.edu.br',
+  'edmundo.silva@ifpb.edu.br'
 ];
 const EMAILS_ACESSO_LIMITADO = [
-  // 'beltrano@ifpb.edu.br',
+  'dpi@ifpb.edu.br',
 ];
 // Telas (ids usados em switchPage/PAGES) bloqueadas para o grupo "limitado".
 // Por eliminação: qualquer tela que NÃO estiver nesta lista fica visível pra
@@ -36,9 +42,9 @@ const EMAILS_ACESSO_LIMITADO = [
 //   pares       -> Análise dos Pares          (hoje já oculta do menu)
 //   simulador   -> Simulador QE               (hoje já oculta do menu)
 //   simuladorF  -> Simulador Funcionamento    (hoje já oculta do menu)
-const PAGINAS_BLOQUEADAS_LIMITADO = ['estrutura', 'funcoes'];
+const PAGINAS_BLOQUEADAS_LIMITADO = ['estrutura', 'funcoes', 'pares', 'simulador', 'simuladorF'];
 // Tempo de inatividade até pedir login de novo (ms). 30 minutos por padrão.
-const INACTIVITY_LIMIT_MS = 30 * 60 * 1000;
+const INACTIVITY_LIMIT_MS = 15 * 60 * 1000;
 let inactivityTimer = null;
 
 function base64UrlDecode(str){
