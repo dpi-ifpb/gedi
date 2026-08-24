@@ -271,21 +271,44 @@ function renderFuncoesQuadroResumo(el){
   const porUo = contagemFuncoesPorUO();
   const unidades = funcoesUnidadesAlvo();
 
+  function celulaValor(ocupado, permitido){
+    if(ocupado===0 && permitido===0) return `<td class="muted" style="text-align:center;">—</td>`;
+    const divergente = ocupado !== permitido;
+    const estilo = divergente ? ` style="text-align:center; font-weight:700; color:var(--c2);"` : ` style="text-align:center;"`;
+    return `<td${estilo}>${ocupado} / ${permitido}</td>`;
+  }
+
+  const totalPorCategoria = {};
+  categorias.forEach(c => { totalPorCategoria[c] = { ocupado: 0, permitido: 0 }; });
+  let totalGeralOcupado = 0, totalGeralPermitido = 0;
+
   const rows = unidades.map(u => {
     const chave = u.sigla || u.nome;
     const dados = porUo[chave];
     const tip = tipologiaPorChaveUO(chave);
     if(!dados && !tip) return '';
+
+    let totalLinhaOcupado = 0, totalLinhaPermitido = 0;
     const celulas = categorias.map(c => {
       const ocupado = dados ? (dados.contagem[c]||0) : 0;
       const permitido = tip ? (tip[c.toLowerCase()]||0) : 0;
-      if(ocupado===0 && permitido===0) return `<td class="muted" style="text-align:center;">—</td>`;
-      const divergente = ocupado !== permitido;
-      const estilo = divergente ? ` style="text-align:center; font-weight:700; color:var(--c2);"` : ` style="text-align:center;"`;
-      return `<td${estilo}>${ocupado} / ${permitido}</td>`;
+      totalLinhaOcupado += ocupado;
+      totalLinhaPermitido += permitido;
+      totalPorCategoria[c].ocupado += ocupado;
+      totalPorCategoria[c].permitido += permitido;
+      return celulaValor(ocupado, permitido);
     }).join('');
-    return `<tr><td>${nomeUnidadeCurto(u.nome)}</td>${celulas}</tr>`;
+    totalGeralOcupado += totalLinhaOcupado;
+    totalGeralPermitido += totalLinhaPermitido;
+
+    return `<tr><td>${nomeUnidadeCurto(u.nome)}</td>${celulas}${celulaValor(totalLinhaOcupado, totalLinhaPermitido)}</tr>`;
   }).filter(Boolean).join('');
+
+  const linhaTotal = `<tr style="font-weight:600;">
+    <td>Total</td>
+    ${categorias.map(c => celulaValor(totalPorCategoria[c].ocupado, totalPorCategoria[c].permitido)).join('')}
+    ${celulaValor(totalGeralOcupado, totalGeralPermitido)}
+  </tr>`;
 
   el.innerHTML = `
     <p style="margin-bottom:10px; font-size:12px; color:var(--ink-soft);">Cada célula mostra <strong>ocupado / tipologia</strong>.</p>
@@ -294,8 +317,9 @@ function renderFuncoesQuadroResumo(el){
         <thead><tr>
           <th style="top:0;">Unidade</th>
           ${categorias.map(c => `<th style="top:0; text-align:center;">${c}</th>`).join('')}
+          <th style="top:0; text-align:center;">Total</th>
         </tr></thead>
-        <tbody>${rows || `<tr><td colspan="${categorias.length+1}" class="muted" style="padding:20px 26px; text-align:center;">Nenhuma unidade com dado para os filtros selecionados.</td></tr>`}</tbody>
+        <tbody>${rows || `<tr><td colspan="${categorias.length+2}" class="muted" style="padding:20px 26px; text-align:center;">Nenhuma unidade com dado para os filtros selecionados.</td></tr>`}${rows ? linhaTotal : ''}</tbody>
       </table>
     </div>`;
 }
