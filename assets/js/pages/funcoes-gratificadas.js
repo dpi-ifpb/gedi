@@ -300,9 +300,58 @@ function renderFuncoesQuadroResumo(el){
     </div>`;
 }
 
+function setorTemFgOuCdDireto(sigla){
+  return SERVIDORES_DATA.some(sv => {
+    if(sv.exercicio_suap_sigla !== sigla || !sv.funcao) return false;
+    const up = sv.funcao.toUpperCase();
+    return up.startsWith('FG') || up.startsWith('CD');
+  });
+}
+
+/* Desce pela árvore a partir da unidade, pulando automaticamente níveis que
+   só têm um filho (ex.: "Direção Geral" concentrando quase tudo) — mas nunca
+   pula por cima de um nível que já tenha FG/CD atribuído diretamente a ele.
+   Ao achar um nível com 2+ filhos, se toda a carga de FG/CD estiver
+   concentrada em um único desses ramos (os demais zerados), continua descendo
+   dentro dele também, recursivamente, até achar uma ramificação com carga
+   distribuída em mais de um ramo (ou nenhuma carga em lugar nenhum). */
+function primeiroNivelComRamificacao(siglaUnidade, guarda){
+  guarda = guarda || 0;
+  const filhos = SETORES_DATA.filter(s => s.superior_sigla === siglaUnidade);
+  if(guarda >= 20 || filhos.length === 0) return filhos;
+
+  if(filhos.length === 1){
+    const unico = filhos[0];
+    if(!unico.sigla || setorTemFgOuCdDireto(unico.sigla)) return filhos;
+    return primeiroNivelComRamificacao(unico.sigla, guarda + 1);
+  }
+
+  const escopoAtual = new Set(filhos.map(f => f.sigla).filter(Boolean));
+  const contagemPorRamo = {};
+  SERVIDORES_DATA.forEach(sv => {
+    if(!sv.funcao) return;
+    const up = sv.funcao.toUpperCase();
+    if(!up.startsWith('FG') && !up.startsWith('CD')) return;
+    const raiz = escopoRaizDoSetorGenerico(sv.exercicio_suap_sigla, escopoAtual);
+    if(raiz) contagemPorRamo[raiz.sigla] = (contagemPorRamo[raiz.sigla] || 0) + 1;
+  });
+  const ramosComCarga = Object.keys(contagemPorRamo);
+  if(ramosComCarga.length === 1){
+    return primeiroNivelComRamificacao(ramosComCarga[0], guarda + 1);
+  }
+  return filhos;
+}
+
 function escopoSetoresFuncoes(){
   if(funcoesFiltros.uos.length === 1){
-    return SETORES_DATA.filter(s => s.superior_sigla === funcoesFiltros.uos[0]);
+    if(funcoesFiltros.compararTipologia){
+      // comparar com tipologia só faz sentido no nível da própria unidade —
+      // uma única barra representando o total da unidade, comparável à tipologia
+      const uo = SETORES_DATA.find(s => (s.sigla || s.nome) === funcoesFiltros.uos[0]);
+      return uo ? [uo] : [];
+    }
+    // sem comparação: mostra a distribuição a partir do primeiro nível que realmente ramifica
+    return primeiroNivelComRamificacao(funcoesFiltros.uos[0]);
   }
   return funcoesUnidadesAlvo();
 }
@@ -320,11 +369,7 @@ function escopoRaizDoSetorGenerico(sigla, escopoSiglas){
 }
 
 function renderFuncoesRanking(el){
-  const dentroDeUmaUnidadePreview = funcoesFiltros.uos.length === 1;
-  const avisoTipologia = (funcoesFiltros.compararTipologia && dentroDeUmaUnidadePreview)
-    ? `<p style="margin-bottom:10px; font-size:12px; color:var(--ink-soft); font-style:italic;">A comparação com a tipologia não se aplica aqui: com uma única unidade selecionada, o ranking mostra os setores internos dela, e a tipologia da Portaria é definida por unidade, não por setor. Selecione nenhuma ou mais de uma unidade para comparar com a tipologia.</p>`
-    : '';
-  el.innerHTML = avisoTipologia + `<canvas id="funcoesRankingChart" height="120"></canvas>`;
+  el.innerHTML = `<canvas id="funcoesRankingChart" height="120"></canvas>`;
   const ctx = document.getElementById('funcoesRankingChart').getContext('2d');
   if(funcoesChartInstance){ funcoesChartInstance.destroy(); funcoesChartInstance = null; }
 
@@ -357,9 +402,7 @@ function renderFuncoesRanking(el){
     stack: 'ocupado',
   }));
 
-  const dentroDeUmaUnidade = funcoesFiltros.uos.length === 1;
-
-  if(funcoesFiltros.compararTipologia && !dentroDeUmaUnidade){
+  if(funcoesFiltros.compararTipologia){
     // mesma paleta de cores por categoria das barras "Ocupadas", só que na
     // pilha "tipologia" — permite comparar segmento a segmento, categoria a categoria
     categorias.forEach(c => {
