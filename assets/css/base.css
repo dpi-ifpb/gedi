@@ -163,6 +163,8 @@
     white-space:nowrap; break-inside:avoid; padding:2px 0;
   }
   .checkbox-item input{accent-color:var(--c1); cursor:pointer; flex-shrink:0;}
+  .checkbox-item input:disabled{cursor:not-allowed;}
+  .checkbox-item:has(input:disabled){color:var(--ink-soft); opacity:.5;}
 
   .multiselect{position:relative; min-width:200px;}
   .multiselect-trigger{
