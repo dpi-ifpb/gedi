@@ -9,21 +9,36 @@
  * poderia inspecionar o código e contornar. Não é adequado para dados ultrassensíveis sem
  * um backend validando o token também.
  */
-const GOOGLE_CLIENT_ID = '807358818690-rg7qcv6bs38ltlgaf26qq228pdcuhie6.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = 'SEU_CLIENT_ID_AQUI.apps.googleusercontent.com';
 const ALLOWED_DOMAIN = 'ifpb.edu.br';
-// Opcional: restrinja a e-mails específicos, além do domínio. Deixe [] para liberar
-// qualquer conta @ifpb.edu.br. Ex.: ['fulano@ifpb.edu.br', 'ciclana@ifpb.edu.br']
-const ALLOWED_EMAILS = [
-  'anderson.silva@ifpb.edu.br', 
-  'mary.marinho@ifpb.edu.br', 
-  'cleidenedia@ifpb.edu.br', 
-  'maria.melo@ifpb.edu.br', 
-  'silvana@ifpb.edu.br',
-  'anna.mendonca@ifpb.edu.br',
-  'erick.melo@ifpb.edu.br',
-  'edmundo.silva@ifpb.edu.br'
-];// Tempo de inatividade até pedir login de novo (ms). 30 minutos por padrão.
-const INACTIVITY_LIMIT_MS = 15 * 60 * 1000;
+// Acesso é definido inteiramente por estas duas listas — quem não estiver em
+// nenhuma delas não entra, mesmo com uma conta @ifpb.edu.br válida.
+const EMAILS_ACESSO_COMPLETO = [
+  // 'fulano@ifpb.edu.br',
+  // 'ciclana@ifpb.edu.br',
+];
+const EMAILS_ACESSO_LIMITADO = [
+  // 'beltrano@ifpb.edu.br',
+];
+// Telas (ids usados em switchPage/PAGES) bloqueadas para o grupo "limitado".
+// Por eliminação: qualquer tela que NÃO estiver nesta lista fica visível pra
+// todo mundo, inclusive o grupo limitado. Ajuste conforme a necessidade.
+//
+// Ids disponíveis (nome do menu correspondente):
+//   sobre       -> Início
+//   formacao    -> Formação do Orçamento
+//   estrutura   -> Estrutura Organizacional
+//   funcoes     -> Funções Gratificadas
+//   totais      -> Totais
+//   detalhe     -> Detalhamento
+//   extra       -> Nova Dist. de Custeio      (hoje já oculta do menu por outro motivo)
+//   indicadores -> Indicadores
+//   pares       -> Análise dos Pares          (hoje já oculta do menu)
+//   simulador   -> Simulador QE               (hoje já oculta do menu)
+//   simuladorF  -> Simulador Funcionamento    (hoje já oculta do menu)
+const PAGINAS_BLOQUEADAS_LIMITADO = ['estrutura', 'funcoes'];
+// Tempo de inatividade até pedir login de novo (ms). 30 minutos por padrão.
+const INACTIVITY_LIMIT_MS = 30 * 60 * 1000;
 let inactivityTimer = null;
 
 function base64UrlDecode(str){
@@ -44,6 +59,13 @@ function showAuthError(msg){
   el.style.display = 'block';
 }
 
+function grupoDoEmail(email){
+  const e = (email || '').toLowerCase();
+  if(EMAILS_ACESSO_COMPLETO.map(x => x.toLowerCase()).includes(e)) return 'completo';
+  if(EMAILS_ACESSO_LIMITADO.map(x => x.toLowerCase()).includes(e)) return 'limitado';
+  return null; // não está em nenhuma lista -> sem acesso
+}
+
 function handleCredentialResponse(response){
   let claims;
   try{
@@ -55,18 +77,28 @@ function handleCredentialResponse(response){
   const email = (claims.email || '').toLowerCase();
   const hd = (claims.hd || '').toLowerCase();
   const domainOk = hd === ALLOWED_DOMAIN || email.endsWith('@' + ALLOWED_DOMAIN);
-  const emailOk = ALLOWED_EMAILS.length === 0 || ALLOWED_EMAILS.map(e => e.toLowerCase()).includes(email);
+  const grupo = grupoDoEmail(email);
 
-  if(!domainOk || !emailOk){
-    showAuthError(`A conta ${claims.email || ''} não tem acesso a este painel. Entre com uma conta @${ALLOWED_DOMAIN} autorizada.`);
+  if(!domainOk || !grupo){
+    showAuthError(`A conta ${claims.email || ''} não tem acesso a este painel. Fale com a DPI para ser incluído na lista de usuários autorizados.`);
     if(window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
     return;
   }
 
   sessionStorage.setItem('gedi_auth_email', claims.email || '');
   sessionStorage.setItem('gedi_auth_name', claims.name || claims.email || '');
+  sessionStorage.setItem('gedi_auth_grupo', grupo);
   touchActivity();
   showApp(claims.name || claims.email || '');
+}
+
+function aplicarRestricaoDeGrupo(){
+  const grupo = sessionStorage.getItem('gedi_auth_grupo') || 'limitado';
+  PAGINAS_BLOQUEADAS_LIMITADO.forEach(pagina => {
+    const nomeNav = 'nav' + pagina.charAt(0).toUpperCase() + pagina.slice(1);
+    const navEl = document.getElementById(nomeNav);
+    if(navEl) navEl.style.display = (grupo === 'completo') ? '' : 'none';
+  });
 }
 
 function initials(name){
@@ -82,6 +114,7 @@ function showApp(label){
   if(el) el.textContent = label || '';
   const av = document.getElementById('authUserAvatar');
   if(av) av.textContent = initials(label);
+  aplicarRestricaoDeGrupo();
   startInactivityWatch();
 }
 

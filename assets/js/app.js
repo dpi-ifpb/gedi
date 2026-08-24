@@ -1,6 +1,9 @@
 /* ================= Navegação ================= */
 const PAGES = ['totais', 'detalhe', 'extra', 'formacao', 'estrutura', 'funcoes', 'indicadores', 'pares', 'simulador', 'simuladorF', 'sobre'];
 function switchPage(page){
+  const restrita = typeof PAGINAS_BLOQUEADAS_LIMITADO !== 'undefined' && PAGINAS_BLOQUEADAS_LIMITADO.includes(page);
+  const grupo = sessionStorage.getItem('gedi_auth_grupo') || 'limitado';
+  if(restrita && grupo !== 'completo') page = 'sobre';
   PAGES.forEach(p => {
     document.getElementById('page-' + p).style.display = (p === page) ? 'block' : 'none';
     document.getElementById('nav' + p.charAt(0).toUpperCase() + p.slice(1)).classList.toggle('active', p === page);
