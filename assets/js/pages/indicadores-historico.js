@@ -48,14 +48,9 @@ function historicoIndicadorTravado(){
   return historicoUnidadesFiltro.length > 1;
 }
 
-function historicoAtualizarBloqueios(){
-  const travarUnidade = historicoUnidadeTravada();
-  const travarIndicador = historicoIndicadorTravado();
-  document.querySelectorAll('#fHistoricoUOWrap input[type="checkbox"]').forEach(cb => {
-    cb.disabled = travarUnidade && !cb.checked;
-  });
-  document.querySelectorAll('#fHistoricoIndicadorWrap input[type="checkbox"]').forEach(cb => {
-    cb.disabled = travarIndicador && !cb.checked;
+function historicoSincronizarCheckboxes(wrapId, filtro){
+  document.querySelectorAll('#' + wrapId + ' input[type="checkbox"]').forEach(cb => {
+    cb.checked = filtro.includes(cb.value);
   });
 }
 
@@ -76,26 +71,43 @@ function buildHistoricoFiltros(){
 
 function onHistoricoUOCheck(checkbox){
   const valor = checkbox.value;
+  const travado = historicoUnidadeTravada();
   if(checkbox.checked){
-    if(!historicoUnidadesFiltro.includes(valor)) historicoUnidadesFiltro.push(valor);
+    if(travado){
+      historicoUnidadesFiltro = [valor]; // travado em 1: marcar uma nova troca a anterior, não acumula
+    } else if(!historicoUnidadesFiltro.includes(valor)){
+      historicoUnidadesFiltro.push(valor);
+    }
   } else {
+    if(travado){
+      checkbox.checked = true; // travado: não pode esvaziar (ficaria "todas" x vários indicadores)
+      return;
+    }
     historicoUnidadesFiltro = historicoUnidadesFiltro.filter(v => v !== valor);
   }
+  historicoSincronizarCheckboxes('fHistoricoUOWrap', historicoUnidadesFiltro);
   atualizarTriggerMultiselect('fHistoricoUO', historicoUOOptions(), historicoUnidadesFiltro);
-  historicoAtualizarBloqueios();
   renderHistoricoConteudo();
 }
 
 function onHistoricoIndicadorCheck(checkbox){
   const valor = checkbox.value;
+  const travado = historicoIndicadorTravado();
   if(checkbox.checked){
-    if(!historicoIndicadoresFiltro.includes(valor)) historicoIndicadoresFiltro.push(valor);
+    if(travado){
+      historicoIndicadoresFiltro = [valor]; // travado em 1: marcar um novo troca o anterior, não acumula
+    } else if(!historicoIndicadoresFiltro.includes(valor)){
+      historicoIndicadoresFiltro.push(valor);
+    }
   } else {
-    if(historicoIndicadoresFiltro.length === 1){ checkbox.checked = true; return; } // sempre ao menos 1 indicador
+    if(historicoIndicadoresFiltro.length === 1){
+      checkbox.checked = true; // sempre ao menos 1 indicador marcado
+      return;
+    }
     historicoIndicadoresFiltro = historicoIndicadoresFiltro.filter(v => v !== valor);
   }
+  historicoSincronizarCheckboxes('fHistoricoIndicadorWrap', historicoIndicadoresFiltro);
   atualizarTriggerMultiselect('fHistoricoIndicador', historicoIndicadorOptions(), historicoIndicadoresFiltro);
-  historicoAtualizarBloqueios();
   renderHistoricoConteudo();
 }
 
@@ -117,7 +129,6 @@ function renderHistoricoIndicadores(){
   const el = document.getElementById('contentHistorico');
   if(!el) return;
   el.innerHTML = buildHistoricoFiltros() + `<div id="historicoConteudo"></div>`;
-  historicoAtualizarBloqueios();
   renderHistoricoConteudo();
 }
 
