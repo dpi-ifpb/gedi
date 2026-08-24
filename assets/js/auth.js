@@ -1,18 +1,21 @@
-const GOOGLE_CLIENT_ID = '807358818690-rg7qcv6bs38ltlgaf26qq228pdcuhie6.apps.googleusercontent.com';
+/* ================= Autenticação (Google Sign-In, restrita a @ifpb.edu.br) =================
+ * IMPORTANTE — antes de usar, troque GOOGLE_CLIENT_ID pelo Client ID gerado no Google Cloud
+ * Console (Credenciais OAuth 2.0), com https://dpi-ifpb.github.io como origem JavaScript
+ * autorizada. Veja o passo a passo que acompanha este arquivo.
+ *
+ * LIMITAÇÃO IMPORTANTE: como este painel é só HTML/JS estático (sem servidor próprio), essa
+ * checagem roda inteiramente no navegador de quem acessa. Ela barra o acesso casual/não
+ * autorizado de forma eficaz, mas não é segurança formal — alguém com conhecimento técnico
+ * poderia inspecionar o código e contornar. Não é adequado para dados ultrassensíveis sem
+ * um backend validando o token também.
+ */
+const GOOGLE_CLIENT_ID = 'SEU_CLIENT_ID_AQUI.apps.googleusercontent.com';
 const ALLOWED_DOMAIN = 'ifpb.edu.br';
 // Opcional: restrinja a e-mails específicos, além do domínio. Deixe [] para liberar
 // qualquer conta @ifpb.edu.br. Ex.: ['fulano@ifpb.edu.br', 'ciclana@ifpb.edu.br']
-const ALLOWED_EMAILS = [
-  'anderson.silva@ifpb.edu.br', 
-  'mary.marinho@ifpb.edu.br', 
-  'cleidenedia@ifpb.edu.br', 
-  'maria.melo@ifpb.edu.br', 
-  'silvana@ifpb.edu.br',
-  'anna.mendonca@ifpb.edu.br',
-  'erick.melo@ifpb.edu.br'
-];
+const ALLOWED_EMAILS = [];
 // Tempo de inatividade até pedir login de novo (ms). 30 minutos por padrão.
-const INACTIVITY_LIMIT_MS = 15 * 60 * 1000;
+const INACTIVITY_LIMIT_MS = 30 * 60 * 1000;
 let inactivityTimer = null;
 
 function base64UrlDecode(str){
@@ -103,7 +106,29 @@ function startInactivityWatch(){
   }, 30 * 1000); // confere a cada 30s
 }
 
+function initGoogleButton(){
+  if(!window.google || !google.accounts || !google.accounts.id){
+    setTimeout(initGoogleButton, 200); // biblioteca do Google ainda carregando
+    return;
+  }
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleCredentialResponse,
+    hd: ALLOWED_DOMAIN,
+  });
+  const btnContainer = document.getElementById('googleSignInButton');
+  google.accounts.id.renderButton(
+    btnContainer,
+    { theme: 'filled_blue', size: 'large', text: 'signin_with', shape: 'pill', width: btnContainer.clientWidth }
+  );
+}
+
 function initAuthGate(){
+  // sempre inicializa e desenha o botão do Google, esteja ou não logado agora —
+  // assim ele já está pronto e funcional quando o usuário fizer logout depois,
+  // sem precisar recarregar a página pra ele reaparecer
+  initGoogleButton();
+
   // já logado nesta aba (sessão do navegador) — evita pedir login de novo a cada navegação interna,
   // mas expira depois de INACTIVITY_LIMIT_MS sem interação
   const savedEmail = sessionStorage.getItem('gedi_auth_email');
@@ -118,20 +143,6 @@ function initAuthGate(){
     sessionStorage.removeItem('gedi_auth_name');
     sessionStorage.removeItem('gedi_auth_last_active');
   }
-  if(!window.google || !google.accounts || !google.accounts.id){
-    setTimeout(initAuthGate, 200); // biblioteca do Google ainda carregando
-    return;
-  }
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: handleCredentialResponse,
-    hd: ALLOWED_DOMAIN,
-  });
-  const btnContainer = document.getElementById('googleSignInButton');
-  google.accounts.id.renderButton(
-    btnContainer,
-    { theme: 'filled_blue', size: 'large', text: 'signin_with', shape: 'pill', width: btnContainer.clientWidth }
-  );
 }
 
 initAuthGate();
