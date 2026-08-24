@@ -25,6 +25,7 @@ const EMAILS_ACESSO_COMPLETO = [
 ];
 const EMAILS_ACESSO_LIMITADO = [
   'dpi@ifpb.edu.br',
+  'yana.dantas@ifpb.edu.br',
   'vinicius.campos@ifpb.edu.br'
 ];
 // Telas (ids usados em switchPage/PAGES) bloqueadas para o grupo "limitado".
