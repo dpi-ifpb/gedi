@@ -1,5 +1,5 @@
 let historicoView = 'tabela';
-let historicoIndicadoresFiltro = ['matriculas']; // array — múltiplos só quando exatamente 1 unidade selecionada
+let historicoIndicadoresFiltro = ['matriculas']; // sempre pelo menos 1
 let historicoUnidadesFiltro = [];
 let historicoChartInstance = null;
 
@@ -11,7 +11,6 @@ function historicoListaUnidades(){
       return a.nome.localeCompare(b.nome, 'pt-BR');
     });
   const todas = [{ sigla: 'INSTITUCIONAL', nome: 'Total (Institucional)' }, ...uos];
-  // uma unidade aparece se tiver dado em pelo menos um dos indicadores selecionados
   return todas.filter(u => historicoIndicadoresFiltro.some(chave => INDICADORES_HISTORICO_DATA.indicadores[chave].valores[u.sigla]));
 }
 
@@ -35,17 +34,29 @@ function historicoIndicadorOptions(){
   return Object.entries(INDICADORES_HISTORICO_DATA.indicadores).map(([chave, ind]) => ({ value: chave, label: ind.label }));
 }
 
-/* O campo "Indicador" muda de comportamento conforme a quantidade de unidades:
-   - 1 unidade selecionada -> multiseleção (permite comparar várias curvas da MESMA unidade)
-   - 0 ou 2+ unidades -> seleção única (o padrão, comparando unidades num só indicador) */
-function historicoIndicadorFieldHTML(){
-  const modoMultiplo = historicoUnidadesFiltro.length === 1;
-  if(!modoMultiplo){
-    const opcoes = historicoIndicadorOptions()
-      .map(o => `<option value="${o.value}" ${o.value===historicoIndicadoresFiltro[0]?'selected':''}>${o.label}</option>`).join('');
-    return `<label>Indicador</label><select id="fHistoricoIndicador" onchange="onHistoricoIndicadorChange()">${opcoes}</select>`;
-  }
-  return `<label>Indicador (${historicoIndicadoresFiltro.length} selecionado${historicoIndicadoresFiltro.length===1?'':'s'})</label>${renderMultiSelect('fHistoricoIndicador', historicoIndicadorOptions(), historicoIndicadoresFiltro, 'onHistoricoIndicadorCheck')}`;
+/* ================= Regra de exclusividade =================
+   Os dois campos (Unidade e Indicador) são sempre multiseleção.
+   Mas só um dos dois pode ter mais de 1 item marcado por vez:
+   - Indicador com 2+ marcados  -> Unidade trava em no máximo 1
+   - Unidade  com 2+ marcadas   -> Indicador trava em no máximo 1
+   Isso evita a combinação "várias unidades x vários indicadores",
+   que geraria um gráfico ilegível. */
+function historicoUnidadeTravada(){
+  return historicoIndicadoresFiltro.length > 1;
+}
+function historicoIndicadorTravado(){
+  return historicoUnidadesFiltro.length > 1;
+}
+
+function historicoAtualizarBloqueios(){
+  const travarUnidade = historicoUnidadeTravada();
+  const travarIndicador = historicoIndicadorTravado();
+  document.querySelectorAll('#fHistoricoUOWrap input[type="checkbox"]').forEach(cb => {
+    cb.disabled = travarUnidade && !cb.checked;
+  });
+  document.querySelectorAll('#fHistoricoIndicadorWrap input[type="checkbox"]').forEach(cb => {
+    cb.disabled = travarIndicador && !cb.checked;
+  });
 }
 
 function buildHistoricoFiltros(){
@@ -55,30 +66,23 @@ function buildHistoricoFiltros(){
         <label>Unidade</label>
         ${renderMultiSelect('fHistoricoUO', historicoUOOptions(), historicoUnidadesFiltro, 'onHistoricoUOCheck')}
       </div>
-      <div class="filter-field" style="min-width:260px;" id="fHistoricoIndicadorWrap">${historicoIndicadorFieldHTML()}</div>
+      <div class="filter-field" style="min-width:260px;">
+        <label>Indicador</label>
+        ${renderMultiSelect('fHistoricoIndicador', historicoIndicadorOptions(), historicoIndicadoresFiltro, 'onHistoricoIndicadorCheck')}
+      </div>
       <button class="filter-clear" onclick="clearHistoricoFiltros()">Limpar filtros</button>
     </div>`;
 }
 
 function onHistoricoUOCheck(checkbox){
   const valor = checkbox.value;
-  const eraUmaUnidade = historicoUnidadesFiltro.length === 1;
   if(checkbox.checked){
     if(!historicoUnidadesFiltro.includes(valor)) historicoUnidadesFiltro.push(valor);
   } else {
     historicoUnidadesFiltro = historicoUnidadesFiltro.filter(v => v !== valor);
   }
   atualizarTriggerMultiselect('fHistoricoUO', historicoUOOptions(), historicoUnidadesFiltro);
-
-  const agoraUmaUnidade = historicoUnidadesFiltro.length === 1;
-  if(eraUmaUnidade !== agoraUmaUnidade){
-    // saindo do modo "1 unidade": não faz sentido manter vários indicadores marcados
-    if(!agoraUmaUnidade && historicoIndicadoresFiltro.length > 1){
-      historicoIndicadoresFiltro = [historicoIndicadoresFiltro[0]];
-    }
-    // troca o campo Indicador entre seleção única/múltipla sem fechar o painel de Unidade que está aberto
-    document.getElementById('fHistoricoIndicadorWrap').innerHTML = historicoIndicadorFieldHTML();
-  }
+  historicoAtualizarBloqueios();
   renderHistoricoConteudo();
 }
 
@@ -87,19 +91,12 @@ function onHistoricoIndicadorCheck(checkbox){
   if(checkbox.checked){
     if(!historicoIndicadoresFiltro.includes(valor)) historicoIndicadoresFiltro.push(valor);
   } else {
-    if(historicoIndicadoresFiltro.length === 1){ checkbox.checked = true; return; } // mantém ao menos 1 marcado
+    if(historicoIndicadoresFiltro.length === 1){ checkbox.checked = true; return; } // sempre ao menos 1 indicador
     historicoIndicadoresFiltro = historicoIndicadoresFiltro.filter(v => v !== valor);
   }
   atualizarTriggerMultiselect('fHistoricoIndicador', historicoIndicadorOptions(), historicoIndicadoresFiltro);
-  const lbl = document.querySelector('#fHistoricoIndicadorWrap > label');
-  if(lbl) lbl.textContent = `Indicador (${historicoIndicadoresFiltro.length} selecionado${historicoIndicadoresFiltro.length===1?'':'s'})`;
+  historicoAtualizarBloqueios();
   renderHistoricoConteudo();
-}
-
-function onHistoricoIndicadorChange(){
-  historicoIndicadoresFiltro = [document.getElementById('fHistoricoIndicador').value];
-  historicoUnidadesFiltro = []; // a disponibilidade de unidades pode mudar entre indicadores
-  renderHistoricoIndicadores();
 }
 
 function clearHistoricoFiltros(){
@@ -120,6 +117,7 @@ function renderHistoricoIndicadores(){
   const el = document.getElementById('contentHistorico');
   if(!el) return;
   el.innerHTML = buildHistoricoFiltros() + `<div id="historicoConteudo"></div>`;
+  historicoAtualizarBloqueios();
   renderHistoricoConteudo();
 }
 
