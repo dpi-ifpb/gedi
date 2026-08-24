@@ -18,7 +18,7 @@ function historicoListaUnidades(){
 function historicoNomeUnidade(sigla){
   if(sigla === 'INSTITUCIONAL') return 'Total (Institucional)';
   const s = SETORES_DATA.find(x => x.sigla === sigla);
-  return s ? (typeof nomeUnidadeCurto === 'function' ? nomeUnidadeCurto(s.nome) : s.nome) : sigla;
+  return s ? nomeUnidadeCurto(s.nome) : sigla;
 }
 
 function historicoFormatarValor(valor, formato){
@@ -27,15 +27,13 @@ function historicoFormatarValor(valor, formato){
   return valor.toLocaleString('pt-BR', {maximumFractionDigits:2});
 }
 
+function historicoUOOptions(){
+  return historicoListaUnidades().map(u => ({ value: u.sigla, label: historicoNomeUnidade(u.sigla) }));
+}
+
 function buildHistoricoFiltros(){
   const opcoesIndicador = Object.entries(INDICADORES_HISTORICO_DATA.indicadores)
     .map(([chave, ind]) => `<option value="${chave}" ${chave===historicoIndicadorAtual?'selected':''}>${ind.label}</option>`).join('');
-
-  const unidadesDisponiveis = historicoListaUnidades();
-  const uoOpts = unidadesDisponiveis.map(u => {
-    const sel = historicoUnidadesFiltro.includes(u.sigla) ? 'selected' : '';
-    return `<option value="${u.sigla}" ${sel}>${historicoNomeUnidade(u.sigla)}</option>`;
-  }).join('');
 
   return `
     <div class="filter-bar" style="align-items:flex-end;">
@@ -45,10 +43,21 @@ function buildHistoricoFiltros(){
       </div>
       <div class="filter-field">
         <label>Unidade</label>
-        <select id="fHistoricoUO" multiple size="4" onchange="onHistoricoFiltroChange()" style="min-width:220px;">${uoOpts}</select>
+        ${renderMultiSelect('fHistoricoUO', historicoUOOptions(), historicoUnidadesFiltro, 'onHistoricoUOCheck')}
       </div>
       <button class="filter-clear" onclick="clearHistoricoFiltros()">Limpar filtros</button>
     </div>`;
+}
+
+function onHistoricoUOCheck(checkbox){
+  const valor = checkbox.value;
+  if(checkbox.checked){
+    if(!historicoUnidadesFiltro.includes(valor)) historicoUnidadesFiltro.push(valor);
+  } else {
+    historicoUnidadesFiltro = historicoUnidadesFiltro.filter(v => v !== valor);
+  }
+  atualizarTriggerMultiselect('fHistoricoUO', historicoUOOptions(), historicoUnidadesFiltro);
+  renderHistoricoConteudo();
 }
 
 function onHistoricoIndicadorChange(){
@@ -57,14 +66,9 @@ function onHistoricoIndicadorChange(){
   renderHistoricoIndicadores();
 }
 
-function onHistoricoFiltroChange(){
-  historicoUnidadesFiltro = Array.from(document.getElementById('fHistoricoUO').selectedOptions).map(o => o.value);
-  renderHistoricoConteudo();
-}
-
 function clearHistoricoFiltros(){
   historicoUnidadesFiltro = [];
-  renderHistoricoConteudo();
+  renderHistoricoIndicadores();
 }
 
 function setHistoricoView(view){
