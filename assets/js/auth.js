@@ -20,7 +20,8 @@ const ALLOWED_EMAILS = [
   'maria.melo@ifpb.edu.br', 
   'silvana@ifpb.edu.br',
   'anna.mendonca@ifpb.edu.br',
-  'erick.melo@ifpb.edu.br'
+  'erick.melo@ifpb.edu.br',
+  'edmundo.silva@ifpb.edu.br'
 ];// Tempo de inatividade até pedir login de novo (ms). 30 minutos por padrão.
 const INACTIVITY_LIMIT_MS = 15 * 60 * 1000;
 let inactivityTimer = null;
