@@ -24,12 +24,14 @@ updateCollapseIcon();
 
 /* ================= Modal reutilizável de notas explicativas ================= */
 const NOTES_CONTENT = {
-  indicadores: `
-    <h3>Sobre estes indicadores</h3>
+  indicadores: {
+    titulo: 'Sobre estes indicadores',
+    corpo: `
     <p>Percentuais que orientaram a composição orçamentária das unidades, tanto na projeção da PLOA quanto na identificação dos valores das propostas em análise pela Reitoria. A linha "RFEPCT (referência)" é o valor médio/base da rede, usado como comparação para as unidades abaixo. Clique no nome de uma unidade para comparar seu perfil de indicadores com a Rede e o IFPB.</p>
-  `,
-  extra: `
-    <h3>Sobre as colunas</h3>
+  `},
+  extra: {
+    titulo: 'Sobre as colunas',
+    corpo: `
     <dl class="notes-dl">
       <dt>2026 - 2024</dt>
       <dd>Diferença entre o orçamento previsto para 2026 e o de 2024. Valores definidos pelo governo federal: desde 2025 a distribuição orçamentária da Rede Federal usa a Matriz de Distribuição Orçamentária da SETEC/MEC — metodologia já vigente desde a Portaria MEC nº 646/2022, atualizada pela Portaria MEC nº 243, de 10/03/2026.</dd>
@@ -40,9 +42,10 @@ const NOTES_CONTENT = {
       <dt>TODAS AS UNIDADES</dt>
       <dd>Reforço Orçamentário em análise pela Reitoria, no valor total de R$ 800.000,00, distribuída a todas as unidades (não só as com déficit orçamentário).</dd>
     </dl>
-  `,
-  formacao: `
-    <h3>Sobre esta tela</h3>
+  `},
+  formacao: {
+    titulo: 'Sobre esta tela',
+    corpo: `
     <p>O orçamento do ano de uma unidade é a soma de todas as colunas da planilha de origem, com exceção da PLOA (que é só uma referência interna de projeção, não compõe o valor final e por isso não aparece nesta tela).</p>
     <dl class="notes-dl">
       <dt>LOA</dt>
@@ -52,11 +55,11 @@ const NOTES_CONTENT = {
       <dt>Reforços do Ano</dt>
       <dd>Recursos adicionais destinados às unidades ao longo do exercício, resultantes de decisões institucionais específicas, conforme necessidades e prioridades identificadas. O valor apresentado corresponde à soma dos reforços realizados de janeiro a dezembro e não decorre de fórmula fixa da Matriz de Distribuição Orçamentária.</dd>
     </dl>
-  `,
-  funcoes: `
-    <h3>Tipologia de referência</h3>
+  `},
+  funcoes: {
+    titulo: 'Tipologia de referência',
+    corpo: `
     <p>Cada unidade tem uma tipologia associada, definida pela Portaria MEC nº 327, de 15 de abril de 2026 (Anexos I e II), que estabelece quantos cargos de direção (CD) e funções gratificadas (FG) a unidade pode ter.</p>
-    <p style="margin-top:10px;"><strong>Ressalva:</strong> Cajazeiras, Catolé do Rocha, Itaporanga, Patos, Princesa Isabel, Santa Luzia e Sousa aparecem na Portaria como unidades do "Instituto Federal do Sertão Paraibano", uma reitoria distinta da do IFPB. Neste painel, essas unidades continuam junto às demais do IFPB, refletindo a estrutura ainda em uso no SUAP.</p>
     <div class="panel" style="margin-top:14px; overflow-x:auto;">
       <table>
         <thead><tr>
@@ -77,10 +80,12 @@ const NOTES_CONTENT = {
         </tbody>
       </table>
     </div>
-  `,
+  `},
 };
 function openNotesModal(key){
-  document.getElementById('notesModalBody').innerHTML = NOTES_CONTENT[key] || '';
+  const item = NOTES_CONTENT[key];
+  document.getElementById('notesModalTitle').textContent = item ? item.titulo : '';
+  document.getElementById('notesModalBody').innerHTML = item ? item.corpo : '';
   document.getElementById('notesModal').classList.remove('hidden');
 }
 function closeNotesModal(){
