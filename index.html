@@ -300,32 +300,42 @@
 <!-- ============ MODAL · DETALHE DA DESPESA ============ -->
 <div class="modal-overlay hidden" id="detailModal" onclick="if(event.target===this) closeDetail()">
   <div class="modal-card">
-    <div class="modal-actions">
-      <button type="button" class="modal-close" onclick="closeDetail()">Fechar ✕</button>
+    <div class="modal-header">
+      <h3 class="modal-title">Detalhe da Despesa</h3>
+      <div class="modal-actions">
+        <button type="button" class="modal-icon-btn modal-close-btn" data-tooltip="Fechar" onclick="closeDetail()">✕</button>
+      </div>
     </div>
-    <dl class="modal-dl" id="modalDl"></dl>
+    <div class="modal-body">
+      <dl class="modal-dl" id="modalDl"></dl>
+    </div>
   </div>
 </div>
 
 <!-- ============ MODAL · GRÁFICO DE INDICADORES ============ -->
 <div class="modal-overlay hidden" id="chartModal" onclick="if(event.target===this) closeChartModal()">
   <div class="modal-card modal-card-wide" id="chartModalCard">
-    <div class="modal-actions">
-      <button type="button" class="modal-zoom" id="chartZoomBtn" onclick="toggleChartZoom()">Ampliar</button>
-      <button type="button" class="modal-close" onclick="closeChartModal()">Fechar ✕</button>
+    <div class="modal-header">
+      <h3 class="modal-title" id="chartModalTitle"></h3>
+      <div class="modal-actions">
+        <button type="button" class="modal-icon-btn" id="chartZoomBtn" data-tooltip="Ampliar" onclick="toggleChartZoom()">⛶</button>
+        <button type="button" class="modal-icon-btn modal-close-btn" data-tooltip="Fechar" onclick="closeChartModal()">✕</button>
+      </div>
     </div>
-    <h3 class="modal-chart-title" id="chartModalTitle"></h3>
-    <div class="modal-chart-scroll" id="chartModalBody"></div>
+    <div class="modal-body" id="chartModalBody"></div>
   </div>
 </div>
 
 <!-- ============ MODAL · NOTAS EXPLICATIVAS (reutilizável) ============ -->
 <div class="modal-overlay hidden" id="notesModal" onclick="if(event.target===this) closeNotesModal()">
   <div class="modal-card modal-card-wide" id="notesModalCard">
-    <div class="modal-actions">
-      <button type="button" class="modal-close" onclick="closeNotesModal()">Fechar ✕</button>
+    <div class="modal-header">
+      <h3 class="modal-title" id="notesModalTitle"></h3>
+      <div class="modal-actions">
+        <button type="button" class="modal-icon-btn modal-close-btn" data-tooltip="Fechar" onclick="closeNotesModal()">✕</button>
+      </div>
     </div>
-    <div id="notesModalBody"></div>
+    <div class="modal-body" id="notesModalBody"></div>
   </div>
 </div>
 
