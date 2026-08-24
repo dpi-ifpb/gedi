@@ -1,44 +1,63 @@
-  /* Modal de detalhe (Descrição da despesa) */
+
+  /* ================= Modal — estrutura padrão em todas as telas =================
+     Toda janela modal segue o mesmo esqueleto: uma barra de título fixa (título +
+     botões de ação) e uma área de conteúdo abaixo, que é a única parte com scroll. */
   .modal-overlay{
     position:fixed; inset:0; background:rgba(42,20,88,.45); z-index:50;
     display:flex; align-items:center; justify-content:center; padding:20px;
   }
   .modal-overlay.hidden{display:none;}
+
   .modal-card{
     background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
-    box-shadow:0 24px 60px rgba(42,20,88,.28); max-width:540px; width:100%;
-    padding:28px 30px; position:relative; max-height:85vh; overflow-y:auto;
+    box-shadow:0 24px 60px rgba(42,20,88,.28);
+    max-width:min(600px, 92vw); width:100%; max-height:85vh;
+    display:flex; flex-direction:column; overflow:hidden;
   }
-  .modal-card-wide{
-    max-width:min(900px, 92vw); max-height:85vh; overflow-y:hidden; display:flex; flex-direction:column;
-    transition:max-width .18s ease;
+  .modal-card-wide{max-width:min(900px, 92vw); transition:max-width .18s ease;}
+  .modal-card-wide.zoomed{max-width:min(1100px, 94vw);}
+
+  .modal-header{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
+    padding:20px 24px 16px; border-bottom:1px solid var(--border); flex-shrink:0;
   }
-  .modal-chart-scroll{overflow-y:auto; flex:1; min-height:0;}
-  #notesModalBody{overflow-y:auto; flex:1; min-height:0; padding-right:2px;}
-  #notesModalBody h3{padding-right:110px;}
-  .modal-card-wide.zoomed{max-width:900px;}
-  .modal-card-wide.zoomed .indicator-radar-svg{max-width:800px !important;}
-  .modal-actions{position:absolute; top:16px; right:18px; display:flex; gap:8px;}
-  .modal-zoom{
-    font-family:'Plus Jakarta Sans'; font-weight:600;
-    background:var(--bg); border:1px solid var(--border); border-radius:6px;
-    font-size:12px; padding:5px 12px; cursor:pointer; color:var(--ink); white-space:nowrap;
+  .modal-title{font-size:17px; font-weight:700; color:var(--c1); line-height:1.35; margin:0;}
+  .modal-actions{display:flex; gap:8px; flex-shrink:0;}
+
+  .modal-body{padding:20px 24px 24px; overflow-y:auto; flex:1; min-height:0;}
+  .modal-body h3{font-size:15px; font-weight:600; color:var(--c1); margin-bottom:12px;}
+  .modal-body > p{font-size:13px; color:var(--ink); line-height:1.6;}
+
+  /* botões da barra de título: ícone redondo, com tooltip via data-tooltip */
+  .modal-icon-btn{
+    width:32px; height:32px; border-radius:50%; flex-shrink:0; position:relative;
+    display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--border); background:var(--surface); color:var(--ink-soft);
+    font-size:14px; cursor:pointer; transition:background .15s ease, color .15s ease, border-color .15s ease;
   }
-  .modal-zoom:hover{background:#F0E7DE;}
-  .modal-chart-title{font-size:15px; font-weight:600; color:var(--c1); margin:0 0 16px; padding-right:190px; flex-shrink:0;}
-  .modal-close{
-    font-family:'Plus Jakarta Sans'; font-weight:600;
-    background:var(--c1); border:1px solid var(--c1); border-radius:6px;
-    font-size:12px; padding:5px 12px; cursor:pointer; color:#fff; white-space:nowrap;
+  .modal-icon-btn:hover{background:var(--c4); color:var(--c1); border-color:var(--c1);}
+  .modal-close-btn{background:var(--c1); border-color:var(--c1); color:#fff;}
+  .modal-close-btn:hover{background:var(--c1-soft); border-color:var(--c1-soft);}
+
+  [data-tooltip]::after{
+    content:attr(data-tooltip); position:absolute; bottom:calc(100% + 7px); left:50%; transform:translateX(-50%);
+    background:var(--c1); color:#fff; font-size:11px; font-weight:500; padding:5px 9px; border-radius:6px;
+    white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .12s ease; z-index:70;
   }
-  .modal-close:hover{background:var(--c1-soft); border-color:var(--c1-soft);}
-  .modal-dl{margin:0; padding-right:80px;}
+  [data-tooltip]::before{
+    content:''; position:absolute; bottom:calc(100% + 2px); left:50%; transform:translateX(-50%);
+    border:5px solid transparent; border-top-color:var(--c1); opacity:0; pointer-events:none; transition:opacity .12s ease; z-index:70;
+  }
+  [data-tooltip]:hover::after, [data-tooltip]:hover::before{opacity:1;}
+
+  .modal-dl{margin:0;}
   .modal-dl dt{
     font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.4px;
     color:var(--c2); margin:16px 0 4px;
   }
   .modal-dl dt:first-child{margin-top:0;}
   .modal-dl dd{margin:0; font-size:14.5px; color:var(--ink); line-height:1.55;}
+
   .desc-link{
     color:var(--c2); font-weight:600; cursor:pointer; text-decoration:underline;
     text-decoration-color:transparent; transition:text-decoration-color .15s ease;
