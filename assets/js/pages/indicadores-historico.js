@@ -1,6 +1,6 @@
 let historicoView = 'tabela';
 let historicoIndicadoresFiltro = ['matriculas']; // sempre pelo menos 1
-let historicoUnidadesFiltro = [];
+let historicoUnidadesFiltro = ['INSTITUCIONAL']; // sempre pelo menos 1 — sem estado "Todas"
 let historicoChartInstance = null;
 
 function historicoListaUnidades(){
@@ -79,8 +79,8 @@ function onHistoricoUOCheck(checkbox){
       historicoUnidadesFiltro.push(valor);
     }
   } else {
-    if(travado){
-      checkbox.checked = true; // travado: não pode esvaziar (ficaria "todas" x vários indicadores)
+    if(travado || historicoUnidadesFiltro.length === 1){
+      checkbox.checked = true; // sempre ao menos 1 unidade marcada — sem estado "Todas"
       return;
     }
     historicoUnidadesFiltro = historicoUnidadesFiltro.filter(v => v !== valor);
@@ -113,7 +113,7 @@ function onHistoricoIndicadorCheck(checkbox){
 
 function clearHistoricoFiltros(){
   historicoIndicadoresFiltro = ['matriculas'];
-  historicoUnidadesFiltro = [];
+  historicoUnidadesFiltro = ['INSTITUCIONAL'];
   renderHistoricoIndicadores();
 }
 
@@ -155,7 +155,7 @@ function renderHistoricoTabela(el){
       const ind = INDICADORES_HISTORICO_DATA.indicadores[chave];
       const serie = ind.valores[unidadeSigla] || [];
       const celulas = anos.map((ano, i) => {
-        const destaque = ano === 2024 ? ' style="background:#F3EDFA; font-weight:600;"' : '';
+        const destaque = ano === 2024 ? ' style="text-align:center; background:#F3EDFA; font-weight:600;"' : ' style="text-align:center;"';
         return `<td class="num"${destaque}>${historicoFormatarValor(serie[i], ind.formato)}</td>`;
       }).join('');
       return `<tr><td>${ind.label}</td>${celulas}</tr>`;
@@ -177,15 +177,12 @@ function renderHistoricoTabela(el){
   }
 
   const ind = INDICADORES_HISTORICO_DATA.indicadores[historicoIndicadoresFiltro[0]];
-  let unidades = historicoListaUnidades();
-  if(historicoUnidadesFiltro.length){
-    unidades = unidades.filter(u => historicoUnidadesFiltro.includes(u.sigla));
-  }
+  const unidades = historicoListaUnidades().filter(u => historicoUnidadesFiltro.includes(u.sigla));
 
   const rows = unidades.map(u => {
     const serie = ind.valores[u.sigla] || [];
     const celulas = anos.map((ano, i) => {
-      const destaque = ano === 2024 ? ' style="background:#F3EDFA; font-weight:600;"' : '';
+      const destaque = ano === 2024 ? ' style="text-align:center; background:#F3EDFA; font-weight:600;"' : ' style="text-align:center;"';
       return `<td class="num"${destaque}>${historicoFormatarValor(serie[i], ind.formato)}</td>`;
     }).join('');
     const rowStyle = u.sigla === 'INSTITUCIONAL' || u.sigla === 'REITORIA' ? ' style="font-weight:600;"' : '';
@@ -246,12 +243,7 @@ function renderHistoricoGrafico(el){
     }
   } else {
     const ind = INDICADORES_HISTORICO_DATA.indicadores[historicoIndicadoresFiltro[0]];
-    let unidades = historicoListaUnidades();
-    if(historicoUnidadesFiltro.length){
-      unidades = unidades.filter(u => historicoUnidadesFiltro.includes(u.sigla));
-    } else {
-      unidades = unidades.filter(u => u.sigla === 'INSTITUCIONAL');
-    }
+    const unidades = historicoListaUnidades().filter(u => historicoUnidadesFiltro.includes(u.sigla));
 
     const datasets = unidades.map((u, i) => ({
       label: historicoNomeUnidade(u.sigla),
@@ -271,10 +263,6 @@ function renderHistoricoGrafico(el){
         scales: { y: { beginAtZero: true, ticks: { callback: v => ind.formato === 'percentual' ? v + '%' : v } } },
       }
     });
-
-    if(!historicoUnidadesFiltro.length){
-      aviso = 'Mostrando só o total institucional por padrão — selecione unidades no filtro para comparar campi.';
-    }
   }
 
   if(aviso){
