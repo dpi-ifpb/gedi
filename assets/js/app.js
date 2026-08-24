@@ -1,5 +1,5 @@
 /* ================= Navegação ================= */
-const PAGES = ['totais', 'detalhe', 'extra', 'formacao', 'estrutura', 'funcoes', 'indicadores', 'pares', 'simulador', 'simuladorF', 'sobre'];
+const PAGES = ['totais', 'detalhe', 'extra', 'formacao', 'estrutura', 'funcoes', 'indicadores', 'historico', 'pares', 'simulador', 'simuladorF', 'sobre'];
 function switchPage(page){
   const restrita = typeof PAGINAS_BLOQUEADAS_LIMITADO !== 'undefined' && PAGINAS_BLOQUEADAS_LIMITADO.includes(page);
   const grupo = sessionStorage.getItem('gedi_auth_grupo') || 'limitado';
@@ -84,6 +84,23 @@ const NOTES_CONTENT = {
       </table>
     </div>
   `},
+  historico: {
+    titulo: 'Sobre a série histórica de indicadores',
+    corpo: `
+    <p><strong>Fundamental:</strong> os números de orçamento, totais e despesas exibidos hoje neste painel são influenciados pelos indicadores registrados em <strong>2024</strong> — por isso essa coluna vem destacada na tabela. A Matriz de Distribuição Orçamentária de um dado ano é sempre elaborada com base na PNP do ano anterior (Portaria MEC nº 243/2026, Anexo, item de metodologia).</p>
+    <p style="margin-top:10px;">Como cada indicador se relaciona com a Matriz (Portaria MEC nº 243/2026):</p>
+    <dl class="notes-dl">
+      <dt>Matrículas</dt>
+      <dd>Base do Bloco Funcionamento (80% do orçamento) e do Bloco Reitoria/Direção-Geral (10%) — art. 3º, I e II.</dd>
+      <dt>Eficiência Acadêmica (IEA)</dt>
+      <dd>Um dos três indicadores do Bloco Qualidade e Eficiência (10% do orçamento) — art. 4º, II.</dd>
+      <dt>Relação Aluno-Professor (RAP)</dt>
+      <dd>Corresponde à RAPP da Portaria, também usada no Bloco Qualidade e Eficiência — art. 4º, III.</dd>
+      <dt>Evasão, Ocupação de Vagas, Inscritos por Vaga, Titulação</dt>
+      <dd>Indicadores de acompanhamento acadêmico — não entram diretamente na fórmula da Matriz, mas ajudam a entender o contexto dos números acima.</dd>
+    </dl>
+    <p style="margin-top:10px;"><strong>Ciclo (Conclusão/Evasão/Retenção) e Eficiência Acadêmica:</strong> os três indicadores de ciclo somam sempre ~100% entre si (são os três desfechos possíveis de um aluno). A Conclusão fica próxima da Eficiência Acadêmica, mas não é idêntica a ela — os dados sugerem que o ciclo alimenta o cálculo da eficiência, mas a fórmula exata de conversão não está disponível nem na Portaria nem nos dados desta planilha. Trate a relação como indicativa, não como equivalência exata.</p>
+  `},
 };
 function openNotesModal(key){
   const item = NOTES_CONTENT[key];
@@ -101,6 +118,7 @@ refreshExtraData();
 refreshFormacaoData();
 setInterval(() => { refreshData(false); refreshExtraData(); refreshFormacaoData(); }, AUTO_REFRESH_MS);
 renderIndicadoresTable();
+renderHistoricoIndicadores();
 buildParesScreen();buildSimuladorScreen();
 buildSimuladorFScreen();
 renderEstruturaOrganizacional();
