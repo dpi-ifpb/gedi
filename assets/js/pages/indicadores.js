@@ -1,11 +1,59 @@
 /* ================= Tela 4 · Indicadores RFEPCT / PNP ================= */
+let indicadoresUnidadesFiltro = [];
+
+function indicadoresUOOptions(){
+  const nomes = [...new Set(RFEPCT_DATA.map(u => u.unidade))].sort((a,b) => a.localeCompare(b, 'pt-BR'));
+  return nomes.map(nome => ({ value: nome, label: nome }));
+}
+
+function buildIndicadoresFiltros(){
+  return `
+    <div class="filter-bar" style="align-items:flex-end;">
+      <div class="filter-field">
+        <label>Unidade</label>
+        ${renderMultiSelect('fIndicadoresUO', indicadoresUOOptions(), indicadoresUnidadesFiltro, 'onIndicadoresUOCheck')}
+      </div>
+      <button class="filter-clear" onclick="clearIndicadoresFiltros()">Limpar filtros</button>
+    </div>`;
+}
+
+function onIndicadoresUOCheck(checkbox){
+  const valor = checkbox.value;
+  if(checkbox.checked){
+    if(!indicadoresUnidadesFiltro.includes(valor)) indicadoresUnidadesFiltro.push(valor);
+  } else {
+    indicadoresUnidadesFiltro = indicadoresUnidadesFiltro.filter(v => v !== valor);
+  }
+  atualizarTriggerMultiselect('fIndicadoresUO', indicadoresUOOptions(), indicadoresUnidadesFiltro);
+  renderIndicadoresTabela();
+}
+
+function clearIndicadoresFiltros(){
+  indicadoresUnidadesFiltro = [];
+  renderIndicadoresTable();
+}
+
 function rfepctCell(cell){
   if(!cell) return `<td class="num rfepct-cell rfepct-red">0,00%</td>`;
   return `<td class="num rfepct-cell rfepct-${cell.c}">${cell.v}</td>`;
 }
 
 function renderIndicadoresTable(){
-  const rows = RFEPCT_DATA.map(u => `
+  document.getElementById('contentIndicadores').innerHTML = buildIndicadoresFiltros() + `<div id="indicadoresTabelaWrap"></div>`;
+  renderIndicadoresTabela();
+  document.getElementById('contentIndicadores').addEventListener('click', (e) => {
+    const link = e.target.closest('.desc-link');
+    if(link) openIndicatorChart(link.dataset.unit);
+  });
+}
+
+function renderIndicadoresTabela(){
+  let dados = RFEPCT_DATA;
+  if(indicadoresUnidadesFiltro.length){
+    dados = dados.filter(u => indicadoresUnidadesFiltro.includes(u.unidade));
+  }
+
+  const rows = dados.map(u => `
     <tr>
       <td><span class="desc-link" data-unit="${escapeAttr(u.unidade)}">${u.unidade}</span></td>
       ${rfepctCell(u.rap)}
@@ -40,15 +88,11 @@ function renderIndicadoresTable(){
             <td class="num">${RFEPCT_BASELINE.formacao}</td>
             <td class="num">${RFEPCT_BASELINE.eja}</td>
           </tr>
-          ${rows}
+          ${rows || `<tr><td colspan="6" class="muted" style="padding:20px 26px;">Nenhuma unidade encontrada para os filtros selecionados.</td></tr>`}
         </tbody>
       </table>
     </div>`;
-  document.getElementById('contentIndicadores').innerHTML = html;
-  document.getElementById('contentIndicadores').addEventListener('click', (e) => {
-    const link = e.target.closest('.desc-link');
-    if(link) openIndicatorChart(link.dataset.unit);
-  });
+  document.getElementById('indicadoresTabelaWrap').innerHTML = html;
 }
 
 /* ---- Gráfico comparativo Rede x IFPB x Campus (SVG, sem dependência externa) ---- */
