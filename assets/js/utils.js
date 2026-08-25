@@ -135,3 +135,47 @@ function parseIndicatorValue(vStr){
 const fmtInt = v => Math.round(v).toLocaleString('pt-BR');
 const fmtMoneyShort = v => v.toLocaleString('pt-BR', {style:'currency', currency:'BRL', maximumFractionDigits:0});
 
+/* ================= Componente: dropdown de múltipla seleção =================
+   Usado por várias telas (Funções Gratificadas, Série Histórica, Formação do
+   Orçamento) — fica aqui em utils.js por ser um componente de UI genérico, sem
+   relação com nenhuma tela específica. Fica fechado como um <select> comum;
+   ao clicar, abre um painel com checkboxes permitindo marcar vários itens
+   ao mesmo tempo. */
+function renderMultiSelect(idPrefix, options, selecionados, onChangeFnName){
+  const labelsSelecionados = options.filter(o => selecionados.includes(o.value)).map(o => o.label);
+  const textoTrigger = selecionados.length === 0
+    ? 'Todas'
+    : (selecionados.length === 1 ? labelsSelecionados[0] : `${selecionados.length} selecionadas`);
+  const itens = options.map(o => {
+    const checked = selecionados.includes(o.value) ? 'checked' : '';
+    return `<label class="checkbox-item"><input type="checkbox" value="${String(o.value).replace(/"/g,'&quot;')}" ${checked} onchange="${onChangeFnName}(this)"> ${o.label}</label>`;
+  }).join('');
+  return `
+    <div class="multiselect" id="${idPrefix}Wrap">
+      <button type="button" class="multiselect-trigger" onclick="toggleMultiselect('${idPrefix}Wrap', event)">
+        <span id="${idPrefix}TriggerText">${textoTrigger}</span><span class="multiselect-arrow">▾</span>
+      </button>
+      <div class="multiselect-panel" onclick="event.stopPropagation()">${itens}</div>
+    </div>`;
+}
+
+function toggleMultiselect(wrapId, evt){
+  if(evt) evt.stopPropagation();
+  document.querySelectorAll('.multiselect.open').forEach(w => { if(w.id !== wrapId) w.classList.remove('open'); });
+  document.getElementById(wrapId).classList.toggle('open');
+}
+if(typeof window !== 'undefined'){
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.multiselect.open').forEach(w => w.classList.remove('open'));
+  });
+}
+
+function atualizarTriggerMultiselect(idPrefix, options, selecionados){
+  const labelsSelecionados = options.filter(o => selecionados.includes(o.value)).map(o => o.label);
+  const texto = selecionados.length === 0
+    ? 'Todas'
+    : (selecionados.length === 1 ? labelsSelecionados[0] : `${selecionados.length} selecionadas`);
+  const el = document.getElementById(idPrefix + 'TriggerText');
+  if(el) el.textContent = texto;
+}
+
