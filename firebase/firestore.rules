@@ -1,0 +1,146 @@
+rules_version = '2';
+
+// ============================================================================
+// GEDI · Regras de segurança do Firestore
+// Publicar em: Console do Firebase > Firestore Database > Regras
+// (ou `firebase deploy --only firestore:rules`).
+//
+// Perfis (acumuláveis, campo "perfis" em usuarios/{email}):
+//   administrador, gestor_planejamento,
+//   leitor_orcamentario_financeiro, leitor_recursos_humanos
+// Usuários ainda com o campo antigo "grupo" continuam funcionando:
+//   completo -> leitor_orcamentario_financeiro + leitor_recursos_humanos
+//   limitado -> leitor_orcamentario_financeiro
+// ============================================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- identidade ----------
+    function logado() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower().matches('.*@ifpb[.]edu[.]br$');
+    }
+    function emailAtual() { return request.auth.token.email.lower(); }
+    function caminhoUsuario() {
+      return /databases/$(database)/documents/usuarios/$(emailAtual());
+    }
+    function cadastrado() { return logado() && exists(caminhoUsuario()); }
+
+    function perfis() {
+      let d = get(caminhoUsuario()).data;
+      let g = d.get('grupo', '');
+      let legado = g == 'completo'
+        ? ['leitor_orcamentario_financeiro', 'leitor_recursos_humanos']
+        : (g == 'limitado' ? ['leitor_orcamentario_financeiro'] : []);
+      return d.get('perfis', legado);
+    }
+    function temAlgum(lista) { return cadastrado() && perfis().hasAny(lista); }
+
+    function admin()     { return temAlgum(['administrador']); }
+    function gestao()    { return temAlgum(['administrador', 'gestor_planejamento']); }
+    function leitorOrc() { return temAlgum(['administrador', 'gestor_planejamento', 'leitor_orcamentario_financeiro']); }
+    function leitorRH()  { return temAlgum(['administrador', 'leitor_recursos_humanos']); }
+
+    function perfisValidos(p) {
+      return p is list && p.size() > 0 && p.hasOnly([
+        'administrador', 'gestor_planejamento',
+        'leitor_orcamentario_financeiro', 'leitor_recursos_humanos'
+      ]);
+    }
+
+    // ---------- usuários ----------
+    match /usuarios/{email} {
+      allow get: if logado() && (email == emailAtual() || admin());
+      allow list: if admin();
+      allow create, update: if admin()
+        && email == email.lower()
+        && email.matches('.*@ifpb[.]edu[.]br$')
+        && perfisValidos(request.resource.data.perfis)
+        // o administrador não pode tirar de si mesmo o perfil de administrador
+        && (email != emailAtual() || request.resource.data.perfis.hasAny(['administrador']));
+      allow delete: if admin() && email != emailAtual();
+    }
+
+    // ---------- bases estáticas (Estrutura, Funções, Indicadores, simuladores) ----------
+    match /dados_estaticos/{doc} {
+      allow read: if (doc in ['setores', 'servidores'] && leitorRH())
+                  || (!(doc in ['setores', 'servidores']) && cadastrado());
+      allow write: if admin();
+    }
+
+    // ---------- tabelas de apoio ----------
+    match /unidades/{codigo} {
+      allow read: if cadastrado();
+      allow create, update: if admin()
+        && codigo.matches('^[A-Z]{2}$')
+        && request.resource.data.nome is string && request.resource.data.nome.size() > 0
+        && request.resource.data.ativo is bool;
+      allow delete: if false;
+    }
+    match /origens/{sigla} {
+      allow read: if cadastrado();
+      allow create: if admin()
+        && sigla.matches('^[A-Z0-9]{2,6}$')
+        && request.resource.data.codigo is string && request.resource.data.codigo.matches('^[0-9A-Z]$')
+        && request.resource.data.ativo is bool;
+      // o código de 1 caractere não muda depois de criado (faz parte dos IDs)
+      allow update: if admin()
+        && request.resource.data.codigo == resource.data.codigo
+        && request.resource.data.ativo is bool;
+      allow delete: if false;
+    }
+    match /financiadores/{codigo} {
+      allow read: if leitorOrc();
+      allow create, update: if admin()
+        && codigo.matches('^[0-9]{4}$') && codigo != '0000'
+        && request.resource.data.descricao is string && request.resource.data.descricao.size() > 0
+        && request.resource.data.ativo is bool;
+      allow delete: if false;
+    }
+
+    // ---------- contadores do sequencial (um por ano + unidade: "2026_AR") ----------
+    match /contadores/{chave} {
+      allow read: if gestao();
+      allow create: if gestao() && request.resource.data.ultimo is int && request.resource.data.ultimo >= 0;
+      allow update: if gestao() && request.resource.data.ultimo is int
+        && request.resource.data.ultimo > resource.data.ultimo;
+      allow delete: if false;
+    }
+
+    // ---------- despesas ----------
+    function despesaValida(d) {
+      return d.keys().hasAll(['id', 'ano', 'unidade', 'descricao', 'valor', 'origem',
+                              'natureza', 'situacao', 'financiador', 'ativo'])
+        && d.id is string && d.id.matches('^#[A-Z]{2}[.][0-9]{4}[.][0-9A-Z][.][0-9]{4}$')
+        && d.ano is int && d.ano >= 2000 && d.ano <= 2100
+        && d.unidade is string && d.unidade.matches('^[A-Z]{2}$')
+        && d.descricao is string && d.descricao.size() > 0 && d.descricao.size() <= 500
+        && (d.valor is int || d.valor is float) && d.valor >= 0
+        && d.origem is string && d.origem.size() > 0
+        && d.natureza in ['Custeio', 'Investimento']
+        && d.situacao in ['Prevista', 'Comprometida', 'Atendida']
+        && d.financiador is string && d.financiador.matches('^[0-9]{4}$')
+        && d.ativo is bool;
+    }
+
+    match /despesas/{docId} {
+      allow read: if leitorOrc();
+      allow create: if gestao()
+        && despesaValida(request.resource.data)
+        && docId == string(request.resource.data.ano) + '_' + request.resource.data.id.replace('#', '')
+        && request.resource.data.criadoPor == emailAtual()
+        && request.resource.data.criadoEm == request.time;
+      // ID, ano e autoria da criação nunca mudam; nada é excluído (só inativado)
+      allow update: if gestao()
+        && despesaValida(request.resource.data)
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.ano == resource.data.ano
+        && request.resource.data.criadoPor == resource.data.criadoPor
+        && request.resource.data.criadoEm == resource.data.criadoEm
+        && request.resource.data.atualizadoPor == emailAtual()
+        && request.resource.data.atualizadoEm == request.time;
+      allow delete: if false;
+    }
+  }
+}
