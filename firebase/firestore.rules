@@ -6,7 +6,8 @@ rules_version = '2';
 // (ou `firebase deploy --only firestore:rules`).
 //
 // Perfis (acumuláveis, campo "perfis" em usuarios/{email}):
-//   administrador, gestor_planejamento,
+//   administrador, gestor_planejamento (analisa despesas),
+//   registrador_despesas (registra despesas das unidades em usuarios/{email}.unidades),
 //   leitor_orcamentario_financeiro, leitor_recursos_humanos
 // Usuários ainda com o campo antigo "grupo" continuam funcionando:
 //   completo -> leitor_orcamentario_financeiro + leitor_recursos_humanos
@@ -36,15 +37,17 @@ service cloud.firestore {
       return d.get('perfis', legado);
     }
     function temAlgum(lista) { return cadastrado() && perfis().hasAny(lista); }
+    function minhasUnidades() { return get(caminhoUsuario()).data.get('unidades', []); }
 
     function admin()     { return temAlgum(['administrador']); }
     function gestao()    { return temAlgum(['administrador', 'gestor_planejamento']); }
     function leitorOrc() { return temAlgum(['administrador', 'gestor_planejamento', 'leitor_orcamentario_financeiro']); }
     function leitorRH()  { return temAlgum(['administrador', 'leitor_recursos_humanos']); }
+    function registrador() { return temAlgum(['registrador_despesas']); }
 
     function perfisValidos(p) {
       return p is list && p.size() > 0 && p.hasOnly([
-        'administrador', 'gestor_planejamento',
+        'administrador', 'gestor_planejamento', 'registrador_despesas',
         'leitor_orcamentario_financeiro', 'leitor_recursos_humanos'
       ]);
     }
@@ -57,6 +60,7 @@ service cloud.firestore {
         && email == email.lower()
         && email.matches('.*@ifpb[.]edu[.]br$')
         && perfisValidos(request.resource.data.perfis)
+        && request.resource.data.get('unidades', []) is list
         // o administrador não pode tirar de si mesmo o perfil de administrador
         && (email != emailAtual() || request.resource.data.perfis.hasAny(['administrador']));
       allow delete: if admin() && email != emailAtual();
@@ -108,38 +112,86 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ---------- índice de IDs (garante ID único por ano: "2026_AR.0001.2.0000") ----------
+    match /ids/{chave} {
+      allow read: if gestao();
+      allow create: if gestao() && request.resource.data.despesa is string;
+      allow update, delete: if false;
+    }
+
     // ---------- despesas ----------
+    // Fluxo: registro (status "pendente", sem ID) -> análise -> "deferida" (com ID) ou "indeferida".
     function despesaValida(d) {
-      return d.keys().hasAll(['id', 'ano', 'unidade', 'descricao', 'valor', 'origem',
-                              'natureza', 'situacao', 'financiador', 'ativo'])
-        && d.id is string && d.id.matches('^#[A-Z]{2}[.][0-9]{4}[.][0-9A-Z][.][0-9]{4}$')
+      return d.keys().hasAll(['ano', 'unidade', 'descricao', 'valor', 'natureza', 'status', 'ativo'])
         && d.ano is int && d.ano >= 2000 && d.ano <= 2100
         && d.unidade is string && d.unidade.matches('^[A-Z]{2}$')
         && d.descricao is string && d.descricao.size() > 0 && d.descricao.size() <= 500
         && (d.valor is int || d.valor is float) && d.valor >= 0
-        && d.origem is string && d.origem.size() > 0
         && d.natureza in ['Custeio', 'Investimento']
-        && d.situacao in ['Prevista', 'Comprometida', 'Atendida']
-        && d.financiador is string && d.financiador.matches('^[0-9]{4}$')
-        && d.ativo is bool;
+        && d.get('processo', '') is string && d.get('processo', '').size() <= 100
+        && d.get('linkSuap', '') is string && d.get('linkSuap', '').size() <= 500
+        && (d.get('linkSuap', '') == '' || d.get('linkSuap', '').matches('^https://.*'))
+        && d.status in ['pendente', 'deferida', 'indeferida']
+        && d.ativo is bool
+        && (d.status == 'deferida'
+              ? (d.id is string && d.id.matches('^#[A-Z]{2}[.][0-9]{4}[.][0-9A-Z][.][0-9]{4}$')
+                 && d.origem is string && d.origem.size() > 0
+                 && d.financiador is string && d.financiador.matches('^[0-9]{4}$'))
+              : d.get('id', null) == null);
     }
-
-    match /despesas/{docId} {
-      allow read: if leitorOrc();
-      allow create: if gestao()
-        && despesaValida(request.resource.data)
-        && docId == string(request.resource.data.ano) + '_' + request.resource.data.id.replace('#', '')
-        && request.resource.data.criadoPor == emailAtual()
-        && request.resource.data.criadoEm == request.time;
-      // ID, ano e autoria da criação nunca mudam; nada é excluído (só inativado)
-      allow update: if gestao()
-        && despesaValida(request.resource.data)
-        && request.resource.data.id == resource.data.id
-        && request.resource.data.ano == resource.data.ano
-        && request.resource.data.criadoPor == resource.data.criadoPor
+    function unidadeMinha(u) { return u in minhasUnidades(); }
+    // o ID gerado precisa estar reservado no índice, apontando para esta despesa
+    function idReservado(d, docId) {
+      return getAfter(/databases/$(database)/documents/ids/$(string(d.ano) + '_' + d.id.replace('#', ''))).data.despesa == docId;
+    }
+    function autoriaMantida() {
+      return request.resource.data.criadoPor == resource.data.criadoPor
         && request.resource.data.criadoEm == resource.data.criadoEm
         && request.resource.data.atualizadoPor == emailAtual()
         && request.resource.data.atualizadoEm == request.time;
+    }
+
+    match /despesas/{docId} {
+      // leitores, analista e admin veem tudo; o registrador vê as das suas unidades
+      allow read: if leitorOrc() || (registrador() && unidadeMinha(resource.data.unidade));
+
+      allow create: if despesaValida(request.resource.data)
+        && request.resource.data.criadoPor == emailAtual()
+        && request.resource.data.criadoEm == request.time
+        && (
+          // registro normal: sempre pendente, sem ID
+          (request.resource.data.status == 'pendente'
+            && (gestao() || (registrador() && unidadeMinha(request.resource.data.unidade))))
+          // importação de despesas já analisadas: só administrador
+          || (request.resource.data.status == 'deferida' && admin() && idReservado(request.resource.data, docId))
+        );
+
+      allow update: if despesaValida(request.resource.data) && autoriaMantida()
+        && (
+          // REGISTRADOR: só enquanto pendente, só campos do registro, só nas suas unidades
+          (registrador()
+            && resource.data.status == 'pendente' && request.resource.data.status == 'pendente'
+            && unidadeMinha(resource.data.unidade) && unidadeMinha(request.resource.data.unidade)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+                 ['ano', 'unidade', 'descricao', 'valor', 'natureza', 'processo', 'linkSuap',
+                  'ativo', 'atualizadoPor', 'atualizadoEm']))
+          // ANALISTA / ADMIN
+          || (gestao() && (
+               // já deferida: ID e ano nunca mudam, e ela continua deferida
+               (resource.data.status == 'deferida'
+                 && request.resource.data.status == 'deferida'
+                 && request.resource.data.id == resource.data.id
+                 && request.resource.data.ano == resource.data.ano)
+               // deferimento agora: o ID novo tem de estar reservado no índice
+               || (resource.data.status != 'deferida'
+                 && request.resource.data.status == 'deferida'
+                 && request.resource.data.ano == resource.data.ano
+                 && idReservado(request.resource.data, docId))
+               // pendente ou indeferida, sem ID
+               || (resource.data.status != 'deferida' && request.resource.data.status != 'deferida')
+             ))
+        );
+
       allow delete: if false;
     }
   }
