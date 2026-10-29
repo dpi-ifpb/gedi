@@ -22,7 +22,8 @@ const ORIGENS_VALIDAS = ['EFQ', 'LOA', 'PAC', 'RP2', 'RP6', 'RP7', 'RTC']; // EF
  */
 const PERFIS = {
   administrador: 'Administrador',
-  gestor_planejamento: 'Gestor de Planejamento',
+  gestor_planejamento: 'Gestor de Planejamento (analisa despesas)',
+  registrador_despesas: 'Registrador de Despesas',
   leitor_orcamentario_financeiro: 'Leitor Orçamentário-Financeiro',
   leitor_recursos_humanos: 'Leitor de Recursos Humanos',
 };
@@ -36,7 +37,8 @@ const PERFIS_LEGADO = {
 
 const P_ORC = ['administrador', 'gestor_planejamento', 'leitor_orcamentario_financeiro'];
 const P_RH = ['administrador', 'leitor_recursos_humanos'];
-const P_GESTAO = ['administrador', 'gestor_planejamento'];
+const P_GESTAO = ['administrador', 'gestor_planejamento'];          // analisam despesas
+const P_REGISTRO = ['administrador', 'gestor_planejamento', 'registrador_despesas']; // registram despesas
 const P_ADMIN = ['administrador'];
 
 // Quem vê cada tela (ids usados em switchPage). null = qualquer usuário cadastrado.
@@ -46,7 +48,7 @@ const PAGINAS_PERFIS = {
   totais: P_ORC,
   detalhe: P_ORC,
   extra: P_ORC,
-  registro: P_GESTAO,
+  lista: [...P_ORC, 'registrador_despesas'],
   estrutura: P_RH,
   funcoes: P_RH,
   indicadores: null,
@@ -61,7 +63,7 @@ const PAGINAS_PERFIS = {
 
 // Listas fixas do registro de despesas (momento de planejamento).
 const NATUREZAS = ['Custeio', 'Investimento'];
-const SITUACOES = ['Prevista', 'Comprometida', 'Atendida'];
+const RESULTADOS_ANALISE = { deferida: 'Deferida', indeferida: 'Indeferida', pendente: 'Não analisada' };
 const FINANCIADOR_NENHUM = '0000';
 
 // Valores iniciais das tabelas de Unidades e Origens — usados só pelo botão

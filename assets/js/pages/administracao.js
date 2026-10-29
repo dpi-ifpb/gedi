@@ -280,7 +280,7 @@ function renderUsuarios(){
     </div>`;
   renderUsuariosTabela();
 }
-aoMudarDadosRegistrar(['usuarios'], renderUsuarios);
+aoMudarDadosRegistrar(['usuarios', 'unidades'], renderUsuarios);
 
 function renderUsuariosTabela(){
   const body = document.getElementById('usuBody');
@@ -293,6 +293,7 @@ function renderUsuariosTabela(){
     <tr>
       <td>${escapeHtml(u.email)}${u.email === eu.toLowerCase() ? ' <span class="muted" style="font-size:11.5px;">(você)</span>' : ''}</td>
       <td>${u.perfis.map(p => `<span class="perfil-chip">${escapeHtml(PERFIS[p] || p)}</span>`).join('')}
+          ${u.perfis.includes('registrador_despesas') && u.unidades.length ? `<div class="muted" style="font-size:11.5px; margin-top:3px;">Unidades: ${u.unidades.map(c => escapeHtml(nomeUnidade(c))).join(', ')}</div>` : ''}
           ${u.legado ? `<span class="perfil-chip legado">cadastro antigo: ${escapeHtml(u.legado)}</span>` : ''}</td>
       <td class="muted" style="font-size:12px;">${u.atualizadoPor ? `${escapeHtml(u.atualizadoPor)}<br>${fmtDataHora(u.atualizadoEm)}` : '—'}</td>
       <td><div class="linha-acoes" style="justify-content:center;">
@@ -304,8 +305,9 @@ function renderUsuariosTabela(){
 
 const DESCRICAO_PERFIS = {
   administrador: 'Tudo, inclusive usuários, financiadores, tabelas e importações.',
-  gestor_planejamento: 'Cadastra, edita e inativa despesas; vê as telas orçamentárias.',
-  leitor_orcamentario_financeiro: 'Consulta Formação do Orçamento, Totais e Detalhamento.',
+  gestor_planejamento: 'Analisa as despesas (defere ou indefere), registra e edita; vê as telas orçamentárias.',
+  registrador_despesas: 'Registra despesas das unidades marcadas abaixo e as edita enquanto não forem analisadas.',
+  leitor_orcamentario_financeiro: 'Consulta Formação do Orçamento e as telas de Despesas (Lista e Totais).',
   leitor_recursos_humanos: 'Consulta Estrutura Organizacional e Funções Gratificadas.',
 };
 
@@ -327,9 +329,16 @@ function abrirFormUsuario(email){
           <div class="form-checks">
             ${Object.keys(PERFIS).map(p => `
               <label><input type="checkbox" name="fuPerfil" value="${p}" ${atuais.includes(p) ? 'checked' : ''}
+                ${p === 'registrador_despesas' ? `onchange="document.getElementById('fuUnidadesBloco').style.display=this.checked?'':'none'"` : ''}
                 ${u && u.email === eu && p === 'administrador' ? 'disabled' : ''}>
                 <span>${escapeHtml(PERFIS[p])}<small>${escapeHtml(DESCRICAO_PERFIS[p])}${u && u.email === eu && p === 'administrador' ? ' Você não pode remover este perfil de si mesmo.' : ''}</small></span>
               </label>`).join('')}
+          </div>
+        </div>
+        <div class="form-field span-2" id="fuUnidadesBloco" style="${atuais.includes('registrador_despesas') ? '' : 'display:none;'}">
+          <label>Unidades em que pode registrar despesas</label>
+          <div class="checkbox-group checkbox-group-scroll" style="max-width:none;">
+            ${unidadesOrdenadas(true).map(x => `<label class="checkbox-item"><input type="checkbox" name="fuUnidade" value="${x.codigo}" ${(u && u.unidades.includes(x.codigo)) ? 'checked' : ''}> ${escapeHtml(x.nome)}</label>`).join('')}
           </div>
         </div>
       </div>`,
@@ -341,7 +350,9 @@ function abrirFormUsuario(email){
       if(!u && TABELAS.usuarios.some(x => x.email === mail)) throw new Error('Este e-mail já está cadastrado.');
       const perfis = [...document.querySelectorAll('input[name="fuPerfil"]')].filter(c => c.checked).map(c => c.value);
       if(!perfis.length) throw new Error('Marque pelo menos um perfil.');
-      await Repo.usuarios.salvar(mail, perfis);
+      const unidades = [...document.querySelectorAll('input[name="fuUnidade"]')].filter(c => c.checked).map(c => c.value);
+      if(perfis.includes('registrador_despesas') && !unidades.length) throw new Error('Marque ao menos uma unidade para o registrador.');
+      await Repo.usuarios.salvar(mail, perfis, unidades);
       fecharFormModal();
       mostrarToast(u ? `Perfis de ${mail} atualizados.` : `${mail} cadastrado.`);
     },

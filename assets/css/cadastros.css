@@ -131,3 +131,29 @@
     .form-grid{grid-template-columns:1fr;}
     .cad-grid{grid-template-columns:1fr;}
   }
+
+  /* ---------- módulo Despesas · Lista ---------- */
+  .lista-abas{display:flex; gap:4px; border-bottom:1px solid var(--border); margin-bottom:16px;}
+  .lista-aba{
+    font-family:'Plus Jakarta Sans', system-ui, sans-serif; font-size:13.5px; font-weight:600; color:var(--ink-soft);
+    background:none; border:none; border-bottom:2px solid transparent; padding:10px 14px 9px; cursor:pointer;
+    display:flex; align-items:center; gap:8px; margin-bottom:-1px;
+  }
+  .lista-aba:hover{color:var(--c1);}
+  .lista-aba.ativa{color:var(--c1); border-bottom-color:var(--c2);}
+  .aba-contador, .nav-badge{
+    display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; padding:0 6px;
+    border-radius:10px; background:var(--c2); color:#fff; font-size:11px; font-weight:700; line-height:1;
+  }
+  .nav-badge{margin-left:auto; background:var(--c3); color:var(--c1);}
+  .sidebar.collapsed .nav-badge{position:absolute; top:4px; right:6px; min-width:16px; height:16px; font-size:9.5px; padding:0 4px; margin:0;}
+  .nav-item{position:relative;}
+  .linha-btn.destaque{background:var(--c1); color:#fff; border-color:var(--c1);}
+  .linha-btn.destaque:hover{background:var(--c1-soft); border-color:var(--c1-soft);}
+  .acao-btn.perigo{background:#fff; color:#B42318; border-color:#E8B4AE;}
+  .acao-btn.perigo:hover{background:#FDECEA; border-color:#B42318;}
+  .sit-tag.sit-indeferida{background:rgba(180,35,24,.12); color:#B42318;}
+  .form-nota{font-size:12.5px; color:var(--ink-soft); line-height:1.5; margin-bottom:14px;}
+  .link-suap{color:var(--c2); font-weight:600; text-decoration:none; white-space:nowrap;}
+  .link-suap:hover{text-decoration:underline;}
+  .modal-footer .espaco{flex:1;}

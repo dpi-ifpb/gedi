@@ -2,16 +2,25 @@
 
 /* ---------- modal de formulário (um só, reaproveitado por todas as telas) ---------- */
 let formModalAoSalvar = null;
+let formModalExtra = null;
 
-/* opcoes: { titulo, corpo (html), textoSalvar, aoSalvar: async () => {}, largo, somenteLeitura } */
+/* opcoes: { titulo, corpo (html), textoSalvar, aoSalvar: async () => {}, largo,
+ *           acaoExtra: { texto, perigo, fn: async () => {} } (segundo botão, ex.: "Indeferir") } */
 function abrirFormModal(opcoes){
   formModalAoSalvar = opcoes.aoSalvar || null;
+  formModalExtra = opcoes.acaoExtra || null;
+  const extra = document.getElementById('formModalExtra');
+  extra.style.display = formModalExtra ? '' : 'none';
+  extra.textContent = formModalExtra ? formModalExtra.texto : '';
+  extra.classList.toggle('perigo', !!(formModalExtra && formModalExtra.perigo));
+  extra.disabled = false;
   document.getElementById('formModalTitle').textContent = opcoes.titulo || '';
   document.getElementById('formModalBody').innerHTML = opcoes.corpo || '';
   document.getElementById('formModalCard').classList.toggle('modal-card-wide', !!opcoes.largo);
   const salvar = document.getElementById('formModalSalvar');
   salvar.textContent = opcoes.textoSalvar || 'Salvar';
   salvar.style.display = opcoes.aoSalvar ? '' : 'none';
+  document.querySelector('#formModal .modal-footer .acao-btn.secundario').textContent = opcoes.aoSalvar ? 'Cancelar' : 'Fechar';
   salvar.disabled = false;
   esconderErroForm();
   document.getElementById('formModal').classList.remove('hidden');
@@ -21,6 +30,16 @@ function abrirFormModal(opcoes){
 function fecharFormModal(){
   document.getElementById('formModal').classList.add('hidden');
   formModalAoSalvar = null;
+  formModalExtra = null;
+}
+async function executarAcaoExtraModal(){
+  if(!formModalExtra) return;
+  const btn = document.getElementById('formModalExtra');
+  btn.disabled = true;
+  esconderErroForm();
+  try{ await formModalExtra.fn(); }
+  catch(e){ console.error(e); mostrarErroForm(traduzirErro(e)); }
+  finally{ btn.disabled = false; }
 }
 async function salvarFormModal(){
   if(!formModalAoSalvar) return;

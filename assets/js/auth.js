@@ -44,9 +44,9 @@ function entrarComGoogle(){
   });
 }
 
-// Perfis do usuário (null = e-mail não cadastrado). Ver Repo.usuarios.
-function buscarPerfisDoUsuario(email){
-  return Repo.usuarios.perfisDoUsuario(email);
+// { perfis, unidades } do usuário (null = e-mail não cadastrado). Ver Repo.usuarios.
+function buscarAcessoDoUsuario(email){
+  return Repo.usuarios.acessoDoUsuario(email);
 }
 
 // Dispara sempre que o estado de login muda (login, logout, retomada de sessão)
@@ -54,6 +54,7 @@ auth.onAuthStateChanged(async (user) => {
   if(!user){
     if(typeof pararAssinaturas === 'function') pararAssinaturas();
     PERFIS_ATUAIS = [];
+    UNIDADES_ATUAIS = [];
     esconderAuthLoading();
     document.getElementById('authGate').style.display = 'flex';
     document.getElementById('appRoot').style.display = 'none';
@@ -70,9 +71,9 @@ auth.onAuthStateChanged(async (user) => {
   }
 
   showAuthLoading('Verificando acesso…');
-  let perfis;
+  let acesso;
   try{
-    perfis = await buscarPerfisDoUsuario(email);
+    acesso = await buscarAcessoDoUsuario(email);
   } catch(err){
     console.error(err);
     showAuthError('Não foi possível verificar seu acesso. Tente novamente em instantes.');
@@ -80,13 +81,15 @@ auth.onAuthStateChanged(async (user) => {
     return;
   }
 
-  if(!perfis || perfis.length === 0){
+  const perfis = acesso ? acesso.perfis : [];
+  if(!perfis.length){
     showAuthError(`A conta ${user.email} não tem acesso a este painel. Fale com a DPI para ser incluído na lista de usuários autorizados.`);
     await auth.signOut();
     return;
   }
 
   PERFIS_ATUAIS = perfis;
+  UNIDADES_ATUAIS = acesso.unidades;
   showAuthLoading('Carregando dados do painel…');
   try{
     await carregarDadosEstaticos();

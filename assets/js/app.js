@@ -1,5 +1,5 @@
 /* ================= Navegação ================= */
-const PAGES = ['totais', 'detalhe', 'extra', 'formacao', 'registro', 'estrutura', 'funcoes', 'indicadores', 'historico', 'pares', 'simulador', 'simuladorF', 'financiadores', 'tabelas', 'usuarios', 'sobre'];
+const PAGES = ['totais', 'detalhe', 'extra', 'formacao', 'lista', 'estrutura', 'funcoes', 'indicadores', 'historico', 'pares', 'simulador', 'simuladorF', 'financiadores', 'tabelas', 'usuarios', 'sobre'];
 function switchPage(page){
   if(!podeVerPagina(page)) page = 'sobre';
   PAGES.forEach(p => {

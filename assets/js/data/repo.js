@@ -7,9 +7,11 @@
  * devolvidos — o resto do painel não precisa mudar.
  *
  * Formato de uma despesa devolvida pelo repositório:
- *   { docId, id, ano, unidade (código, ex. "AR"), descricao, valor (número),
- *     origem (sigla, ex. "RP2"), natureza, situacao, financiador ("0000"…),
- *     ativo, criadoPor, criadoEm (Date|null), atualizadoPor, atualizadoEm (Date|null) }
+ *   { docId, id (null até ser deferida), ano, unidade (código, ex. "AR"), descricao,
+ *     valor (número), natureza, processo, linkSuap,
+ *     status ("pendente" | "deferida" | "indeferida"), origem, financiador,
+ *     analise: { observacao, por, em }, ativo,
+ *     criadoPor, criadoEm (Date|null), atualizadoPor, atualizadoEm (Date|null) }
  */
 const Repo = (() => {
   const db = () => firebase.firestore();
@@ -21,7 +23,6 @@ const Repo = (() => {
   const pad4 = (n) => String(n).padStart(4, '0');
 
   // "#AR.0001.2.0000" + 2026 -> "2026_AR.0001.2.0000" (id do documento no Firestore)
-  const docIdDespesa = (ano, id) => `${ano}_${id.replace('#', '')}`;
   const montarId = (unidade, seq, origemCodigo, financiador) =>
     `#${unidade}.${pad4(seq)}.${origemCodigo}.${financiador}`;
   const ID_REGEX = /^#([A-Z]{2})\.(\d{4})\.([0-9A-Z])\.(\d{4})$/;
@@ -41,20 +42,26 @@ const Repo = (() => {
   }
 
   const usuarios = {
-    async perfisDoUsuario(email){
+    // { perfis, unidades } do usuário; null = e-mail não cadastrado
+    async acessoDoUsuario(email){
       const doc = await db().collection('usuarios').doc(email.toLowerCase()).get();
-      return doc.exists ? perfisDe(doc.data()) : null; // null = não cadastrado
+      if(!doc.exists) return null;
+      const d = doc.data();
+      return { perfis: perfisDe(d), unidades: Array.isArray(d.unidades) ? d.unidades : [] };
     },
     observar(onDados, onErro){
       return observarColecao('usuarios', (email, d) => ({
-        email, perfis: perfisDe(d), legado: !Array.isArray(d.perfis) && d.grupo ? d.grupo : null,
+        email, perfis: perfisDe(d), unidades: Array.isArray(d.unidades) ? d.unidades : [],
+        legado: !Array.isArray(d.perfis) && d.grupo ? d.grupo : null,
         atualizadoPor: d.atualizadoPor || '', atualizadoEm: paraData(d.atualizadoEm),
       }), onDados, onErro);
     },
     // set() substitui o documento inteiro — remove o campo antigo "grupo"
-    salvar(email, perfis){
+    // unidades: só para o perfil registrador_despesas (códigos de unidade que ele pode lançar)
+    salvar(email, perfis, unidades){
       return db().collection('usuarios').doc(email.toLowerCase()).set({
-        perfis, atualizadoPor: emailAtual(), atualizadoEm: agora(),
+        perfis, unidades: perfis.includes('registrador_despesas') ? (unidades || []) : [],
+        atualizadoPor: emailAtual(), atualizadoEm: agora(),
       });
     },
     excluir(email){
@@ -125,73 +132,137 @@ const Repo = (() => {
     },
   };
 
-  /* ---------------- despesas ---------------- */
+  /* ---------------- despesas ----------------
+   * Fluxo: REGISTRO (status "pendente", sem ID) → ANÁLISE → "deferida" (ganha o ID,
+   * entra nos Totais) ou "indeferida" (sem ID, fora dos Totais). Empenho e execução
+   * virão depois, sobre as deferidas.
+   *
+   * O id do documento no Firestore é automático (a despesa nasce sem ID). A
+   * unicidade do ID de negócio (#UU.NNNN.O.FFFF) por ano é garantida pela coleção
+   * "ids": cada ID gerado cria ids/{ano}_{ID sem #} → { despesa: <docId> }.
+   */
+  const STATUS = { PENDENTE: 'pendente', DEFERIDA: 'deferida', INDEFERIDA: 'indeferida' };
+  const docIdIndice = (ano, id) => `${ano}_${id.replace('#', '')}`;
+
   function mapearDespesa(docId, d){
+    // compatibilidade com despesas gravadas antes do fluxo de análise (têm ID e não têm status)
+    const status = d.status || (d.id ? STATUS.DEFERIDA : STATUS.PENDENTE);
+    const a = d.analise || {};
     return {
-      docId, id: d.id, ano: d.ano, unidade: d.unidade, descricao: d.descricao || '',
-      valor: Number(d.valor) || 0, origem: d.origem || '', natureza: d.natureza || '',
-      situacao: d.situacao || '', financiador: d.financiador || FINANCIADOR_NENHUM,
+      docId, id: d.id || null, ano: d.ano, unidade: d.unidade, descricao: d.descricao || '',
+      valor: Number(d.valor) || 0, natureza: d.natureza || '',
+      processo: d.processo || '', linkSuap: d.linkSuap || '',
+      status, origem: d.origem || '', financiador: d.financiador || '',
+      analise: { observacao: a.observacao || '', por: a.por || '', em: paraData(a.em) },
+      situacaoLegado: d.situacaoLegado || d.situacao || '',
       ativo: d.ativo !== false,
       criadoPor: d.criadoPor || '', criadoEm: paraData(d.criadoEm),
       atualizadoPor: d.atualizadoPor || '', atualizadoEm: paraData(d.atualizadoEm),
     };
   }
 
-  function camposDespesa(dados){
+  // campos preenchidos no registro
+  function camposRegistro(dados){
     return {
+      ano: Number(dados.ano),
       unidade: dados.unidade,
       descricao: String(dados.descricao).trim(),
       valor: arred2(dados.valor),
-      origem: dados.origem,
       natureza: dados.natureza,
-      situacao: dados.situacao,
-      financiador: dados.financiador || FINANCIADOR_NENHUM,
+      processo: String(dados.processo || '').trim(),
+      linkSuap: String(dados.linkSuap || '').trim(),
     };
   }
 
-  /* Reserva o próximo sequencial da unidade no ano e grava a despesa, tudo numa
-   * transação: se duas pessoas salvarem ao mesmo tempo, o Firestore repete uma
-   * das transações e cada uma recebe um número diferente. Se o número já estiver
-   * ocupado (ex.: veio de uma importação), pula para o seguinte. */
-  async function criarComIdGerado(dados, origemCodigo, extras){
-    const ano = Number(dados.ano);
-    const campos = camposDespesa(dados);
-    const contadorRef = db().collection('contadores').doc(`${ano}_${campos.unidade}`);
-    return db().runTransaction(async tx => {
-      const cont = await tx.get(contadorRef);
-      let seq = (cont.exists ? cont.data().ultimo : 0) + 1;
-      let id, ref;
-      for(let tentativas = 0; ; tentativas++){
-        if(seq > 9999) throw new Error(`A unidade ${campos.unidade} atingiu o limite de 9999 despesas em ${ano}.`);
-        id = montarId(campos.unidade, seq, origemCodigo, campos.financiador);
-        ref = db().collection('despesas').doc(docIdDespesa(ano, id));
-        if(!(await tx.get(ref)).exists) break;
-        if(tentativas > 50) throw new Error('Não foi possível reservar um número livre. Tente novamente.');
-        seq++;
-      }
-      tx.set(contadorRef, { ultimo: seq });
-      tx.set(ref, {
-        id, ano, ...campos, ativo: true, ...(extras || {}),
-        criadoPor: emailAtual(), criadoEm: agora(),
-        atualizadoPor: emailAtual(), atualizadoEm: agora(),
-      });
-      return id;
-    });
+  /* Reserva o próximo sequencial da unidade no ano, numa transação: se dois analistas
+   * deferirem ao mesmo tempo, o Firestore repete uma das transações e cada despesa
+   * recebe um número diferente. Números já ocupados (importação, despesas antigas)
+   * são pulados. Devolve { id, seq, refs } para quem chamou gravar na mesma transação. */
+  async function reservarId(tx, ano, unidade, origemCodigo, financiador){
+    const contadorRef = db().collection('contadores').doc(`${ano}_${unidade}`);
+    const cont = await tx.get(contadorRef);
+    let seq = (cont.exists ? cont.data().ultimo : 0) + 1;
+    for(let tentativas = 0; ; tentativas++){
+      if(seq > 9999) throw new Error(`A unidade ${unidade} atingiu o limite de 9999 despesas em ${ano}.`);
+      const id = montarId(unidade, seq, origemCodigo, financiador);
+      const idxRef = db().collection('ids').doc(docIdIndice(ano, id));
+      const legadoRef = db().collection('despesas').doc(docIdIndice(ano, id)); // despesas gravadas no formato antigo
+      const [idx, legado] = await Promise.all([tx.get(idxRef), tx.get(legadoRef)]);
+      if(!idx.exists && !legado.exists) return { id, seq, contadorRef, idxRef };
+      if(tentativas > 50) throw new Error('Não foi possível reservar um número livre. Tente novamente.');
+      seq++;
+    }
   }
 
   const despesas = {
-    observar(onDados, onErro){
-      return observarColecao('despesas', mapearDespesa, onDados, onErro);
+    STATUS,
+    /* unidades: null = todas (leitores, analista, admin); lista = só essas (registrador) */
+    observar(onDados, onErro, unidades){
+      const col = db().collection('despesas');
+      const mapear = snap => snap.docs.map(d => mapearDespesa(d.id, d.data()));
+      const falha = err => { console.error('[repo] despesas:', err); if(onErro) onErro(err); };
+      if(!Array.isArray(unidades)) return col.onSnapshot(snap => onDados(mapear(snap)), falha);
+      // registrador: uma consulta "unidade == X" por unidade (formato que as regras
+      // de segurança conseguem validar com certeza), resultados unidos
+      if(!unidades.length){ onDados([]); return () => {}; }
+      const partes = {};
+      const unsubs = unidades.map(u => col.where('unidade', '==', u).onSnapshot(snap => {
+        partes[u] = mapear(snap);
+        if(Object.keys(partes).length === unidades.length) onDados([].concat(...Object.values(partes)));
+      }, falha));
+      return () => unsubs.forEach(f => f());
     },
-    /* dados: { ano, unidade, descricao, valor, origem, natureza, situacao, financiador }
-     * origemCodigo: caractere da origem (ex. "2" para RP2). Devolve o ID gerado. */
-    criar(dados, origemCodigo){
-      return criarComIdGerado(dados, origemCodigo);
+
+    /* REGISTRO: dados = { ano, unidade, descricao, valor, natureza, processo, linkSuap } */
+    async registrar(dados){
+      const ref = db().collection('despesas').doc(); // id automático
+      await ref.set({
+        ...camposRegistro(dados), status: STATUS.PENDENTE, id: null, origem: null, financiador: null,
+        ativo: true, criadoPor: emailAtual(), criadoEm: agora(), atualizadoPor: emailAtual(), atualizadoEm: agora(),
+      });
+      return ref.id;
     },
-    // ID e ano nunca são alterados — só os demais campos
-    atualizar(docId, dados){
+    // edição dos campos do registro (registrador enquanto pendente; analista a qualquer momento)
+    atualizarRegistro(docId, dados){
+      const campos = camposRegistro(dados);
+      return db().collection('despesas').doc(docId).update({ ...campos, atualizadoPor: emailAtual(), atualizadoEm: agora() });
+    },
+
+    /* ANÁLISE · deferir: gera o ID e grava tudo numa transação.
+     * analise = { origem, origemCodigo, financiador, observacao } */
+    async deferir(docId, analise){
+      const ref = db().collection('despesas').doc(docId);
+      const financiador = analise.financiador || FINANCIADOR_NENHUM;
+      return db().runTransaction(async tx => {
+        const atual = await tx.get(ref);
+        if(!atual.exists) throw new Error('Despesa não encontrada.');
+        const d = atual.data();
+        if(d.status === STATUS.DEFERIDA || d.id) throw new Error('Esta despesa já foi deferida.');
+        const r = await reservarId(tx, d.ano, d.unidade, analise.origemCodigo, financiador);
+        tx.set(r.contadorRef, { ultimo: r.seq });
+        tx.set(r.idxRef, { despesa: docId });
+        tx.update(ref, {
+          status: STATUS.DEFERIDA, id: r.id, origem: analise.origem, financiador,
+          analise: { resultado: STATUS.DEFERIDA, observacao: String(analise.observacao || '').trim(), por: emailAtual(), em: agora() },
+          atualizadoPor: emailAtual(), atualizadoEm: agora(),
+        });
+        return r.id;
+      });
+    },
+    // ANÁLISE · indeferir: sem ID; a justificativa é obrigatória
+    indeferir(docId, observacao){
       return db().collection('despesas').doc(docId).update({
-        ...camposDespesa(dados), atualizadoPor: emailAtual(), atualizadoEm: agora(),
+        status: STATUS.INDEFERIDA,
+        analise: { resultado: STATUS.INDEFERIDA, observacao: String(observacao).trim(), por: emailAtual(), em: agora() },
+        atualizadoPor: emailAtual(), atualizadoEm: agora(),
+      });
+    },
+    // analista corrige origem/financiador de uma deferida — o ID NÃO muda
+    atualizarAnalise(docId, dados){
+      return db().collection('despesas').doc(docId).update({
+        origem: dados.origem, financiador: dados.financiador || FINANCIADOR_NENHUM,
+        analise: { resultado: STATUS.DEFERIDA, observacao: String(dados.observacao || '').trim(), por: emailAtual(), em: agora() },
+        atualizadoPor: emailAtual(), atualizadoEm: agora(),
       });
     },
     definirAtivo(docId, ativo){
@@ -200,60 +271,57 @@ const Repo = (() => {
       });
     },
 
-    /* Importação em lote (administrador).
-     * linhas: [{ id|null, ano, unidade, descricao, valor, origem, natureza, situacao, financiador, origemCodigo }]
-     *   - com id: grava com o ID informado (se ainda não existir) e ajusta o contador;
-     *   - sem id: gera o ID normalmente, na ordem em que as linhas vieram.
-     * onProgresso(feitos, total). Devolve { gravadas, geradas:[{linha,id}], ignoradas:[...] }. */
+    /* Importação em lote (administrador) de despesas JÁ ANALISADAS (deferidas).
+     * linhas: [{ id|null, ano, unidade, descricao, valor, origem, origemCodigo, natureza,
+     *            financiador, situacaoLegado, processo?, linkSuap? }]
+     *   - com id: mantém o ID (se ainda não existir no ano) e ajusta o contador;
+     *   - sem id: gera o ID, na ordem das linhas.
+     * Gravações uma a uma (cada uma consulta o perfil nas regras de segurança). */
     async importar(linhas, onProgresso){
       const total = linhas.length;
       let feitos = 0;
       const resultado = { gravadas: 0, geradas: [], ignoradas: [] };
       const tick = () => { feitos++; if(onProgresso) onProgresso(feitos, total); };
+      const base = (l) => ({
+        ...camposRegistro(l), status: STATUS.DEFERIDA, origem: l.origem,
+        financiador: l.financiador || FINANCIADOR_NENHUM, situacaoLegado: l.situacaoLegado || '',
+        analise: { resultado: STATUS.DEFERIDA, observacao: 'Importada da planilha de despesas', por: emailAtual(), em: agora() },
+        ativo: true, importado: true,
+        criadoPor: emailAtual(), criadoEm: agora(), atualizadoPor: emailAtual(), atualizadoEm: agora(),
+      });
 
-      // 1) linhas que já têm ID: gravadas uma a uma (10 em paralelo). Não usamos
-      //    "batch" porque cada gravação consulta o perfil do usuário nas regras de
-      //    segurança, e um lote grande estouraria o limite de consultas por requisição.
-      const comId = linhas.filter(l => l.id);
-      const maiores = {}; // "2026_AR" -> maior sequencial visto
-      for(let i = 0; i < comId.length; i += 10){
-        const fatia = comId.slice(i, i + 10);
-        await Promise.all(fatia.map(async l => {
-          const m = l.id.match(ID_REGEX);
-          const chave = `${l.ano}_${m[1]}`;
-          maiores[chave] = Math.max(maiores[chave] || 0, parseInt(m[2], 10));
-          const ref = db().collection('despesas').doc(docIdDespesa(l.ano, l.id));
-          if((await ref.get()).exists){ resultado.ignoradas.push(l); tick(); return; }
-          await ref.set({
-            id: l.id, ano: Number(l.ano), ...camposDespesa(l), ativo: true, importado: true,
-            criadoPor: emailAtual(), criadoEm: agora(), atualizadoPor: emailAtual(), atualizadoEm: agora(),
-          });
-          resultado.gravadas++;
-          tick();
-        }));
-      }
-
-      // 2) contadores: só sobem (nunca voltam para trás)
-      for(const [chave, maior] of Object.entries(maiores)){
-        const ref = db().collection('contadores').doc(chave);
+      for(const l of linhas){
+        const ano = Number(l.ano);
         await db().runTransaction(async tx => {
-          const c = await tx.get(ref);
-          const atual = c.exists ? c.data().ultimo : 0;
-          if(maior > atual) tx.set(ref, { ultimo: maior });
+          if(l.id){
+            const m = l.id.match(ID_REGEX);
+            const idxRef = db().collection('ids').doc(docIdIndice(ano, l.id));
+            const legadoRef = db().collection('despesas').doc(docIdIndice(ano, l.id));
+            const contadorRef = db().collection('contadores').doc(`${ano}_${m[1]}`);
+            const [idx, legado, cont] = await Promise.all([tx.get(idxRef), tx.get(legadoRef), tx.get(contadorRef)]);
+            if(idx.exists || legado.exists){ resultado.ignoradas.push(l); return; }
+            const ref = db().collection('despesas').doc();
+            const seq = parseInt(m[2], 10);
+            if(!cont.exists || cont.data().ultimo < seq) tx.set(contadorRef, { ultimo: seq });
+            tx.set(idxRef, { despesa: ref.id });
+            tx.set(ref, { ...base(l), id: l.id });
+            resultado.gravadas++;
+          } else {
+            const ref = db().collection('despesas').doc();
+            const r = await reservarId(tx, ano, l.unidade, l.origemCodigo, l.financiador || FINANCIADOR_NENHUM);
+            tx.set(r.contadorRef, { ultimo: r.seq });
+            tx.set(r.idxRef, { despesa: ref.id });
+            tx.set(ref, { ...base(l), id: r.id });
+            resultado.geradas.push({ linha: l, id: r.id });
+            resultado.gravadas++;
+          }
         });
-      }
-
-      // 3) linhas sem ID: geração normal, uma a uma, na ordem da lista
-      for(const l of linhas.filter(l => !l.id)){
-        const id = await criarComIdGerado(l, l.origemCodigo, { importado: true });
-        resultado.geradas.push({ linha: l, id });
-        resultado.gravadas++;
         tick();
       }
       return resultado;
     },
   };
 
-  return { usuarios, unidades, origens, financiadores, despesas, ID_REGEX, docIdDespesa, montarId,
+  return { usuarios, unidades, origens, financiadores, despesas, ID_REGEX, montarId,
            carregarTabelasIniciais: origens.carregarIniciais };
 })();

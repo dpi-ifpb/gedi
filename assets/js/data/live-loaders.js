@@ -5,13 +5,13 @@ let currentFilters = { busca:'', unidade:'', origem:'', natureza:'', situacao:''
 /* ================= Despesas (Totais e Detalhamento) =================
  * Antes: lidas da planilha "Registro e acompanhamento de despesas".
  * Agora: vêm do registro de despesas no Firestore (TABELAS.despesas, mantido ao
- * vivo por assinaturas.js). Só entram despesas ATIVAS do ano selecionado, no
+ * vivo por assinaturas.js). Só entram despesas DEFERIDAS e ATIVAS do ano selecionado, no
  * mesmo formato que as telas já usavam — Totais e Detalhamento não mudaram.
  */
 let anoPainel = null; // ano de referência exibido em Totais/Detalhamento
 
 function anosDisponiveis(){
-  const anos = [...new Set(TABELAS.despesas.filter(d => d.ativo).map(d => d.ano))];
+  const anos = [...new Set(TABELAS.despesas.filter(d => d.ativo && d.status === 'deferida').map(d => d.ano))];
   if(!anos.length) anos.push(new Date().getFullYear());
   return anos.sort((a, b) => b - a);
 }
@@ -20,7 +20,7 @@ function montarItensPainel(){
   const anos = anosDisponiveis();
   if(anoPainel === null || !anos.includes(anoPainel)) anoPainel = anos[0];
   return TABELAS.despesas
-    .filter(d => d.ativo && d.ano === anoPainel)
+    .filter(d => d.ativo && d.status === 'deferida' && d.ano === anoPainel)
     .map(d => ({
       id: d.id,
       descricao: d.descricao,
@@ -28,7 +28,7 @@ function montarItensPainel(){
       valor: d.valor,
       origem: d.origem,
       natureza: d.natureza,
-      situacao: d.situacao,
+      situacao: 'Deferida',
       financiador: d.financiador,
       acao: '', doc: '', dataDoc: '', // campos da fase de execução (ainda não registrados)
     }));

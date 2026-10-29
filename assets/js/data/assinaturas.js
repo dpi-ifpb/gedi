@@ -7,7 +7,17 @@ const TABELAS = { unidades: [], origens: [], financiadores: [], despesas: [], us
 const TABELAS_CARREGADAS = {};
 const TABELAS_ERRO = {};
 let PERFIS_ATUAIS = [];
+let UNIDADES_ATUAIS = []; // unidades do registrador (vazio para os demais perfis)
 let assinaturasAtivas = [];
+
+// registrador "puro" (sem perfil que veja todas as unidades)
+function soRegistrador(){
+  return temPerfil(['registrador_despesas']) && !temPerfil(P_ORC);
+}
+// unidades em que o usuário pode registrar despesas (null = todas)
+function unidadesPermitidasRegistro(){
+  return temPerfil(P_GESTAO) ? null : UNIDADES_ATUAIS;
+}
 
 function temPerfil(lista){
   if(lista === null || lista === undefined) return true;
@@ -30,7 +40,11 @@ function iniciarAssinaturas(){
   assinar('origens', (a, b) => Repo.origens.observar(a, b));
   if(temPerfil(P_ORC)){
     assinar('financiadores', (a, b) => Repo.financiadores.observar(a, b));
-    assinar('despesas', (a, b) => Repo.despesas.observar(a, b));
+    assinar('despesas', (a, b) => Repo.despesas.observar(a, b, null));
+  } else if(temPerfil(['registrador_despesas'])){
+    // registrador sem perfil de leitura: só as despesas das suas unidades
+    TABELAS_CARREGADAS.financiadores = true;
+    assinar('despesas', (a, b) => Repo.despesas.observar(a, b, UNIDADES_ATUAIS));
   }
   if(temPerfil(P_ADMIN)){
     assinar('usuarios', (a, b) => Repo.usuarios.observar(a, b));
@@ -77,6 +91,9 @@ function nomeUnidade(codigo){
 function codigoOrigem(sigla){
   const o = TABELAS.origens.find(x => x.sigla === sigla);
   return o ? o.codigo : null;
+}
+function despesasPendentes(){
+  return TABELAS.despesas.filter(d => d.ativo && d.status === 'pendente');
 }
 function descricaoFinanciador(codigo){
   if(!codigo || codigo === FINANCIADOR_NENHUM) return 'Sem financiador';
