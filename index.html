@@ -57,6 +57,18 @@
     </div>
 
     <div class="nav-section-label">Orçamento</div>
+    <div class="nav-item" id="navPainelOrc" onclick="switchPage('painelOrc')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      <span class="nav-label">Painel do Orçamento</span>
+    </div>
+    <div class="nav-item" id="navReceitas" onclick="switchPage('receitas')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M8 14h3"/><path d="M8 17h6"/></svg>
+      <span class="nav-label">Receitas</span>
+    </div>
+    <div class="nav-item" id="navTransferencias" onclick="switchPage('transferencias')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13"/><path d="M14 5l3 3-3 3"/><path d="M20 16H7"/><path d="M10 13l-3 3 3 3"/></svg>
+      <span class="nav-label">Transferências</span>
+    </div>
     <div class="nav-item" id="navFormacao" onclick="switchPage('formacao')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 8c0-2 2-3 4-2s2 4 0 4-4-1-4-3"/><path d="M15 15c0 2 2 3 4 2s2-4 0-4-4 1-4 3"/></svg>
       <span class="nav-label">Formação do Orçamento</span>
@@ -122,7 +134,7 @@
     </div>
     <div class="nav-item" id="navTabelas" onclick="switchPage('tabelas')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/><circle cx="18" cy="18" r="2"/></svg>
-      <span class="nav-label">Unidades e Origens</span>
+      <span class="nav-label">Unidades, Origens e Ações</span>
     </div>
     <div class="nav-item" id="navUsuarios" onclick="switchPage('usuarios')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3.1-6.5 7-6.5s7 2.9 7 6.5"/></svg>
@@ -137,6 +149,7 @@
   </div>
 </div>
 
+<button type="button" class="menu-mobile" id="btnMenuMobile" aria-label="Abrir menu" onclick="document.getElementById('sidebar').classList.remove('collapsed'); updateCollapseIcon();">☰</button>
 <div class="main">
 
   <!-- ============ TELA 1 · TOTAIS ============ -->
@@ -327,6 +340,39 @@
   </div>
 
 
+
+  <!-- ============ MÓDULO ORÇAMENTO ============ -->
+  <div id="page-painelOrc" style="display:none;">
+    <div class="topbar"><div class="topbar-left">
+      <h1>Painel do Orçamento</h1>
+      <p>Receita prevista e recebida frente à despesa deferida, empenhada e paga.</p>
+    </div></div>
+    <div class="content" id="contentPainelOrc"></div>
+  </div>
+  <div id="page-receitas" style="display:none;">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>Receitas</h1>
+        <p>Previsão orçamentária (ex.: LOA de cada unidade) e receitas que chegam ao longo do ano.</p>
+      </div>
+      <div class="topbar-right"><button class="acao-btn" id="btnNovaReceita" onclick="abrirFormReceita()" style="display:none;">+ Lançar receita</button></div>
+    </div>
+    <div class="content" id="contentReceitas"></div>
+  </div>
+  <div id="page-transferencias" style="display:none;">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>Transferências</h1>
+        <p>Automáticas (despesa bancada pela Reitoria), repasses entre unidades e trocas orçamentárias. Realizadas pelas NCs do Tesouro Gerencial.</p>
+      </div>
+      <div class="topbar-right">
+        <button class="acao-btn secundario" id="btnNovaTroca" onclick="abrirFormTransferencia('troca')" style="display:none;">+ Troca orçamentária</button>
+        <button class="acao-btn" id="btnNovoRepasse" onclick="abrirFormTransferencia('repasse')" style="display:none;">+ Repasse</button>
+      </div>
+    </div>
+    <div class="content" id="contentTransferencias"></div>
+  </div>
+
   <!-- ============ MÓDULO DESPESAS · LISTA ============ -->
   <div id="page-lista" style="display:none;">
     <div class="topbar">
@@ -360,8 +406,8 @@
   <div id="page-tabelas" style="display:none;">
     <div class="topbar">
       <div class="topbar-left">
-        <h1>Unidades e Origens</h1>
-        <p>Códigos usados na formação do ID das despesas.</p>
+        <h1>Unidades, Origens e Ações</h1>
+        <p>Códigos usados nos lançamentos e na formação do ID das despesas.</p>
       </div>
     </div>
     <div class="content" id="contentTabelas"></div>
@@ -449,12 +495,14 @@
 
 
 <!-- ============ MODAL · FORMULÁRIO DE CADASTRO (reutilizável) ============ -->
-<div class="modal-overlay hidden" id="formModal">
-  <div class="modal-card modal-card-form" id="formModalCard">
-    <div class="modal-header">
+<!-- Painel lateral de cadastro (no celular ocupa a tela inteira) -->
+<div class="modal-overlay drawer-overlay hidden" id="formModal">
+  <div class="modal-card drawer" id="formModalCard" role="dialog" aria-modal="true" aria-labelledby="formModalTitle">
+    <div class="modal-header drawer-header">
+      <button type="button" class="drawer-voltar" onclick="fecharFormModal()" aria-label="Voltar">←</button>
       <h3 class="modal-title" id="formModalTitle"></h3>
       <div class="modal-actions">
-        <button type="button" class="modal-icon-btn modal-close-btn" data-tooltip="Fechar" onclick="fecharFormModal()">✕</button>
+        <button type="button" class="drawer-fechar" onclick="fecharFormModal()" aria-label="Fechar">✕</button>
       </div>
     </div>
     <div class="modal-body">
@@ -495,6 +543,7 @@
 <script src="assets/js/pages/analise-pares.js"></script>
 <script src="assets/js/pages/cadastros-ui.js"></script>
 <script src="assets/js/pages/lista-despesas.js"></script>
+<script src="assets/js/pages/orcamento.js"></script>
 <script src="assets/js/pages/administracao.js"></script>
 <script src="assets/js/app.js"></script>
 </body>

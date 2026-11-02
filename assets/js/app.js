@@ -1,5 +1,5 @@
 /* ================= Navegação ================= */
-const PAGES = ['totais', 'detalhe', 'extra', 'formacao', 'lista', 'estrutura', 'funcoes', 'indicadores', 'historico', 'pares', 'simulador', 'simuladorF', 'financiadores', 'tabelas', 'usuarios', 'sobre'];
+const PAGES = ['totais', 'detalhe', 'extra', 'formacao', 'painelOrc', 'receitas', 'transferencias', 'lista', 'estrutura', 'funcoes', 'indicadores', 'historico', 'pares', 'simulador', 'simuladorF', 'financiadores', 'tabelas', 'usuarios', 'sobre'];
 function switchPage(page){
   if(!podeVerPagina(page)) page = 'sobre';
   PAGES.forEach(p => {
@@ -7,6 +7,8 @@ function switchPage(page){
     document.getElementById('nav' + p.charAt(0).toUpperCase() + p.slice(1)).classList.toggle('active', p === page);
   });
   window.scrollTo(0,0);
+  // no celular, o menu fecha ao escolher uma tela
+  if(window.innerWidth <= 640){ document.getElementById('sidebar').classList.add('collapsed'); if(typeof updateCollapseIcon === 'function') updateCollapseIcon(); }
 }
 
 document.getElementById('collapseBtn').addEventListener('click', ()=>{

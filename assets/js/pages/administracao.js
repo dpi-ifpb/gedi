@@ -21,7 +21,7 @@ function renderFinanciadores(){
     </div>
     <div class="result-count" id="finContagem"></div>
     <div class="panel">
-      <table>
+      <table class="tabela-cartoes">
         <thead><tr>
           <th style="width:110px;">Código</th><th>Descrição</th><th class="th-center" style="width:120px;">Situação</th><th class="th-center" style="width:190px;">Ações</th>
         </tr></thead>
@@ -41,7 +41,7 @@ function renderFinanciadoresTabela(){
   const usos = {};
   TABELAS.despesas.forEach(d => { usos[d.financiador] = (usos[d.financiador] || 0) + 1; });
   document.getElementById('finContagem').textContent =
-    `${lista.length} exibido(s) · o código 0000 é reservado para "sem financiador"`;
+    `${lista.length} exibido(s) · o código 000 é reservado para "sem financiador"`;
   body.innerHTML = lista.map(f => `
     <tr class="${f.ativo ? '' : 'linha-inativa'}">
       <td class="id-cell">${escapeHtml(f.codigo)}</td>
@@ -62,8 +62,8 @@ function abrirFormFinanciador(codigo){
       <div class="form-grid">
         <div class="form-field">
           <label for="ffCodigo">Código</label>
-          <input type="text" id="ffCodigo" maxlength="4" inputmode="numeric" placeholder="0001" value="${f ? escapeAttr(f.codigo) : ''}" ${f ? 'disabled' : ''}>
-          <span class="ajuda">4 dígitos. Compõe as 4 últimas posições do ID da despesa e não pode ser alterado depois.</span>
+          <input type="text" id="ffCodigo" maxlength="3" inputmode="numeric" placeholder="001" value="${f ? escapeAttr(f.codigo) : ''}" ${f ? 'disabled' : ''}>
+          <span class="ajuda">3 dígitos. Compõe o 4º bloco do ID da despesa e não pode ser alterado depois.</span>
         </div>
         <div class="form-field span-2">
           <label for="ffDescricao">Descrição</label>
@@ -79,15 +79,16 @@ function abrirFormFinanciador(codigo){
         fecharFormModal(); mostrarToast(`Financiador ${f.codigo} atualizado.`);
       } else {
         const cod = document.getElementById('ffCodigo').value.trim();
-        const codOk = /^\d{4}$/.test(cod) && cod !== FINANCIADOR_NENHUM;
+        const codOk = /^\d{3}$/.test(cod) && cod !== FINANCIADOR_NENHUM;
         marcarInvalido('ffCodigo', !codOk);
-        if(!codOk) throw new Error('O código deve ter exatamente 4 dígitos e não pode ser 0000.');
+        if(!codOk) throw new Error('O código deve ter exatamente 3 dígitos e não pode ser 000.');
         if(!descricao) throw new Error('Informe a descrição.');
         await Repo.financiadores.criar(cod, descricao);
         fecharFormModal(); mostrarToast(`Financiador ${cod} cadastrado.`);
       }
     },
   });
+  if(f && f.codigo) anexarHistorico('financiadores', f && f.codigo);
 }
 
 async function alternarAtivoFinanciador(codigo, ativo){
@@ -123,17 +124,18 @@ function renderTabelasApoio(){
         </div>
         <div class="panel">
           <table>
-            <thead><tr><th style="width:90px;">Código</th><th>Nome</th><th class="th-center">Despesas</th><th class="th-center">Ações</th></tr></thead>
+            <thead><tr><th style="width:80px;">Código</th><th>Nome</th><th class="th-center">UG</th><th class="th-center">Despesas</th><th class="th-center">Ações</th></tr></thead>
             <tbody>${unidadesOrdenadas(false).map(u => `
               <tr class="${u.ativo ? '' : 'linha-inativa'}">
                 <td class="id-cell">${escapeHtml(u.codigo)}</td>
                 <td>${escapeHtml(u.nome)}${u.ativo ? '' : '<span class="tag-inativa">Inativa</span>'}</td>
+                <td style="text-align:center;" class="id-cell">${escapeHtml(u.ug) || '<span class="muted">—</span>'}</td>
                 <td style="text-align:center;">${usosUni[u.codigo] || '—'}</td>
                 <td><div class="linha-acoes" style="justify-content:center;">
                   <button class="linha-btn" onclick="abrirFormUnidade('${escapeAttr(u.codigo)}')">Editar</button>
                   <button class="linha-btn ${u.ativo ? 'perigo' : ''}" onclick="alternarAtivoUnidade('${escapeAttr(u.codigo)}', ${!u.ativo})">${u.ativo ? 'Inativar' : 'Reativar'}</button>
                 </div></td>
-              </tr>`).join('') || `<tr><td colspan="4" class="muted" style="padding:20px 26px;">Nenhuma unidade cadastrada.</td></tr>`}
+              </tr>`).join('') || `<tr><td colspan="5" class="muted" style="padding:20px 26px;">Nenhuma unidade cadastrada.</td></tr>`}
             </tbody>
           </table>
         </div>
@@ -145,24 +147,140 @@ function renderTabelasApoio(){
         </div>
         <div class="panel">
           <table>
-            <thead><tr><th>Sigla</th><th class="th-center">Código no ID</th><th class="th-center">Despesas</th><th class="th-center">Ações</th></tr></thead>
+            <thead><tr><th>Sigla</th><th class="th-center">Código no ID</th><th class="th-center">RP (SIAFI)</th><th class="th-center">Despesas</th><th class="th-center">Ações</th></tr></thead>
             <tbody>${origensOrdenadas(false).map(o => `
               <tr class="${o.ativo ? '' : 'linha-inativa'}">
                 <td><span class="badge ${origemBadgeClass(o.sigla)}">${escapeHtml(o.sigla)}</span>${o.ativo ? '' : '<span class="tag-inativa">Inativa</span>'}</td>
                 <td class="id-cell" style="text-align:center;">${escapeHtml(o.codigo)}</td>
+                <td style="text-align:center;">${o.rp ? 'RP ' + escapeHtml(o.rp) : '<span class="muted">—</span>'}</td>
                 <td style="text-align:center;">${usosOri[o.sigla] || '—'}</td>
                 <td><div class="linha-acoes" style="justify-content:center;">
+                  <button class="linha-btn" onclick="abrirFormOrigem('${escapeAttr(o.sigla)}')">Editar</button>
                   <button class="linha-btn ${o.ativo ? 'perigo' : ''}" onclick="alternarAtivoOrigem('${escapeAttr(o.sigla)}', ${!o.ativo})">${o.ativo ? 'Inativar' : 'Reativar'}</button>
                 </div></td>
-              </tr>`).join('') || `<tr><td colspan="4" class="muted" style="padding:20px 26px;">Nenhuma origem cadastrada.</td></tr>`}
+              </tr>`).join('') || `<tr><td colspan="5" class="muted" style="padding:20px 26px;">Nenhuma origem cadastrada.</td></tr>`}
             </tbody>
           </table>
         </div>
         <p class="result-count" style="margin-top:10px;">Sigla e código não mudam depois de criados, porque fazem parte dos IDs. Uma origem inativa deixa de aparecer para novas despesas.</p>
+
+        <div class="cad-section-head" style="margin-top:28px;">
+          <h2>Ações do orçamento</h2>
+          <button class="acao-btn" onclick="abrirFormAcao()">+ Nova ação</button>
+        </div>
+        <div class="panel">
+          <table>
+            <thead><tr><th>Código</th><th>Descrição</th><th class="th-center">Ações</th></tr></thead>
+            <tbody>${acoesOrdenadas(false).map(a => `
+              <tr class="${a.ativo ? '' : 'linha-inativa'}">
+                <td class="id-cell">${escapeHtml(a.codigo)}</td>
+                <td>${escapeHtml(a.descricao)}${a.ativo ? '' : '<span class="tag-inativa">Inativa</span>'}</td>
+                <td><div class="linha-acoes" style="justify-content:center;">
+                  <button class="linha-btn" onclick="abrirFormAcao('${escapeAttr(a.codigo)}')">Editar</button>
+                  <button class="linha-btn ${a.ativo ? 'perigo' : ''}" onclick="alternarAtivoAcao('${escapeAttr(a.codigo)}', ${!a.ativo})">${a.ativo ? 'Inativar' : 'Reativar'}</button>
+                </div></td>
+              </tr>`).join('') || `<tr><td colspan="3" class="muted" style="padding:20px 26px;">Nenhuma ação cadastrada.</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="cad-section-head" style="margin-top:28px;">
+          <h2>PTRES</h2>
+          <button class="acao-btn" onclick="abrirFormPtres()" ${TABELAS.acoes.length ? '' : 'disabled title="Cadastre uma ação antes"'}>+ Novo PTRES</button>
+        </div>
+        <div class="panel">
+          <table>
+            <thead><tr><th>PTRES</th><th>Ação</th><th>Descrição</th><th class="th-center">Ações</th></tr></thead>
+            <tbody>${ptresOrdenados(false).map(pt => `
+              <tr class="${pt.ativo ? '' : 'linha-inativa'}">
+                <td class="id-cell">${escapeHtml(pt.codigo)}</td>
+                <td class="id-cell">${escapeHtml(pt.acao)}</td>
+                <td>${escapeHtml(pt.descricao)}${pt.ativo ? '' : '<span class="tag-inativa">Inativo</span>'}</td>
+                <td><div class="linha-acoes" style="justify-content:center;">
+                  <button class="linha-btn" onclick="abrirFormPtres('${escapeAttr(pt.codigo)}')">Editar</button>
+                  <button class="linha-btn ${pt.ativo ? 'perigo' : ''}" onclick="alternarAtivoPtres('${escapeAttr(pt.codigo)}', ${!pt.ativo})">${pt.ativo ? 'Inativar' : 'Reativar'}</button>
+                </div></td>
+              </tr>`).join('') || `<tr><td colspan="4" class="muted" style="padding:20px 26px;">Nenhum PTRES cadastrado.</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+        <p class="result-count" style="margin-top:10px;">Cada PTRES pertence a uma ação. Nos lançamentos escolhe-se o PTRES, e a ação vem junto.</p>
       </div>
-    </div>`;
+    </div>
+    ${secaoPosicoes()}`;
 }
-aoMudarDadosRegistrar(['unidades', 'origens', 'despesas'], renderTabelasApoio);
+
+/* ---------- tabela de posições das unidades no ID (por ano) ---------- */
+let posAno = new Date().getFullYear();
+function secaoPosicoes(){
+  const pos = posicoesDoAno(posAno);
+  const anos = [...new Set([new Date().getFullYear(), new Date().getFullYear() + 1, ...TABELAS.posicoes.map(p => p.ano)])].sort((a, b) => b - a);
+  const fora = unidadesOrdenadas(true).filter(u => u.codigo !== 'IF' && (!pos || !pos.includes(u.codigo)));
+  const hex = pos ? Math.ceil(pos.length / 4) : 0;
+  return `
+    <div class="cad-section-head" style="margin-top:32px;">
+      <h2>Posições das unidades no ID (beneficiárias)</h2>
+      <div class="filter-field" style="min-width:110px;"><select onchange="posAno=parseInt(this.value,10); renderTabelasApoio()">${opcoesSelect(anos.map(String), String(posAno))}</select></div>
+    </div>
+    <p class="form-nota">Ordem das unidades no bloco hexadecimal do ID das despesas de ${posAno}. Cada caractere representa 4 unidades: a 1ª da tabela é o bit mais à esquerda do 1º caractere. <strong>Posições não mudam depois de criadas</strong>; unidades novas entram no fim.</p>
+    ${pos ? `
+      <div class="panel"><table>
+        <thead><tr><th class="th-center">Posição</th><th class="th-center">Caractere</th><th class="th-center">Bit</th><th>Unidade</th></tr></thead>
+        <tbody>${pos.map((c, i) => `<tr><td style="text-align:center;">${i + 1}</td><td style="text-align:center;">${Math.floor(i / 4) + 1}º</td>
+          <td style="text-align:center;" class="id-cell">${[8, 4, 2, 1][i % 4]}</td><td>${escapeHtml(nomeUnidade(c))} <span class="muted">(${escapeHtml(c)})</span></td></tr>`).join('')}</tbody>
+      </table></div>
+      <p class="result-count" style="margin-top:8px;">${pos.length} unidade(s) · bloco de ${hex} caractere(s). Para ler um caractere, some os bits das unidades beneficiadas do grupo (ex.: 8 + 1 = 9).</p>
+      ${fora.length ? `<div class="filter-bar" style="margin-top:10px;"><div class="filter-field"><label>Acrescentar ao fim</label>
+        <select id="posNova">${opcoesSelect(fora.map(u => ({ valor: u.codigo, texto: u.nome })), '')}</select></div>
+        <button class="acao-btn" onclick="acrescentarPosicao()">Acrescentar</button></div>` : ''}`
+    : `<div class="aviso-box"><span>Ainda não há tabela de posições de ${posAno}. Ela será criada com as unidades ativas (sem "- Institucional -"), em ordem alfabética. Confira antes: depois de criada, a ordem não muda.</span>
+        <button class="acao-btn" onclick="criarPosicoes()">Criar tabela de ${posAno}</button></div>`}`;
+}
+async function criarPosicoes(){
+  const lista = unidadesOrdenadas(true).filter(u => u.codigo !== 'IF').map(u => u.codigo);
+  if(!confirm(`Criar a tabela de ${posAno} com ${lista.length} unidades nesta ordem?\n\n${lista.map((c, i) => `${i + 1}. ${nomeUnidade(c)}`).join('\n')}`)) return;
+  try{ await Repo.posicoes.criar(posAno, lista); mostrarToast(`Tabela de posições de ${posAno} criada.`); } catch(e){ mostrarToast(traduzirErro(e), true); }
+}
+async function acrescentarPosicao(){
+  const c = document.getElementById('posNova').value;
+  try{ await Repo.posicoes.acrescentar(posAno, c); mostrarToast(`${nomeUnidade(c)} acrescentada ao fim da tabela de ${posAno}.`); } catch(e){ mostrarToast(traduzirErro(e), true); }
+}
+
+/* ---------- ações do orçamento ---------- */
+function abrirFormAcao(codigo){
+  const a = codigo ? TABELAS.acoes.find(x => x.codigo === codigo) : null;
+  abrirFormModal({
+    titulo: a ? 'Editar ação do orçamento' : 'Nova ação do orçamento',
+    corpo: `
+      <div class="form-grid">
+        <div class="form-field"><label for="faCodigo">Código</label>
+          <input type="text" id="faCodigo" maxlength="8" placeholder="Ex.: 20RL" style="text-transform:uppercase;" value="${a ? escapeAttr(a.codigo) : ''}" ${a ? 'disabled' : ''}>
+          <span class="ajuda">Letras e números (2 a 8). Não muda depois de criado.</span></div>
+        <div class="form-field span-2"><label for="faDesc">Descrição</label>
+          <input type="text" id="faDesc" maxlength="200" placeholder="Ex.: Funcionamento de Instituições Federais de Educação Profissional e Tecnológica" value="${a ? escapeAttr(a.descricao) : ''}"></div>
+      </div>
+      ${a && a.criadoPor ? `<div class="auditoria">Criada por ${escapeHtml(a.criadoPor)} em ${fmtDataHora(a.criadoEm)}<br>Última alteração por ${escapeHtml(a.atualizadoPor)} em ${fmtDataHora(a.atualizadoEm)}</div>` : ''}
+      ${a ? blocoHistorico('acoes', a.codigo) : ''}`,
+    aoSalvar: async () => {
+      const descricao = document.getElementById('faDesc').value.trim();
+      marcarInvalido('faDesc', !descricao);
+      if(!descricao) throw new Error('Informe a descrição.');
+      if(a){ await Repo.acoes.atualizar(a.codigo, { descricao }); fecharFormModal(); mostrarToast(`Ação ${a.codigo} atualizada.`); return; }
+      const cod = document.getElementById('faCodigo').value.trim().toUpperCase();
+      const ok = /^[0-9A-Z]{2,8}$/.test(cod);
+      marcarInvalido('faCodigo', !ok);
+      if(!ok) throw new Error('O código deve ter de 2 a 8 letras ou números.');
+      await Repo.acoes.criar(cod, descricao);
+      fecharFormModal(); mostrarToast(`Ação ${cod} cadastrada.`);
+    },
+  });
+  if(a) carregarHistorico('acoes', a.codigo);
+}
+async function alternarAtivoAcao(codigo, ativo){
+  if(!ativo && !confirm(`Inativar a ação ${codigo}? Ela deixa de aparecer em novos lançamentos.`)) return;
+  try{ await Repo.acoes.atualizar(codigo, { ativo }); mostrarToast(`Ação ${codigo} ${ativo ? 'reativada' : 'inativada'}.`); } catch(e){ mostrarToast(traduzirErro(e), true); }
+}
+aoMudarDadosRegistrar(['unidades', 'origens', 'acoes', 'ptres', 'posicoes', 'despesas'], renderTabelasApoio);
 
 async function carregarTabelasIniciais(){
   try{
@@ -187,25 +305,36 @@ function abrirFormUnidade(codigo){
           <input type="text" id="fuNome" maxlength="80" placeholder="Ex.: Cajazeiras" value="${u ? escapeAttr(u.nome) : ''}">
           <span class="ajuda">É o nome mostrado em Totais e Detalhamento e o usado para reconhecer a unidade na importação.</span>
         </div>
+        <div class="form-field">
+          <label for="fuUg">UG (SIAFI)</label>
+          <input type="text" id="fuUg" maxlength="6" inputmode="numeric" placeholder="158xxx" value="${u ? escapeAttr(u.ug) : ''}">
+          <span class="ajuda">Código da unidade gestora, com 6 dígitos. Usado para cruzar com o Tesouro Gerencial.</span>
+        </div>
       </div>`,
     aoSalvar: async () => {
       const nome = document.getElementById('fuNome').value.trim();
+      const ug = document.getElementById('fuUg').value.trim();
+      marcarInvalido('fuUg', ug && !/^\d{6}$/.test(ug));
+      if(ug && !/^\d{6}$/.test(ug)) throw new Error('A UG deve ter 6 dígitos.');
+      const ugRep = ug && TABELAS.unidades.find(x => x.ug === ug && (!u || x.codigo !== u.codigo));
+      if(ugRep) throw new Error(`A UG ${ug} já está na unidade ${ugRep.nome}.`);
       marcarInvalido('fuNome', !nome);
       if(!nome) throw new Error('Informe o nome da unidade.');
       const repetido = TABELAS.unidades.find(x => normalizarTexto(x.nome) === normalizarTexto(nome) && (!u || x.codigo !== u.codigo));
       if(repetido) throw new Error(`Já existe a unidade "${repetido.nome}" (${repetido.codigo}).`);
       if(u){
-        await Repo.unidades.atualizar(u.codigo, { nome });
+        await Repo.unidades.atualizar(u.codigo, { nome, ug });
         fecharFormModal(); mostrarToast(`Unidade ${u.codigo} atualizada.`);
       } else {
         const cod = document.getElementById('fuCodigo').value.trim().toUpperCase();
         marcarInvalido('fuCodigo', !/^[A-Z]{2}$/.test(cod));
         if(!/^[A-Z]{2}$/.test(cod)) throw new Error('O código deve ter exatamente 2 letras.');
-        await Repo.unidades.criar(cod, nome);
+        await Repo.unidades.criar(cod, nome, ug);
         fecharFormModal(); mostrarToast(`Unidade ${nome} (${cod}) cadastrada.`);
       }
     },
   });
+  if(u && u.codigo) anexarHistorico('unidades', u && u.codigo);
 }
 
 async function alternarAtivoUnidade(codigo, ativo){
@@ -216,32 +345,43 @@ async function alternarAtivoUnidade(codigo, ativo){
   } catch(e){ mostrarToast(traduzirErro(e), true); }
 }
 
-function abrirFormOrigem(){
+function abrirFormOrigem(sigla){
+  const o = sigla ? TABELAS.origens.find(x => x.sigla === sigla) : null;
   abrirFormModal({
-    titulo: 'Nova origem',
+    titulo: o ? `Origem ${o.sigla}` : 'Nova origem',
     corpo: `
       <div class="form-grid">
         <div class="form-field">
           <label for="foSigla">Sigla</label>
-          <input type="text" id="foSigla" maxlength="6" placeholder="LOA" style="text-transform:uppercase;">
+          <input type="text" id="foSigla" maxlength="6" placeholder="LOA" style="text-transform:uppercase;" value="${o ? escapeAttr(o.sigla) : ''}" ${o ? 'disabled' : ''}>
         </div>
         <div class="form-field">
           <label for="foCodigo">Código no ID</label>
-          <input type="text" id="foCodigo" maxlength="1" placeholder="Ex.: 2, R, P" style="text-transform:uppercase;">
-          <span class="ajuda">1 caractere (número ou letra), único entre as origens. Já usados: ${origensOrdenadas(false).map(o => `${o.codigo} (${o.sigla})`).join(', ') || 'nenhum'}.</span>
+          <input type="text" id="foCodigo" maxlength="1" placeholder="Ex.: 2, R, P" style="text-transform:uppercase;" value="${o ? escapeAttr(o.codigo) : ''}" ${o ? 'disabled' : ''}>
+          <span class="ajuda">1 caractere, único entre as origens; não muda depois de criado. Já usados: ${origensOrdenadas(false).map(x => `${x.codigo} (${x.sigla})`).join(', ') || 'nenhum'}.</span>
+        </div>
+        <div class="form-field">
+          <label for="foRp">Resultado primário no SIAFI</label>
+          <input type="text" id="foRp" maxlength="1" inputmode="numeric" placeholder="Ex.: 2" value="${o ? escapeAttr(o.rp) : ''}">
+          <span class="ajuda">O SIAFI não distingue LOA, EFQ e RTC (todas RP 2): essas origens existem só no GEDI. O RP serve para conferir os dados importados.</span>
         </div>
       </div>`,
     aoSalvar: async () => {
-      const sigla = document.getElementById('foSigla').value.trim().toUpperCase();
+      const rp = document.getElementById('foRp').value.trim();
+      marcarInvalido('foRp', rp && !/^\d$/.test(rp));
+      if(rp && !/^\d$/.test(rp)) throw new Error('O resultado primário é 1 dígito.');
+      if(o){ await Repo.origens.atualizar(o.sigla, { rp }); fecharFormModal(); mostrarToast(`Origem ${o.sigla} atualizada.`); return; }
+      const sg = document.getElementById('foSigla').value.trim().toUpperCase();
       const codigo = document.getElementById('foCodigo').value.trim().toUpperCase();
-      const siglaOk = /^[A-Z0-9]{2,6}$/.test(sigla), codOk = /^[0-9A-Z]$/.test(codigo);
+      const siglaOk = /^[A-Z0-9]{2,6}$/.test(sg), codOk = /^[0-9A-Z]$/.test(codigo);
       marcarInvalido('foSigla', !siglaOk); marcarInvalido('foCodigo', !codOk);
       if(!siglaOk) throw new Error('A sigla deve ter de 2 a 6 letras/números.');
       if(!codOk) throw new Error('O código deve ser 1 número ou letra.');
-      await Repo.origens.criar(sigla, codigo);
-      fecharFormModal(); mostrarToast(`Origem ${sigla} cadastrada com o código ${codigo}.`);
+      await Repo.origens.criar(sg, codigo, rp);
+      fecharFormModal(); mostrarToast(`Origem ${sg} cadastrada com o código ${codigo}.`);
     },
   });
+  if(o) anexarHistorico('origens', o.sigla);
 }
 
 async function alternarAtivoOrigem(sigla, ativo){
@@ -352,11 +492,12 @@ function abrirFormUsuario(email){
       if(!perfis.length) throw new Error('Marque pelo menos um perfil.');
       const unidades = [...document.querySelectorAll('input[name="fuUnidade"]')].filter(c => c.checked).map(c => c.value);
       if(perfis.includes('registrador_despesas') && !unidades.length) throw new Error('Marque ao menos uma unidade para o registrador.');
-      await Repo.usuarios.salvar(mail, perfis, unidades);
+      await Repo.usuarios.salvar(mail, perfis, unidades, !u);
       fecharFormModal();
       mostrarToast(u ? `Perfis de ${mail} atualizados.` : `${mail} cadastrado.`);
     },
   });
+  if(u && u.email) anexarHistorico('usuarios', u && u.email);
 }
 
 async function removerUsuario(email){
@@ -365,4 +506,39 @@ async function removerUsuario(email){
     await Repo.usuarios.excluir(email);
     mostrarToast(`${email} removido.`);
   } catch(e){ mostrarToast(traduzirErro(e), true); }
+}
+
+/* ---------- PTRES ---------- */
+function abrirFormPtres(codigo){
+  const pt = codigo ? TABELAS.ptres.find(x => x.codigo === codigo) : null;
+  const acoes = acoesOrdenadas(false).filter(a => a.ativo || (pt && pt.acao === a.codigo)).map(a => ({ valor: a.codigo, texto: `${a.codigo} · ${a.descricao}` }));
+  abrirFormModal({
+    titulo: pt ? `PTRES ${pt.codigo}` : 'Novo PTRES',
+    corpo: `
+      <div class="form-grid">
+        <div class="form-field"><label for="fpCodigo">PTRES</label>
+          <input type="text" id="fpCodigo" maxlength="8" inputmode="numeric" placeholder="Ex.: 169970" value="${pt ? escapeAttr(pt.codigo) : ''}" ${pt ? 'disabled' : ''}>
+          <span class="ajuda">Somente números (4 a 8). Não muda depois de criado.</span></div>
+        <div class="form-field"><label for="fpAcao">Ação do orçamento</label>
+          <select id="fpAcao"><option value="">Selecione…</option>${opcoesSelect(acoes, pt ? pt.acao : '')}</select></div>
+        <div class="form-field span-2"><label for="fpDesc">Descrição (opcional)</label>
+          <input type="text" id="fpDesc" maxlength="200" placeholder="Ex.: Funcionamento · campus" value="${pt ? escapeAttr(pt.descricao) : ''}"></div>
+      </div>`,
+    aoSalvar: async () => {
+      const acao = document.getElementById('fpAcao').value, descricao = document.getElementById('fpDesc').value.trim();
+      marcarInvalido('fpAcao', !acao);
+      if(!acao) throw new Error('Selecione a ação.');
+      if(pt){ await Repo.ptres.atualizar(pt.codigo, { acao, descricao }); fecharFormModal(); mostrarToast(`PTRES ${pt.codigo} atualizado.`); return; }
+      const cod = document.getElementById('fpCodigo').value.trim();
+      marcarInvalido('fpCodigo', !/^\d{4,8}$/.test(cod));
+      if(!/^\d{4,8}$/.test(cod)) throw new Error('O PTRES deve ter de 4 a 8 dígitos.');
+      await Repo.ptres.criar(cod, acao, descricao);
+      fecharFormModal(); mostrarToast(`PTRES ${cod} cadastrado.`);
+    },
+  });
+  if(pt) anexarHistorico('ptres', pt.codigo);
+}
+async function alternarAtivoPtres(codigo, ativo){
+  if(!ativo && !confirm(`Inativar o PTRES ${codigo}? Ele deixa de aparecer em novos lançamentos.`)) return;
+  try{ await Repo.ptres.atualizar(codigo, { ativo }); mostrarToast(`PTRES ${codigo} ${ativo ? 'reativado' : 'inativado'}.`); } catch(e){ mostrarToast(traduzirErro(e), true); }
 }

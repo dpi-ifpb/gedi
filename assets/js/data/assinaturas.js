@@ -3,7 +3,7 @@
  * ler. Qualquer gravação (de qualquer usuário) chega aqui em segundos e as telas
  * são redesenhadas — não é mais preciso esperar o ciclo de 5 minutos.
  */
-const TABELAS = { unidades: [], origens: [], financiadores: [], despesas: [], usuarios: [] };
+const TABELAS = { unidades: [], origens: [], acoes: [], ptres: [], posicoes: [], financiadores: [], despesas: [], usuarios: [], receitas: [], transferencias: [] };
 const TABELAS_CARREGADAS = {};
 const TABELAS_ERRO = {};
 let PERFIS_ATUAIS = [];
@@ -38,9 +38,14 @@ function iniciarAssinaturas(){
   };
   assinar('unidades', (a, b) => Repo.unidades.observar(a, b));
   assinar('origens', (a, b) => Repo.origens.observar(a, b));
+  assinar('acoes', (a, b) => Repo.acoes.observar(a, b));
+  assinar('ptres', (a, b) => Repo.ptres.observar(a, b));
+  assinar('posicoes', (a, b) => Repo.posicoes.observar(a, b));
   if(temPerfil(P_ORC)){
     assinar('financiadores', (a, b) => Repo.financiadores.observar(a, b));
     assinar('despesas', (a, b) => Repo.despesas.observar(a, b, null));
+    assinar('receitas', (a, b) => Repo.receitas.observar(a, b));
+    assinar('transferencias', (a, b) => Repo.transferencias.observar(a, b));
   } else if(temPerfil(['registrador_despesas'])){
     // registrador sem perfil de leitura: só as despesas das suas unidades
     TABELAS_CARREGADAS.financiadores = true;
@@ -99,4 +104,49 @@ function descricaoFinanciador(codigo){
   if(!codigo || codigo === FINANCIADOR_NENHUM) return 'Sem financiador';
   const f = TABELAS.financiadores.find(x => x.codigo === codigo);
   return f ? f.descricao : `Financiador ${codigo}`;
+}
+
+/* ---------- execução da despesa (valores calculados) ---------- */
+function resumoExecucao(d){
+  const empenhado = d.empenhos.reduce((s, e) => s + (e.tipo === 'anulacao' ? -1 : 1) * (Number(e.valor) || 0), 0);
+  const pago = d.pagamentos.reduce((s, p) => s + (Number(p.valor) || 0), 0);
+  const ultimaExec = d.execucao.slice().sort((a, b) => (a.data + a.registradoEm).localeCompare(b.data + b.registradoEm)).pop();
+  const fisico = ultimaExec ? Number(ultimaExec.percentual) : 0;
+  let fase = 'Deferida';
+  if(empenhado > 0.004) fase = 'Empenhada';
+  if(pago > 0.004) fase = 'Em pagamento';
+  if(empenhado > 0.004 && pago >= empenhado - 0.004) fase = 'Quitada';
+  return {
+    empenhado: Math.round(empenhado * 100) / 100,
+    pago: Math.round(pago * 100) / 100,
+    aPagar: Math.round((empenhado - pago) * 100) / 100,
+    fisico,
+    pctPago: d.valor > 0 ? pago / d.valor * 100 : 0,
+    fase,
+  };
+}
+
+function acoesOrdenadas(somenteAtivas){
+  return TABELAS.acoes.filter(a => !somenteAtivas || a.ativo).sort((a, b) => a.codigo.localeCompare(b.codigo));
+}
+function posicoesDoAno(ano){
+  const p = TABELAS.posicoes.find(x => x.ano === Number(ano));
+  return p ? p.unidades : null;
+}
+function nomeAcao(codigo){
+  const a = TABELAS.acoes.find(x => x.codigo === codigo);
+  return a ? `${a.codigo} · ${a.descricao}` : (codigo || '—');
+}
+
+function ptresOrdenados(somenteAtivos){
+  return TABELAS.ptres.filter(p => !somenteAtivos || p.ativo).sort((a, b) => a.codigo.localeCompare(b.codigo));
+}
+function acaoDoPtres(codigo){
+  const p = TABELAS.ptres.find(x => x.codigo === codigo);
+  return p ? p.acao : '';
+}
+// opções de PTRES para selects: "123456 · 20RL · descrição"
+function opcoesPtres(atual){
+  return ptresOrdenados(false).filter(p => p.ativo || p.codigo === atual)
+    .map(p => ({ valor: p.codigo, texto: `${p.codigo} · ${p.acao}${p.descricao ? ' · ' + p.descricao : ''}` }));
 }

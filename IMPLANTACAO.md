@@ -1,20 +1,22 @@
-# Atualização · fluxo de registro e análise de despesas (29/10/2026)
+# Atualização v5 · UG, PTRES, resultado primário e três tipos de transferência (02/11/2026)
 
-Para quem já instalou a versão anterior. O passo a passo comentado está no documento
-"GEDI · Guia de uso do Firebase".
+O roteiro de teste completo está no documento "GEDI · Guia de uso do Firebase". Os conceitos estão no README.
 
-## 1 · Firebase
-1. Firestore Database → Dados: apague as despesas de teste da versão anterior (coleção `despesas`)
-   e os documentos de `contadores`. Elas usam o formato antigo e ocupariam números de ID.
-2. Firestore Database → Regras: cole `firebase/firestore.rules` (versão nova) e Publicar.
+## 1 · Firebase: limpar os dados de teste
+Em Firestore Database → Dados, apague as coleções `transferencias`, `contadores`, `despesas` e `ids` (menu ⋮ da coleção → Excluir coleção).
+As transferências mudaram de formato: agora têm tipo, código e lançamentos de NC.
+Usuários, unidades, origens, ações, posições, financiadores e receitas podem ficar.
 
-## 2 · GitHub (dpi-ifpb/gedi)
-1. Apague `assets/js/pages/registro-despesas.js` (substituído por `lista-despesas.js`).
-2. Add file → Upload files → arraste o CONTEÚDO da pasta `gedi` deste zip → Commit.
-3. Abra o site com Ctrl+Shift+R.
+## 2 · Firebase: regras
+Em Firestore Database → Regras, cole `firebase/firestore.rules` (versão v5) e clique em Publicar.
 
-## 3 · No GEDI (administrador)
-1. Administração → Usuários: dê o perfil **Registrador de Despesas** a quem só lança despesas e marque
-   as unidades de cada um. Quem analisa recebe **Gestor de Planejamento**.
-2. Teste o fluxo no ano 2099 (registrar → analisar → deferir/indeferir) e depois apague os testes pelo
-   Console: `despesas` (os de ano 2099), `ids` e `contadores` que começam com `2099_`.
+## 3 · GitHub (dpi-ifpb/gedi)
+Em Add file → Upload files, arraste o CONTEÚDO da pasta `gedi` deste zip e faça o Commit. Depois abra o site com Ctrl+Shift+R.
+
+## 4 · No GEDI (administrador)
+1. Administração → Unidades, Origens e Ações:
+   - informe a **UG** (6 dígitos) de cada unidade;
+   - confira o **RP** de cada origem (LOA/EFQ/RTC = 2, RP6 = 6, RP7 = 7);
+   - cadastre os **PTRES**, cada um vinculado à sua ação.
+2. Confira se existe a tabela de posições do ano.
+3. Siga o roteiro de teste v5 do guia.

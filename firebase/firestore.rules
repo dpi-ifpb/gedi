@@ -3,15 +3,15 @@ rules_version = '2';
 // ============================================================================
 // GEDI · Regras de segurança do Firestore
 // Publicar em: Console do Firebase > Firestore Database > Regras
-// (ou `firebase deploy --only firestore:rules`).
 //
 // Perfis (acumuláveis, campo "perfis" em usuarios/{email}):
-//   administrador, gestor_planejamento (analisa despesas),
+//   administrador, gestor_planejamento (analisa despesas e lança orçamento),
 //   registrador_despesas (registra despesas das unidades em usuarios/{email}.unidades),
 //   leitor_orcamentario_financeiro, leitor_recursos_humanos
-// Usuários ainda com o campo antigo "grupo" continuam funcionando:
-//   completo -> leitor_orcamentario_financeiro + leitor_recursos_humanos
-//   limitado -> leitor_orcamentario_financeiro
+// Cadastro antigo (campo "grupo"): completo -> leitores orçamentário + RH; limitado -> leitor orçamentário.
+//
+// AUDITORIA: todo documento de cadastro guarda criadoPor/criadoEm/atualizadoPor/atualizadoEm
+// e "versao". Cada gravação exige, na mesma transação, o registro historico/{coleção}_{id}_{versão}.
 // ============================================================================
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -23,11 +23,8 @@ service cloud.firestore {
         && request.auth.token.email.lower().matches('.*@ifpb[.]edu[.]br$');
     }
     function emailAtual() { return request.auth.token.email.lower(); }
-    function caminhoUsuario() {
-      return /databases/$(database)/documents/usuarios/$(emailAtual());
-    }
+    function caminhoUsuario() { return /databases/$(database)/documents/usuarios/$(emailAtual()); }
     function cadastrado() { return logado() && exists(caminhoUsuario()); }
-
     function perfis() {
       let d = get(caminhoUsuario()).data;
       let g = d.get('grupo', '');
@@ -38,35 +35,65 @@ service cloud.firestore {
     }
     function temAlgum(lista) { return cadastrado() && perfis().hasAny(lista); }
     function minhasUnidades() { return get(caminhoUsuario()).data.get('unidades', []); }
-
-    function admin()     { return temAlgum(['administrador']); }
-    function gestao()    { return temAlgum(['administrador', 'gestor_planejamento']); }
-    function leitorOrc() { return temAlgum(['administrador', 'gestor_planejamento', 'leitor_orcamentario_financeiro']); }
-    function leitorRH()  { return temAlgum(['administrador', 'leitor_recursos_humanos']); }
+    function admin()       { return temAlgum(['administrador']); }
+    function gestao()      { return temAlgum(['administrador', 'gestor_planejamento']); }
+    function leitorOrc()   { return temAlgum(['administrador', 'gestor_planejamento', 'leitor_orcamentario_financeiro']); }
+    function leitorRH()    { return temAlgum(['administrador', 'leitor_recursos_humanos']); }
     function registrador() { return temAlgum(['registrador_despesas']); }
-
     function perfisValidos(p) {
       return p is list && p.size() > 0 && p.hasOnly([
         'administrador', 'gestor_planejamento', 'registrador_despesas',
         'leitor_orcamentario_financeiro', 'leitor_recursos_humanos'
       ]);
     }
+    function num(v) { return v is int || v is float; }
+
+    // ---------- auditoria + histórico ----------
+    function novo() { return request.resource.data; }
+    function audCriacao() {
+      return novo().criadoPor == emailAtual() && novo().criadoEm == request.time
+        && novo().atualizadoPor == emailAtual() && novo().atualizadoEm == request.time;
+    }
+    function audAlteracao() {
+      return novo().get('criadoPor', null) == resource.data.get('criadoPor', null)
+        && novo().get('criadoEm', null) == resource.data.get('criadoEm', null)
+        && novo().atualizadoPor == emailAtual() && novo().atualizadoEm == request.time;
+    }
+    function versaoEsperada() { return resource == null ? 1 : resource.data.get('versao', 0) + 1; }
+    function historicoOk(col, id) {
+      return novo().versao is int && novo().versao == versaoEsperada()
+        && existsAfter(/databases/$(database)/documents/historico/$(col + '_' + id + '_' + string(novo().versao)));
+    }
+    function historicoExclusaoOk(col, id) {
+      return existsAfter(/databases/$(database)/documents/historico/$(col + '_' + id + '_' + string(resource.data.get('versao', 0) + 1)));
+    }
+    function auditadoCriar(col, id)   { return audCriacao() && historicoOk(col, id); }
+    function auditadoAlterar(col, id) { return audAlteracao() && historicoOk(col, id); }
+
+    match /historico/{hid} {
+      allow read: if gestao();
+      allow create: if cadastrado()
+        && request.resource.data.por == emailAtual()
+        && request.resource.data.em == request.time
+        && request.resource.data.entidade is string
+        && request.resource.data.versao is int;
+      allow update, delete: if false;
+    }
 
     // ---------- usuários ----------
     match /usuarios/{email} {
       allow get: if logado() && (email == emailAtual() || admin());
       allow list: if admin();
-      allow create, update: if admin()
-        && email == email.lower()
-        && email.matches('.*@ifpb[.]edu[.]br$')
-        && perfisValidos(request.resource.data.perfis)
-        && request.resource.data.get('unidades', []) is list
-        // o administrador não pode tirar de si mesmo o perfil de administrador
-        && (email != emailAtual() || request.resource.data.perfis.hasAny(['administrador']));
-      allow delete: if admin() && email != emailAtual();
+      allow create: if admin() && email == email.lower() && email.matches('.*@ifpb[.]edu[.]br$')
+        && perfisValidos(novo().perfis) && novo().get('unidades', []) is list
+        && auditadoCriar('usuarios', email);
+      allow update: if admin() && perfisValidos(novo().perfis) && novo().get('unidades', []) is list
+        && (email != emailAtual() || novo().perfis.hasAny(['administrador']))
+        && auditadoAlterar('usuarios', email);
+      allow delete: if admin() && email != emailAtual() && historicoExclusaoOk('usuarios', email);
     }
 
-    // ---------- bases estáticas (Estrutura, Funções, Indicadores, simuladores) ----------
+    // ---------- bases estáticas ----------
     match /dados_estaticos/{doc} {
       allow read: if (doc in ['setores', 'servidores'] && leitorRH())
                   || (!(doc in ['setores', 'servidores']) && cadastrado());
@@ -76,119 +103,180 @@ service cloud.firestore {
     // ---------- tabelas de apoio ----------
     match /unidades/{codigo} {
       allow read: if cadastrado();
-      allow create, update: if admin()
-        && codigo.matches('^[A-Z]{2}$')
-        && request.resource.data.nome is string && request.resource.data.nome.size() > 0
-        && request.resource.data.ativo is bool;
+      allow create: if admin() && codigo.matches('^[A-Z]{2}$') && novo().nome is string && novo().nome.size() > 0
+        && novo().get('ug', '').matches('^([0-9]{6})?$') && novo().ativo is bool && auditadoCriar('unidades', codigo);
+      allow update: if admin() && novo().nome is string && novo().nome.size() > 0
+        && novo().get('ug', '').matches('^([0-9]{6})?$') && novo().ativo is bool && auditadoAlterar('unidades', codigo);
       allow delete: if false;
     }
     match /origens/{sigla} {
       allow read: if cadastrado();
-      allow create: if admin()
-        && sigla.matches('^[A-Z0-9]{2,6}$')
-        && request.resource.data.codigo is string && request.resource.data.codigo.matches('^[0-9A-Z]$')
-        && request.resource.data.ativo is bool;
-      // o código de 1 caractere não muda depois de criado (faz parte dos IDs)
-      allow update: if admin()
-        && request.resource.data.codigo == resource.data.codigo
-        && request.resource.data.ativo is bool;
+      allow create: if admin() && sigla.matches('^[A-Z0-9]{2,6}$')
+        && novo().codigo is string && novo().codigo.matches('^[0-9A-Z]$') && novo().ativo is bool
+        && novo().get('rp', '').matches('^[0-9]?$') && auditadoCriar('origens', sigla);
+      allow update: if admin() && novo().codigo == resource.data.codigo && novo().ativo is bool
+        && novo().get('rp', '').matches('^[0-9]?$') && auditadoAlterar('origens', sigla);
+      allow delete: if false;
+    }
+    match /acoes/{codigo} {
+      allow read: if cadastrado();
+      allow create: if admin() && codigo.matches('^[0-9A-Z]{2,8}$')
+        && novo().descricao is string && novo().ativo is bool && auditadoCriar('acoes', codigo);
+      allow update: if admin() && novo().descricao is string && novo().ativo is bool && auditadoAlterar('acoes', codigo);
+      allow delete: if false;
+    }
+    match /ptres/{codigo} {
+      allow read: if cadastrado();
+      allow create: if admin() && codigo.matches('^[0-9]{4,8}$') && novo().acao is string && novo().acao.size() > 0
+        && novo().descricao is string && novo().ativo is bool && auditadoCriar('ptres', codigo);
+      allow update: if admin() && novo().acao is string && novo().acao.size() > 0 && novo().descricao is string
+        && novo().ativo is bool && auditadoAlterar('ptres', codigo);
+      allow delete: if false;
+    }
+    // ordem das unidades no bloco de beneficiárias do ID, por ano: só cresce (posições usadas não mudam)
+    match /posicoes/{ano} {
+      allow read: if cadastrado();
+      allow create: if admin() && ano.matches('^[0-9]{4}$') && novo().unidades is list && novo().unidades.size() > 0
+        && novo().unidades.size() <= 32 && auditadoCriar('posicoes', ano);
+      allow update: if admin() && novo().unidades is list && novo().unidades.size() <= 32
+        && novo().unidades.size() > resource.data.unidades.size()
+        && novo().unidades.hasAll(resource.data.unidades) && auditadoAlterar('posicoes', ano);
       allow delete: if false;
     }
     match /financiadores/{codigo} {
       allow read: if leitorOrc();
-      allow create, update: if admin()
-        && codigo.matches('^[0-9]{4}$') && codigo != '0000'
-        && request.resource.data.descricao is string && request.resource.data.descricao.size() > 0
-        && request.resource.data.ativo is bool;
+      allow create: if admin() && codigo.matches('^[0-9]{3}$') && codigo != '000'
+        && novo().descricao is string && novo().descricao.size() > 0 && novo().ativo is bool
+        && auditadoCriar('financiadores', codigo);
+      allow update: if admin() && novo().descricao is string && novo().descricao.size() > 0 && novo().ativo is bool
+        && auditadoAlterar('financiadores', codigo);
       allow delete: if false;
     }
 
-    // ---------- contadores do sequencial (um por ano + unidade: "2026_AR") ----------
-    match /contadores/{chave} {
-      allow read: if gestao();
-      allow create: if gestao() && request.resource.data.ultimo is int && request.resource.data.ultimo >= 0;
-      allow update: if gestao() && request.resource.data.ultimo is int
-        && request.resource.data.ultimo > resource.data.ultimo;
+    // ---------- receitas (previsão e chegada) ----------
+    function receitaValida(d) {
+      return d.ano is int && d.ano >= 2000 && d.ano <= 2100 && d.get('ptres', '') is string
+        && d.unidade is string && d.unidade.matches('^[A-Z]{2}$')
+        && d.acao is string && d.acao.size() > 0
+        && d.origem is string && d.origem.size() > 0
+        && d.natureza in ['Custeio', 'Investimento']
+        && num(d.valor) && d.valor != 0
+        && d.previsao is bool && d.ativo is bool
+        && (d.previsao || d.get('data', '').matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'));
+    }
+    match /receitas/{docId} {
+      allow read: if leitorOrc();
+      allow create: if gestao() && receitaValida(novo()) && auditadoCriar('receitas', docId);
+      allow update: if gestao() && receitaValida(novo()) && auditadoAlterar('receitas', docId);
       allow delete: if false;
     }
 
-    // ---------- índice de IDs (garante ID único por ano: "2026_AR.0001.2.0000") ----------
+    // ---------- transferências ----------
+    // tipo: despesa (automática) | repasse (manual, entre unidades) | troca (troca orçamentária, mesma unidade)
+    // lancamentos: NCs / anulações (valor negativo) / documento da alteração; status calculado pelo GEDI.
+    function pontaValida(p) {
+      return p is map && p.unidade is string && p.unidade.matches('^[A-Z]{2}$')
+        && p.get('acao', '') is string && p.get('ptres', '') is string
+        && p.origem is string && p.natureza in ['Custeio', 'Investimento'];
+    }
+    function transferenciaValida(d) {
+      return d.ano is int && d.tipo in ['despesa', 'repasse', 'troca'] && d.codigo is string && d.codigo.size() > 0
+        && pontaValida(d.de) && pontaValida(d.para) && num(d.valor) && d.valor > 0
+        && d.status in ['prevista', 'parcial', 'realizada', 'cancelada']
+        && d.get('lancamentos', []) is list && d.cancelada is bool && d.ativo is bool
+        && (d.tipo != 'repasse' || d.de.unidade != d.para.unidade)
+        && (d.tipo != 'troca' || (d.de.unidade == d.para.unidade && d.get('processo', '') is string && d.get('processo', '').size() > 0))
+        && (d.tipo != 'despesa' || d.despesa is string);
+    }
+    match /transferencias/{docId} {
+      allow read: if leitorOrc();
+      allow create: if gestao() && transferenciaValida(novo()) && auditadoCriar('transferencias', docId)
+        && (novo().tipo != 'despesa' || docId == 'auto_' + novo().despesa);
+      allow update: if gestao() && transferenciaValida(novo())
+        && novo().tipo == resource.data.tipo
+        && auditadoAlterar('transferencias', docId);
+      allow delete: if false;
+    }
+
+    // ---------- índice de IDs e contadores ----------
     match /ids/{chave} {
       allow read: if gestao();
       allow create: if gestao() && request.resource.data.despesa is string;
       allow update, delete: if false;
     }
+    match /contadores/{chave} {
+      allow read: if gestao();
+      allow create: if gestao() && request.resource.data.ultimo is int && request.resource.data.ultimo >= 0;
+      allow update: if gestao() && request.resource.data.ultimo is int && request.resource.data.ultimo > resource.data.ultimo;
+      allow delete: if false;
+    }
 
     // ---------- despesas ----------
-    // Fluxo: registro (status "pendente", sem ID) -> análise -> "deferida" (com ID) ou "indeferida".
+    // Fluxo: registro (pendente, sem ID) -> análise -> deferida (com ID) ou indeferida.
+    function baseValida(b) { return b is string && b.matches('^#[A-Z]{2}[.][0-9]{4}[.][0-9A-Z][.][0-9]{3}$'); }
+    function idCombina(d) {
+      return d.id is string && d.id.matches(d.idBase.replace('[.]', '[.]') + '([.][0-9A-F]{1,8})?');
+    }
     function despesaValida(d) {
       return d.keys().hasAll(['ano', 'unidade', 'descricao', 'valor', 'natureza', 'status', 'ativo'])
         && d.ano is int && d.ano >= 2000 && d.ano <= 2100
         && d.unidade is string && d.unidade.matches('^[A-Z]{2}$')
+        && d.get('fonte', 'RE') is string && d.get('fonte', 'RE').matches('^[A-Z]{2}$')
         && d.descricao is string && d.descricao.size() > 0 && d.descricao.size() <= 500
-        && (d.valor is int || d.valor is float) && d.valor >= 0
+        && num(d.valor) && d.valor >= 0
         && d.natureza in ['Custeio', 'Investimento']
         && d.get('processo', '') is string && d.get('processo', '').size() <= 100
         && d.get('linkSuap', '') is string && d.get('linkSuap', '').size() <= 500
         && (d.get('linkSuap', '') == '' || d.get('linkSuap', '').matches('^https://.*'))
+        && d.get('percentual', false) is bool
+        && d.get('beneficiarias', []) is list
+        && d.get('empenhos', []) is list && d.get('pagamentos', []) is list && d.get('execucao', []) is list
+        && (d.status == 'deferida' || (d.get('empenhos', []).size() == 0 && d.get('pagamentos', []).size() == 0 && d.get('execucao', []).size() == 0))
         && d.status in ['pendente', 'deferida', 'indeferida']
         && d.ativo is bool
         && (d.status == 'deferida'
-              ? (d.id is string && d.id.matches('^#[A-Z]{2}[.][0-9]{4}[.][0-9A-Z][.][0-9]{4}$')
+              ? (baseValida(d.idBase) && idCombina(d)
                  && d.origem is string && d.origem.size() > 0
-                 && d.financiador is string && d.financiador.matches('^[0-9]{4}$'))
-              : d.get('id', null) == null);
+                 && d.acao is string && d.acao.size() > 0 && d.get('ptres', '') is string
+                 && d.financiador is string && d.financiador.matches('^[0-9]{3}$'))
+              : (d.get('id', null) == null && d.get('idBase', null) == null));
     }
     function unidadeMinha(u) { return u in minhasUnidades(); }
-    // o ID gerado precisa estar reservado no índice, apontando para esta despesa
     function idReservado(d, docId) {
-      return getAfter(/databases/$(database)/documents/ids/$(string(d.ano) + '_' + d.id.replace('#', ''))).data.despesa == docId;
-    }
-    function autoriaMantida() {
-      return request.resource.data.criadoPor == resource.data.criadoPor
-        && request.resource.data.criadoEm == resource.data.criadoEm
-        && request.resource.data.atualizadoPor == emailAtual()
-        && request.resource.data.atualizadoEm == request.time;
+      return getAfter(/databases/$(database)/documents/ids/$(string(d.ano) + '_' + d.idBase.replace('#', ''))).data.despesa == docId;
     }
 
     match /despesas/{docId} {
-      // leitores, analista e admin veem tudo; o registrador vê as das suas unidades
       allow read: if leitorOrc() || (registrador() && unidadeMinha(resource.data.unidade));
 
-      allow create: if despesaValida(request.resource.data)
-        && request.resource.data.criadoPor == emailAtual()
-        && request.resource.data.criadoEm == request.time
+      allow create: if despesaValida(novo()) && auditadoCriar('despesas', docId)
         && (
-          // registro normal: sempre pendente, sem ID
-          (request.resource.data.status == 'pendente'
-            && (gestao() || (registrador() && unidadeMinha(request.resource.data.unidade))))
-          // importação de despesas já analisadas: só administrador
-          || (request.resource.data.status == 'deferida' && admin() && idReservado(request.resource.data, docId))
+          (novo().status == 'pendente'
+            && (gestao() || (registrador() && unidadeMinha(novo().unidade)
+                             && (novo().get('fonte', 'RE') == 'RE' || unidadeMinha(novo().get('fonte', 'RE'))))))
+          || (novo().status == 'deferida' && admin() && idReservado(novo(), docId))   // importação
         );
 
-      allow update: if despesaValida(request.resource.data) && autoriaMantida()
+      allow update: if despesaValida(novo()) && auditadoAlterar('despesas', docId)
         && (
           // REGISTRADOR: só enquanto pendente, só campos do registro, só nas suas unidades
           (registrador()
-            && resource.data.status == 'pendente' && request.resource.data.status == 'pendente'
-            && unidadeMinha(resource.data.unidade) && unidadeMinha(request.resource.data.unidade)
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
-                 ['ano', 'unidade', 'descricao', 'valor', 'natureza', 'processo', 'linkSuap',
-                  'ativo', 'atualizadoPor', 'atualizadoEm']))
+            && resource.data.status == 'pendente' && novo().status == 'pendente'
+            && unidadeMinha(resource.data.unidade) && unidadeMinha(novo().unidade)
+            && novo().diff(resource.data).affectedKeys().hasOnly(
+                 ['ano', 'unidade', 'descricao', 'valor', 'natureza', 'processo', 'linkSuap', 'percentual',
+                  'beneficiarias', 'ativo', 'atualizadoPor', 'atualizadoEm', 'versao']))
           // ANALISTA / ADMIN
           || (gestao() && (
-               // já deferida: ID e ano nunca mudam, e ela continua deferida
-               (resource.data.status == 'deferida'
-                 && request.resource.data.status == 'deferida'
-                 && request.resource.data.id == resource.data.id
-                 && request.resource.data.ano == resource.data.ano)
-               // deferimento agora: o ID novo tem de estar reservado no índice
-               || (resource.data.status != 'deferida'
-                 && request.resource.data.status == 'deferida'
-                 && request.resource.data.ano == resource.data.ano
-                 && idReservado(request.resource.data, docId))
+               // já deferida: base do ID e ano nunca mudam; o bloco de beneficiárias pode mudar
+               (resource.data.status == 'deferida' && novo().status == 'deferida'
+                 && novo().idBase == resource.data.get('idBase', resource.data.get('id', null))
+                 && novo().ano == resource.data.ano && novo().unidade == resource.data.unidade)
+               // deferimento agora: a base do ID tem de estar reservada no índice
+               || (resource.data.status != 'deferida' && novo().status == 'deferida'
+                 && novo().ano == resource.data.ano && idReservado(novo(), docId))
                // pendente ou indeferida, sem ID
-               || (resource.data.status != 'deferida' && request.resource.data.status != 'deferida')
+               || (resource.data.status != 'deferida' && novo().status != 'deferida')
              ))
         );
 

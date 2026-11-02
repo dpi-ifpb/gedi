@@ -22,6 +22,15 @@ function resultadoTag(status){
   const cls = status === 'deferida' ? 'sit-atendida' : status === 'indeferida' ? 'sit-indeferida' : 'sit-prevista';
   return `<span class="sit-tag ${cls}">${RESULTADOS_ANALISE[status] || status}</span>`;
 }
+// fase da despesa deferida: Deferida → Empenhada → Em pagamento → Quitada (+ % físico, se percentual)
+function faseTag(d){
+  if(d.status !== 'deferida') return resultadoTag(d.status);
+  const r = resumoExecucao(d);
+  const cls = { 'Deferida': 'fase-deferida', 'Empenhada': 'fase-empenhada', 'Em pagamento': 'fase-pagamento', 'Quitada': 'fase-quitada' }[r.fase];
+  const pct = d.percentual ? `<div class="fase-pct">${fmtPct(r.fisico)} executado · ${fmtPct(r.pctPago)} pago</div>` : '';
+  return `<span class="sit-tag ${cls}">${r.fase}</span>${pct}`;
+}
+function fmtPct(v){ return `${(Number(v) || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`; }
 function processoCell(d){
   if(!d.processo && !d.linkSuap) return '<span class="muted">—</span>';
   const num = escapeHtml(d.processo || 'Processo');
@@ -91,11 +100,11 @@ function renderLista(){
     </div>
     <div class="result-count" id="listaContagem"></div>
     <div class="panel">
-      <table>
+      <table class="tabela-cartoes">
         <thead>${analisadas ? `
           <tr>
             <th>ID</th><th>Unidade</th><th>Descrição</th>
-            <th class="th-center">Origem</th><th class="th-center">Natureza</th><th class="th-center">Resultado</th>
+            <th class="th-center">Origem</th><th class="th-center">Natureza</th><th class="th-center">Situação</th>
             <th class="num th-center">Valor</th><th class="th-center">Ações</th>
           </tr>` : `
           <tr>
@@ -157,6 +166,7 @@ function botoesLinha(d){
     if(podeEditarRegistro(d) && d.ativo) b.push(`<button class="linha-btn" onclick="abrirFormRegistro('${id}')">Editar</button>`);
   } else {
     b.push(`<button class="linha-btn" onclick="verDespesa('${id}')">Ver</button>`);
+    if(d.status === 'deferida') b.push(`<button class="linha-btn${podeAnalisar() ? ' destaque' : ''}" onclick="abrirExecucao('${id}')">Execução</button>`);
     if(podeAnalisar() && d.ativo){
       if(d.status === 'deferida') b.push(`<button class="linha-btn" onclick="abrirFormRegistro('${id}')">Editar</button>`);
       else b.push(`<button class="linha-btn" onclick="abrirAnalise('${id}')">Reanalisar</button>`);
@@ -188,7 +198,7 @@ function renderListaTabela(){
       <td class="desc-cell">${escapeHtml(d.descricao)}${inativa(d)}</td>
       <td>${d.origem ? `<span class="badge ${origemBadgeClass(d.origem)}">${escapeHtml(d.origem)}</span>` : '<span class="muted">—</span>'}</td>
       <td><span class="tipo-tag ${naturezaTagClass(d.natureza)}">${escapeHtml(d.natureza)}</span></td>
-      <td>${resultadoTag(d.status)}</td>
+      <td style="text-align:center;">${faseTag(d)}</td>
       <td class="num">${fmtBRLCell(d.valor)}</td>
       <td>${botoesLinha(d)}</td>
     </tr>` : `
@@ -224,17 +234,22 @@ function abrirFormRegistro(docId){
     titulo: d ? 'Editar despesa' : 'Registrar despesa',
     corpo: `
       ${deferida ? `<div class="id-preview"><div class="id-valor">${escapeHtml(d.id)}</div>
-        <div class="id-nota">Despesa deferida. O ID e o ano não mudam; origem e financiador são alterados pela análise.</div></div>`
-      : `<p class="form-nota">A origem e o financiador são definidos na análise. O ID é gerado quando a despesa for deferida.</p>`}
+        <div class="id-nota">Despesa deferida. Ano e unidade executora não mudam; origem, ação, financiador e beneficiárias são alterados pela análise.</div></div>`
+      : `<p class="form-nota">A unidade é quem recebe e executa o recurso. Origem, ação do orçamento, financiador e unidades beneficiadas são definidos na análise; o ID é gerado no deferimento.</p>`}
       <div class="form-grid">
         <div class="form-field">
           <label for="rfAno">Ano de referência</label>
           <input type="number" id="rfAno" min="2000" max="2100" step="1" value="${d ? d.ano : anoPadrao}" ${deferida ? 'disabled' : ''}>
         </div>
         <div class="form-field">
-          <label for="rfUnidade">Unidade</label>
-          <select id="rfUnidade"><option value="">Selecione…</option>${opcoesSelect(unidades, d ? d.unidade : (unidades.length === 1 ? unidades[0].valor : ''))}</select>
+          <label for="rfUnidade">Unidade executora</label>
+          <select id="rfUnidade" ${deferida ? 'disabled' : ''}><option value="">Selecione…</option>${opcoesSelect(unidades, d ? d.unidade : (unidades.length === 1 ? unidades[0].valor : ''))}</select>
         </div>
+        ${podeAnalisar() ? `<div class="form-field span-2">
+          <label for="rfFonte">Fonte do recurso</label>
+          <select id="rfFonte">${opcoesSelect(unidadesOrdenadas(false).filter(u => u.ativo || (d && d.fonte === u.codigo)).map(u => ({ valor: u.codigo, texto: u.nome })), d ? d.fonte : Repo.despesas.FONTE_PADRAO)}</select>
+          <span class="ajuda">De onde sai o recurso. Se for diferente da unidade executora, o deferimento gera a transferência automaticamente.</span>
+        </div>` : ''}
         <div class="form-field span-2">
           <label for="rfDescricao">Descrição</label>
           <textarea id="rfDescricao" maxlength="500">${d ? escapeHtml(d.descricao) : ''}</textarea>
@@ -247,6 +262,10 @@ function abrirFormRegistro(docId){
         <div class="form-field">
           <label for="rfNatureza">Natureza</label>
           <select id="rfNatureza"><option value="">Selecione…</option>${opcoesSelect(NATUREZAS, d ? d.natureza : '')}</select>
+        </div>
+        <div class="form-field span-2">
+          <label class="check-linha"><input type="checkbox" id="rfPercentual" ${d && d.percentual ? 'checked' : ''}>
+            <span>Acompanhar em percentual<small>Para obras e serviços de engenharia: registra a evolução física (0 a 100%) e o percentual pago.</small></span></label>
         </div>
         <div class="form-field">
           <label for="rfProcesso">Nº do processo eletrônico</label>
@@ -269,6 +288,8 @@ function abrirFormRegistro(docId){
         natureza: document.getElementById('rfNatureza').value,
         processo: document.getElementById('rfProcesso').value.trim(),
         linkSuap: document.getElementById('rfLink').value.trim(),
+        percentual: document.getElementById('rfPercentual').checked,
+        fonte: document.getElementById('rfFonte') ? document.getElementById('rfFonte').value : (d ? d.fonte : Repo.despesas.FONTE_PADRAO),
       };
       const erros = [];
       const checar = (id, ok, msg) => { marcarInvalido(id, !ok); if(!ok) erros.push(msg); };
@@ -280,8 +301,8 @@ function abrirFormRegistro(docId){
       checar('rfLink', !dados.linkSuap || /^https:\/\/\S+$/.test(dados.linkSuap), 'O link do SUAP deve começar com https://');
       if(erros.length) throw new Error(erros.join(' '));
       if(d){
-        await Repo.despesas.atualizarRegistro(d.docId, dados);
-        fecharFormModal(); mostrarToast('Despesa atualizada.');
+        const avisos = await Repo.despesas.atualizarRegistro(d.docId, dados);
+        fecharFormModal(); mostrarToast(avisos.length ? avisos.join(' ') : 'Despesa atualizada.', avisos.length > 0);
       } else {
         await Repo.despesas.registrar(dados);
         fecharFormModal();
@@ -293,76 +314,114 @@ function abrirFormRegistro(docId){
 }
 
 /* ---------- detalhe (somente leitura) ---------- */
-function dlDespesa(d){
+function transferenciaDaDespesa(d){
+  return d.transferencia ? TABELAS.transferencias.find(t => t.docId === d.transferencia) : null;
+}
+function dlDespesa(d, semHistorico){
+  const t = transferenciaDaDespesa(d);
+  const benef = d.beneficiarias.length > 1 || (d.beneficiarias[0] && d.beneficiarias[0] !== d.unidade);
   return `
     <dl class="modal-dl">
       ${d.id ? `<dt>ID</dt><dd class="id-cell" style="font-size:14px;">${escapeHtml(d.id)}</dd>` : ''}
-      <dt>Ano · Unidade</dt><dd>${d.ano} · ${escapeHtml(nomeUnidade(d.unidade))}</dd>
+      <dt>Ano · Unidade executora</dt><dd>${d.ano} · ${escapeHtml(nomeUnidade(d.unidade))}</dd>
+      <dt>Fonte do recurso</dt><dd>${escapeHtml(nomeUnidade(d.fonte))}</dd>
       <dt>Descrição</dt><dd>${escapeHtml(d.descricao)}</dd>
       <dt>Valor · Natureza</dt><dd>${fmtBRL(d.valor)} · ${escapeHtml(d.natureza)}</dd>
       <dt>Processo eletrônico</dt><dd>${processoCell(d)}</dd>
+      ${d.percentual ? '<dt>Acompanhamento</dt><dd>Em percentual (evolução física e pagamento)</dd>' : ''}
       <dt>Registro</dt><dd>${escapeHtml(d.criadoPor || '—')} em ${fmtDataHora(d.criadoEm)}</dd>
       ${d.status !== 'pendente' ? `
       <dt>Resultado da análise</dt><dd>${resultadoTag(d.status)}${d.analise.por ? ` por ${escapeHtml(d.analise.por)} em ${fmtDataHora(d.analise.em)}` : ''}</dd>
-      ${d.status === 'deferida' ? `<dt>Origem · Financiador</dt><dd>${escapeHtml(d.origem)} · ${escapeHtml(d.financiador)} (${escapeHtml(descricaoFinanciador(d.financiador))})</dd>` : ''}
+      ${d.status === 'deferida' ? `
+        <dt>Origem · PTRES · Ação</dt><dd>${escapeHtml(d.origem)} · ${escapeHtml(d.ptres || '—')} · ${escapeHtml(nomeAcao(d.acao))}</dd>
+        <dt>Financiador</dt><dd>${escapeHtml(d.financiador)} · ${escapeHtml(descricaoFinanciador(d.financiador))}</dd>
+        <dt>Unidades beneficiadas</dt><dd>${benef ? d.beneficiarias.map(c => `<span class="chip-unid">${escapeHtml(nomeUnidade(c))}</span>`).join('') : 'Somente a unidade executora'}</dd>
+        <dt>Descentralização (transferência)</dt><dd>${t ? `<span class="transf-tag ${t.status}">${ROTULO_STATUS_TRANSF[t.status] || t.status}</span> ${escapeHtml(nomeUnidade(t.de.unidade))} → ${escapeHtml(nomeUnidade(t.para.unidade))} · planejado ${fmtBRL(t.valor)} · realizado ${fmtBRL(t.realizado)}${t.lancamentos.length ? ` · NC: ${t.lancamentos.map(l => escapeHtml(l.numero)).join(', ')}` : ''}` : 'Não se aplica (recurso já está na executora)'}</dd>` : ''}
       ${d.analise.observacao ? `<dt>${d.status === 'indeferida' ? 'Justificativa' : 'Observação'}</dt><dd>${escapeHtml(d.analise.observacao)}</dd>` : ''}
       ${d.situacaoLegado ? `<dt>Situação (planilha de origem)</dt><dd>${escapeHtml(d.situacaoLegado)}</dd>` : ''}` : ''}
-    </dl>`;
+    </dl>
+    ${semHistorico ? '' : blocoHistorico('despesas', d.docId)}`;
 }
 function verDespesa(docId){
   const d = TABELAS.despesas.find(x => x.docId === docId);
   if(!d) return;
   abrirFormModal({ titulo: d.id ? `Despesa ${d.id}` : 'Despesa', corpo: dlDespesa(d) });
+  carregarHistorico('despesas', d.docId);
 }
 
 /* ---------- análise: deferir (gera o ID) ou indeferir ---------- */
+let analiseDocId = null;
 function abrirAnalise(docId){
+  analiseDocId = docId;
   const d = TABELAS.despesas.find(x => x.docId === docId);
   if(!d) return;
   const deferida = d.status === 'deferida';
   const origens = origensOrdenadas(false).filter(o => o.ativo || o.sigla === d.origem)
     .map(o => ({ valor: o.sigla, texto: `${o.sigla} (código ${o.codigo})` }));
-  const financiadores = [{ valor: FINANCIADOR_NENHUM, texto: '0000 · Sem financiador' }]
+  const listaPtres = opcoesPtres(d.ptres);
+  const financiadores = [{ valor: FINANCIADOR_NENHUM, texto: '000 · Sem financiador' }]
     .concat(financiadoresOrdenados(false).filter(f => f.ativo || f.codigo === d.financiador)
       .map(f => ({ valor: f.codigo, texto: `${f.codigo} · ${f.descricao}` })));
+  const pos = posicoesDoAno(d.ano);
+  const listaBenef = pos || unidadesOrdenadas(true).map(u => u.codigo).filter(c => c !== 'IF');
+  const vaiTransferir = d.unidade !== d.fonte && !(['RE', 'IF'].includes(d.unidade) && ['RE', 'IF'].includes(d.fonte));
 
   abrirFormModal({
     titulo: deferida ? `Editar análise · ${d.id}` : 'Analisar despesa',
-    largo: false,
     corpo: `
-      ${dlDespesa(d)}
-      <div class="form-grid" style="margin-top:18px; padding-top:16px; border-top:1px solid var(--border);">
-        <div class="form-field">
-          <label for="afOrigem">Origem</label>
-          <select id="afOrigem" onchange="previewIdAnalise('${escapeAttr(d.unidade)}')"><option value="">Selecione…</option>${opcoesSelect(origens, d.origem)}</select>
+      ${dlDespesa(d, true)}
+      <div class="bloco-drawer">
+        <h4>${deferida ? 'Análise' : 'Definições da análise'}</h4>
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="afOrigem">Origem</label>
+            <select id="afOrigem" onchange="previewIdAnalise()"><option value="">Selecione…</option>${opcoesSelect(origens, d.origem)}</select>
+          </div>
+          <div class="form-field">
+            <label for="afPtres">PTRES · ação do orçamento</label>
+            <select id="afPtres"><option value="">Selecione…</option>${opcoesSelect(listaPtres, d.ptres)}</select>
+            ${listaPtres.length ? '' : '<span class="ajuda">Nenhum PTRES cadastrado. O administrador cadastra em Unidades, Origens e Ações.</span>'}
+          </div>
+          <div class="form-field span-2">
+            <label for="afFinanciador">Financiador</label>
+            <select id="afFinanciador" onchange="previewIdAnalise()">${opcoesSelect(financiadores, d.financiador || FINANCIADOR_NENHUM)}</select>
+          </div>
+          <div class="form-field span-2">
+            <label>Unidades beneficiadas</label>
+            <div class="benef-grade" id="afBenef">
+              ${listaBenef.map((c, i) => `<label><input type="checkbox" value="${c}" ${d.beneficiarias.includes(c) ? 'checked' : ''} onchange="previewIdAnalise()">
+                ${pos ? `<span class="pos">${i + 1}</span>` : ''}${escapeHtml(nomeUnidade(c))}</label>`).join('')}
+            </div>
+            <span class="ajuda">Por padrão, só a unidade executora. ${pos ? `Números = posição no código do ID (tabela de ${d.ano}).` : `<strong>Não há tabela de posições de ${d.ano}</strong>: para indicar outras beneficiárias, o administrador precisa criá-la em Unidades, Origens e Ações.`}</span>
+          </div>
+          <div class="form-field span-2">
+            <label for="afObs">Observação ${deferida ? '' : '(obrigatória para indeferir)'}</label>
+            <textarea id="afObs" maxlength="1000" placeholder="${deferida ? '' : 'Justificativa, se indeferir; comentário opcional, se deferir.'}">${escapeHtml(d.analise.observacao || '')}</textarea>
+          </div>
         </div>
-        <div class="form-field">
-          <label for="afFinanciador">Financiador</label>
-          <select id="afFinanciador" onchange="previewIdAnalise('${escapeAttr(d.unidade)}')">${opcoesSelect(financiadores, d.financiador || FINANCIADOR_NENHUM)}</select>
-        </div>
-        <div class="form-field span-2">
-          <label for="afObs">Observação ${deferida ? '' : '(obrigatória para indeferir)'}</label>
-          <textarea id="afObs" maxlength="1000" placeholder="${deferida ? '' : 'Justificativa, se indeferir; comentário opcional, se deferir.'}">${escapeHtml(d.analise.observacao || '')}</textarea>
-        </div>
+        <div class="id-preview" style="margin-top:14px; margin-bottom:0;"><div class="id-valor" id="afIdPreview"></div>
+          <div class="id-nota">${deferida ? 'A base do ID não muda; o bloco das beneficiárias acompanha a correção.' : 'ID que será gerado ao deferir (o número sequencial é reservado no momento de salvar).'}</div></div>
+        ${vaiTransferir ? `<p class="form-nota" style="margin-top:12px;">${deferida ? 'A transferência' : 'Ao deferir, será gerada a transferência'} <strong>${escapeHtml(nomeUnidade(d.fonte))} → ${escapeHtml(nomeUnidade(d.unidade))}</strong> de ${fmtBRL(d.valor)}, prevista até a confirmação da nota de crédito.</p>` : ''}
       </div>
-      ${deferida ? `<p class="form-nota" style="margin-top:12px;">O ID ${escapeHtml(d.id)} não muda, mesmo que a origem ou o financiador sejam alterados.</p>`
-        : `<div class="id-preview" style="margin-top:14px; margin-bottom:0;"><div class="id-valor" id="afIdPreview"></div>
-           <div class="id-nota">ID que será gerado ao deferir (o número sequencial é reservado no momento de salvar).</div></div>`}`,
+      ${blocoHistorico('despesas', d.docId)}`,
     textoSalvar: deferida ? 'Salvar análise' : 'Deferir e gerar ID',
     aoSalvar: async () => {
       const origem = document.getElementById('afOrigem').value;
+      const ptres = document.getElementById('afPtres').value;
+      const acao = acaoDoPtres(ptres);
       const financiador = document.getElementById('afFinanciador').value || FINANCIADOR_NENHUM;
       const observacao = document.getElementById('afObs').value.trim();
-      marcarInvalido('afOrigem', !origem);
-      if(!origem) throw new Error('Selecione a origem para deferir.');
+      const beneficiarias = beneficiariasMarcadas(d);
+      marcarInvalido('afOrigem', !origem); marcarInvalido('afPtres', !ptres);
+      if(!origem || !ptres) throw new Error('Selecione a origem e o PTRES (ação do orçamento) para deferir.');
       if(deferida){
-        await Repo.despesas.atualizarAnalise(d.docId, { origem, financiador, observacao });
-        fecharFormModal(); mostrarToast(`Análise de ${d.id} atualizada.`);
+        const avisos = await Repo.despesas.atualizarAnalise(d.docId, { origem, ptres, acao, financiador, beneficiarias, observacao });
+        fecharFormModal(); mostrarToast(avisos.length ? avisos.join(' ') : `Análise atualizada.`, avisos.length > 0);
       } else {
         const origemCodigo = codigoOrigem(origem);
         if(!origemCodigo) throw new Error('A origem selecionada não tem código cadastrado.');
-        const id = await Repo.despesas.deferir(d.docId, { origem, origemCodigo, financiador, observacao });
-        fecharFormModal(); mostrarToast(`Despesa deferida com o ID ${id}.`);
+        const id = await Repo.despesas.deferir(d.docId, { origem, origemCodigo, ptres, acao, financiador, beneficiarias, observacao });
+        fecharFormModal(); mostrarToast(`Despesa deferida com o ID ${id}.${vaiTransferir ? ' Transferência prevista gerada.' : ''}`);
       }
     },
     acaoExtra: deferida ? null : {
@@ -377,13 +436,24 @@ function abrirAnalise(docId){
       },
     },
   });
-  if(!deferida) previewIdAnalise(d.unidade);
+  carregarHistorico('despesas', d.docId);
+  previewIdAnalise();
 }
-function previewIdAnalise(unidade){
+function beneficiariasMarcadas(d){
+  const marcadas = [...document.querySelectorAll('#afBenef input:checked')].map(c => c.value);
+  return marcadas.length ? marcadas : [d.unidade];
+}
+function previewIdAnalise(){
   const el = document.getElementById('afIdPreview');
-  if(!el) return;
+  const d = TABELAS.despesas.find(x => x.docId === analiseDocId);
+  if(!el || !d) return;
   const ori = codigoOrigem(document.getElementById('afOrigem').value) || '·';
-  el.textContent = `#${unidade}.····.${ori}.${document.getElementById('afFinanciador').value || FINANCIADOR_NENHUM}`;
+  const fin = document.getElementById('afFinanciador').value || FINANCIADOR_NENHUM;
+  const base = d.idBase || `#${d.unidade}.····.${ori}.${fin}`;
+  try{
+    el.textContent = Repo.idCompleto(base, d.unidade, beneficiariasMarcadas(d), posicoesDoAno(d.ano));
+    el.style.color = '';
+  } catch(e){ el.textContent = e.message; el.style.color = '#B42318'; }
 }
 
 async function alternarAtivoDespesa(docId, ativo){
@@ -395,8 +465,8 @@ async function alternarAtivoDespesa(docId, ativo){
     : `Inativar a despesa ${nome}?\n\nEla sai das listas e dos Totais, mas continua registrada e pode ser reativada depois.`;
   if(!confirm(msg)) return;
   try{
-    await Repo.despesas.definirAtivo(docId, ativo);
-    mostrarToast(`Despesa ${ativo ? 'reativada' : 'inativada'}.`);
+    const avisos = await Repo.despesas.definirAtivo(docId, ativo);
+    mostrarToast(avisos.length ? avisos.join(' ') : `Despesa ${ativo ? 'reativada' : 'inativada'}.`, avisos.length > 0);
   } catch(e){ mostrarToast(traduzirErro(e), true); }
 }
 
@@ -424,6 +494,10 @@ function abrirImportacao(){
       </p>
       <div class="form-grid" style="margin-bottom:12px;">
         <div class="form-field">
+          <label for="impPtres">PTRES · ação (para todas as linhas)</label>
+          <select id="impPtres"><option value="">Selecione…</option>${opcoesSelect(opcoesPtres(''), '')}</select>
+        </div>
+        <div class="form-field">
           <label for="impAno">Ano de referência das despesas</label>
           <input type="number" id="impAno" min="2000" max="2100" value="${listaFiltros.ano !== 'todos' ? listaFiltros.ano : new Date().getFullYear()}">
         </div>
@@ -439,11 +513,15 @@ function abrirImportacao(){
 
 function analisarImportacao(){
   const ano = parseInt(document.getElementById('impAno').value, 10);
+  const ptresImp = document.getElementById('impPtres').value;
+  const acaoImp = acaoDoPtres(ptresImp);
+  if(!ptresImp){ mostrarErroForm('Selecione o PTRES antes de analisar.'); return; }
+  esconderErroForm();
   const linhasBrutas = document.getElementById('impTexto').value.split(/\r?\n/).filter(l => l.trim());
   const porNome = {};
   TABELAS.unidades.forEach(u => { porNome[normalizarTexto(u.nome)] = u; });
   const doAno = TABELAS.despesas.filter(d => d.ano === ano);
-  const existentes = new Set(doAno.filter(d => d.id).map(d => d.id));
+  const existentes = new Set(doAno.filter(d => d.idBase).map(d => d.idBase));
   const assinatura = (uni, desc, valor, origem) => [uni, normalizarTexto(desc), Number(valor).toFixed(2), origem].join('|');
   const jaImportadas = new Set(doAno.map(d => assinatura(d.unidade, d.descricao, d.valor, d.origem)));
   const vistos = new Set();
@@ -464,26 +542,34 @@ function analisarImportacao(){
     if(isNaN(valor) || valor < 0) r.erros.push(`Valor "${valorTxt}" inválido.`);
     if(!descricao) r.erros.push('Descrição vazia.');
 
-    const m = idTxt.match(Repo.ID_REGEX);
+    // formato antigo (financiador com 4 dígitos) → novo (3 dígitos)
+    const leg = idTxt.match(Repo.ID_LEGADO_REGEX);
+    let idNovo = idTxt;
+    if(leg){
+      if(leg[4][0] !== '0') r.erros.push(`Financiador ${leg[4]} não cabe em 3 dígitos.`);
+      idNovo = `#${leg[1]}.${leg[2]}.${leg[3]}.${leg[4].slice(1)}`;
+    }
+    const m = idNovo.match(Repo.ID_REGEX);
     let financiador = FINANCIADOR_NENHUM;
     if(m){
+      if(m[5]) r.erros.push('IDs com bloco de beneficiárias não são importados por aqui.');
       financiador = m[4];
       if(uni && m[1] !== uni.codigo) r.avisos.push(`Prefixo ${m[1]} diferente do código da unidade (${uni.codigo}) — o ID será mantido.`);
       if(ori && m[3] !== ori.codigo) r.avisos.push(`Código de origem "${m[3]}" diferente do cadastrado para ${ori.sigla} ("${ori.codigo}") — o ID será mantido.`);
       if(financiador !== FINANCIADOR_NENHUM && !TABELAS.financiadores.some(f => f.codigo === financiador))
         r.avisos.push(`Financiador ${financiador} ainda não cadastrado.`);
-      if(vistos.has(idTxt)) r.erros.push(`ID ${idTxt} repetido nesta lista.`);
-      vistos.add(idTxt);
+      if(vistos.has(idNovo)) r.erros.push(`ID ${idNovo} repetido nesta lista.`);
+      vistos.add(idNovo);
     } else if(idTxt && !/X/i.test(idTxt)){
       r.erros.push(`ID "${idTxt}" fora do padrão #UU.NNNN.O.FFFF (use vazio ou com X para gerar).`);
     }
     r.registro = {
-      id: m ? idTxt : null, ano, unidade: uni && uni.codigo, descricao, valor,
+      id: m ? idNovo : null, ano, unidade: uni && uni.codigo, descricao, valor, ptres: ptresImp, acao: acaoImp,
       origem: ori && ori.sigla, origemCodigo: ori && ori.codigo, natureza, financiador,
       situacaoLegado: situacaoTxt || '',
     };
     if(r.erros.length) r.status = 'erro';
-    else if(m && existentes.has(idTxt)) r.status = 'ignorar';
+    else if(m && existentes.has(idNovo)) r.status = 'ignorar';
     else if(!m && jaImportadas.has(assinatura(uni.codigo, descricao, valor, ori.sigla))){
       r.status = 'ignorar'; r.avisos.push('Já existe despesa igual (unidade, descrição, valor e origem) neste ano.');
     }
@@ -549,4 +635,144 @@ async function executarImportacao(){
     (res.geradas.length ? `<br><br>IDs gerados:<br>${res.geradas.map(g =>
       `<span class="id-cell">${escapeHtml(g.id)}</span> · ${escapeHtml(nomeUnidade(g.linha.unidade))} · ${escapeHtml(g.linha.descricao)}`).join('<br>')}` : '');
   mostrarToast(`Importação concluída: ${res.gravadas} despesa(s).`);
+}
+
+/* ================= Execução da despesa deferida =================
+ * Empenhos (empenho, reforço, anulação), pagamentos (parciais) e, se a despesa é
+ * acompanhada em percentual, a evolução física (0 a 100%).
+ * Lançamento: analista (gestor_planejamento) e administrador. Os demais consultam.
+ */
+let execDocId = null;
+
+function abrirExecucao(docId){
+  execDocId = docId;
+  abrirFormModal({ titulo: 'Execução da despesa', largo: true, corpo: '<div id="execCorpo"></div>' });
+  renderExecucao();
+}
+aoMudarDadosRegistrar(['despesas'], () => {
+  if(execDocId && !document.getElementById('formModal').classList.contains('hidden') && document.getElementById('execCorpo')) renderExecucao();
+  else execDocId = null;
+});
+
+function renderExecucao(){
+  const el = document.getElementById('execCorpo');
+  const d = TABELAS.despesas.find(x => x.docId === execDocId);
+  if(!el || !d) return;
+  document.getElementById('formModalTitle').textContent = `Execução · ${d.id}`;
+  const r = resumoExecucao(d);
+  const editar = podeAnalisar() && d.ativo;
+  const id = escapeAttr(d.docId);
+  const remover = (lista, item) => editar ? `<button class="linha-btn perigo" onclick="removerMovimentoExec('${lista}','${escapeAttr(item.id)}')">Excluir</button>` : '';
+  const ordenar = arr => arr.slice().sort((a, b) => (a.data + (a.registradoEm || '')).localeCompare(b.data + (b.registradoEm || '')));
+  const tipoEmp = { empenho: 'Empenho', reforco: 'Reforço', anulacao: 'Anulação' };
+  const card = (rot, val, sub) => `<div class="exec-card"><div class="kpi-label">${rot}</div><div class="exec-valor">${val}</div>${sub ? `<div class="kpi-sub">${sub}</div>` : ''}</div>`;
+
+  el.innerHTML = `
+    <div class="exec-cab">
+      <div><strong>${escapeHtml(d.descricao)}</strong><br><span class="muted">${escapeHtml(nomeUnidade(d.unidade))} · ${escapeHtml(d.origem)} · ${escapeHtml(d.natureza)} · ${d.ano}</span></div>
+      <div>${faseTag(d)}</div>
+    </div>
+    <div class="exec-cards">
+      ${card('Valor deferido', fmtBRL(d.valor))}
+      ${card('Empenhado', fmtBRL(r.empenhado), d.valor ? `${fmtPct(r.empenhado / d.valor * 100)} do deferido` : '')}
+      ${card('Pago', fmtBRL(r.pago), r.empenhado ? `${fmtPct(r.pago / r.empenhado * 100)} do empenhado` : '')}
+      ${card('A pagar', fmtBRL(r.aPagar))}
+      ${d.percentual ? card('Evolução física', fmtPct(r.fisico), `pagamento: ${fmtPct(r.pctPago)} do deferido`) : ''}
+    </div>
+    ${d.percentual ? `<div class="exec-barras">
+      <div class="exec-barra-rot">Execução física</div><div class="exec-barra"><div style="width:${Math.min(100, r.fisico)}%"></div></div><div class="exec-barra-num">${fmtPct(r.fisico)}</div>
+      <div class="exec-barra-rot">Pagamento</div><div class="exec-barra pag"><div style="width:${Math.min(100, r.pctPago)}%"></div></div><div class="exec-barra-num">${fmtPct(r.pctPago)}</div>
+    </div>` : ''}
+
+    <h3 class="exec-tit">Empenhos</h3>
+    <div class="panel"><table class="exec-tab">
+      <thead><tr><th>Data</th><th>Tipo</th><th>Nº do empenho</th><th class="num th-center">Valor</th><th>Lançado por</th><th></th></tr></thead>
+      <tbody>${ordenar(d.empenhos).map(e => `<tr><td>${fmtDataISO(e.data)}</td><td>${tipoEmp[e.tipo] || e.tipo}</td><td class="id-cell">${escapeHtml(e.numero)}</td>
+        <td class="num">${fmtBRLCell((e.tipo === 'anulacao' ? -1 : 1) * e.valor)}</td><td class="muted" style="font-size:11.5px;">${escapeHtml(e.por || '')}</td><td>${remover('empenhos', e)}</td></tr>`).join('')
+        || '<tr><td colspan="6" class="muted">Nenhum empenho lançado.</td></tr>'}</tbody>
+    </table></div>
+    ${editar ? `<div class="exec-form">
+      <div class="form-field"><label>Data</label><input type="date" id="exEmpData" value="${hojeISO()}"></div>
+      <div class="form-field"><label>Tipo</label><select id="exEmpTipo">${opcoesSelect([{ valor: 'empenho', texto: 'Empenho' }, { valor: 'reforco', texto: 'Reforço' }, { valor: 'anulacao', texto: 'Anulação' }], 'empenho')}</select></div>
+      <div class="form-field"><label>Nº do empenho</label><input type="text" id="exEmpNum" maxlength="30" placeholder="2026NE000123"></div>
+      <div class="form-field"><label>Valor (R$)</label><input type="text" id="exEmpValor" inputmode="decimal" placeholder="0,00"></div>
+      <button class="acao-btn" onclick="lancarEmpenho()">Lançar</button>
+    </div>` : ''}
+
+    <h3 class="exec-tit">Pagamentos</h3>
+    <div class="panel"><table class="exec-tab">
+      <thead><tr><th>Data</th><th>Documento</th><th class="num th-center">Valor</th>${d.percentual ? '<th class="num th-center">% do deferido</th>' : ''}<th>Lançado por</th><th></th></tr></thead>
+      <tbody>${ordenar(d.pagamentos).map(pg => `<tr><td>${fmtDataISO(pg.data)}</td><td>${escapeHtml(pg.documento) || '<span class="muted">—</span>'}</td>
+        <td class="num">${fmtBRLCell(pg.valor)}</td>${d.percentual ? `<td class="num">${d.valor ? fmtPct(pg.valor / d.valor * 100) : '—'}</td>` : ''}
+        <td class="muted" style="font-size:11.5px;">${escapeHtml(pg.por || '')}</td><td>${remover('pagamentos', pg)}</td></tr>`).join('')
+        || `<tr><td colspan="${d.percentual ? 6 : 5}" class="muted">Nenhum pagamento lançado.</td></tr>`}</tbody>
+    </table></div>
+    ${editar ? `<div class="exec-form">
+      <div class="form-field"><label>Data</label><input type="date" id="exPagData" value="${hojeISO()}"></div>
+      <div class="form-field"><label>Documento</label><input type="text" id="exPagDoc" maxlength="60" placeholder="Ex.: 2026OB000456"></div>
+      ${d.percentual ? `<div class="form-field"><label>Informar em</label><select id="exPagModo" onchange="document.getElementById('exPagValorRot').textContent=this.value==='pct'?'Percentual do deferido (%)':'Valor (R$)'">${opcoesSelect([{ valor: 'rs', texto: 'R$' }, { valor: 'pct', texto: '% do deferido' }], 'rs')}</select></div>` : ''}
+      <div class="form-field"><label id="exPagValorRot">Valor (R$)</label><input type="text" id="exPagValor" inputmode="decimal" placeholder="0,00"></div>
+      <button class="acao-btn" onclick="lancarPagamento()">Lançar</button>
+    </div>` : ''}
+
+    ${d.percentual ? `
+    <h3 class="exec-tit">Evolução física</h3>
+    <div class="panel"><table class="exec-tab">
+      <thead><tr><th>Data</th><th class="num th-center">% executado (acumulado)</th><th>Observação</th><th>Lançado por</th><th></th></tr></thead>
+      <tbody>${ordenar(d.execucao).map(x => `<tr><td>${fmtDataISO(x.data)}</td><td class="num">${fmtPct(x.percentual)}</td><td>${escapeHtml(x.observacao || '')}</td>
+        <td class="muted" style="font-size:11.5px;">${escapeHtml(x.por || '')}</td><td>${remover('execucao', x)}</td></tr>`).join('')
+        || '<tr><td colspan="5" class="muted">Nenhuma medição lançada.</td></tr>'}</tbody>
+    </table></div>
+    ${editar ? `<div class="exec-form">
+      <div class="form-field"><label>Data</label><input type="date" id="exFisData" value="${hojeISO()}"></div>
+      <div class="form-field"><label>% executado (acumulado)</label><input type="text" id="exFisPct" inputmode="decimal" placeholder="Ex.: 35"></div>
+      <div class="form-field" style="flex:1; min-width:200px;"><label>Observação</label><input type="text" id="exFisObs" maxlength="200" placeholder="Ex.: 3ª medição"></div>
+      <button class="acao-btn" onclick="lancarEvolucao()">Lançar</button>
+    </div>` : ''}` : ''}
+    ${!editar ? '<p class="form-nota" style="margin-top:14px;">Empenhos, pagamentos e evolução são lançados pelo analista (Gestor de Planejamento) ou pelo administrador.</p>' : ''}`;
+}
+
+async function execAcao(fn, msg){
+  esconderErroForm();
+  try{ await fn(); mostrarToast(msg); }
+  catch(e){ console.error(e); mostrarErroForm(traduzirErro(e)); }
+}
+function lancarEmpenho(){
+  const d = TABELAS.despesas.find(x => x.docId === execDocId);
+  const item = { data: document.getElementById('exEmpData').value, tipo: document.getElementById('exEmpTipo').value,
+    numero: document.getElementById('exEmpNum').value.trim(), valor: parseValorBR(document.getElementById('exEmpValor').value) };
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(item.data)) return mostrarErroForm('Informe a data do empenho.');
+  if(!item.numero) return mostrarErroForm('Informe o número do empenho.');
+  if(isNaN(item.valor) || item.valor <= 0) return mostrarErroForm('Informe um valor maior que zero.');
+  const r = resumoExecucao(d);
+  if(item.tipo === 'anulacao' && item.valor > r.empenhado - r.pago + 0.004) return mostrarErroForm(`A anulação não pode passar do saldo empenhado ainda não pago (${fmtBRL(r.empenhado - r.pago)}).`);
+  if(item.tipo !== 'anulacao' && r.empenhado + item.valor > d.valor + 0.004 &&
+     !confirm(`O total empenhado (${fmtBRL(r.empenhado + item.valor)}) passará do valor deferido (${fmtBRL(d.valor)}). Lançar mesmo assim?`)) return;
+  execAcao(() => Repo.despesas.adicionarMovimento(execDocId, 'empenhos', item), 'Empenho lançado.');
+}
+function lancarPagamento(){
+  const d = TABELAS.despesas.find(x => x.docId === execDocId);
+  const modo = (document.getElementById('exPagModo') || {}).value || 'rs';
+  const bruto = parseValorBR(document.getElementById('exPagValor').value);
+  const valor = modo === 'pct' ? Math.round(d.valor * bruto) / 100 : bruto;
+  const item = { data: document.getElementById('exPagData').value, documento: document.getElementById('exPagDoc').value.trim(), valor };
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(item.data)) return mostrarErroForm('Informe a data do pagamento.');
+  if(isNaN(valor) || valor <= 0) return mostrarErroForm('Informe um valor maior que zero.');
+  const r = resumoExecucao(d);
+  if(r.pago + valor > r.empenhado + 0.004) return mostrarErroForm(`O pagamento passa do saldo empenhado a pagar (${fmtBRL(r.aPagar)}). Lance o empenho antes.`);
+  execAcao(() => Repo.despesas.adicionarMovimento(execDocId, 'pagamentos', item), `Pagamento de ${fmtBRL(valor)} lançado.`);
+}
+function lancarEvolucao(){
+  const d = TABELAS.despesas.find(x => x.docId === execDocId);
+  const item = { data: document.getElementById('exFisData').value, percentual: parseValorBR(document.getElementById('exFisPct').value),
+    observacao: document.getElementById('exFisObs').value.trim() };
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(item.data)) return mostrarErroForm('Informe a data da medição.');
+  if(isNaN(item.percentual) || item.percentual < 0 || item.percentual > 100) return mostrarErroForm('O percentual deve estar entre 0 e 100.');
+  const r = resumoExecucao(d);
+  if(item.percentual < r.fisico && !confirm(`O percentual informado (${fmtPct(item.percentual)}) é menor que o último lançado (${fmtPct(r.fisico)}). Lançar mesmo assim?`)) return;
+  execAcao(() => Repo.despesas.adicionarMovimento(execDocId, 'execucao', item), 'Evolução lançada.');
+}
+function removerMovimentoExec(lista, itemId){
+  if(!confirm('Excluir este lançamento?')) return;
+  execAcao(() => Repo.despesas.removerMovimento(execDocId, lista, itemId), 'Lançamento excluído.');
 }

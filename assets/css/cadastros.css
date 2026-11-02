@@ -157,3 +157,122 @@
   .link-suap{color:var(--c2); font-weight:600; text-decoration:none; white-space:nowrap;}
   .link-suap:hover{text-decoration:underline;}
   .modal-footer .espaco{flex:1;}
+
+  /* ---------- fases da despesa e execução ---------- */
+  .sit-tag.fase-deferida{background:rgba(30,142,90,.14); color:#1E8E5A;}
+  .sit-tag.fase-empenhada{background:rgba(37,99,235,.13); color:#2563EB;}
+  .sit-tag.fase-pagamento{background:rgba(202,138,4,.15); color:#A16207;}
+  .sit-tag.fase-quitada{background:rgba(42,20,88,.12); color:var(--c1);}
+  .fase-pct{font-size:10.5px; color:var(--ink-soft); margin-top:3px; white-space:nowrap;}
+  .check-linha{display:flex !important; align-items:flex-start; gap:8px; font-size:13px !important; text-transform:none !important; letter-spacing:0 !important; color:var(--ink) !important; font-weight:500 !important; cursor:pointer;}
+  .check-linha input{accent-color:var(--c1); margin-top:3px;}
+  .check-linha small{display:block; color:var(--ink-soft); font-size:11.5px; font-weight:400;}
+  .exec-cab{display:flex; justify-content:space-between; align-items:flex-start; gap:16px; font-size:13.5px; line-height:1.5; margin-bottom:14px;}
+  .exec-cards{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; margin-bottom:14px;}
+  .exec-card{border:1px solid var(--border); border-radius:10px; padding:11px 13px;}
+  .exec-valor{font-size:17px; font-weight:600; color:var(--c1); margin-top:4px; font-variant-numeric:tabular-nums;}
+  .exec-barras{display:grid; grid-template-columns:130px 1fr 60px; gap:8px 12px; align-items:center; margin:4px 0 6px; font-size:12px;}
+  .exec-barra{height:10px; background:var(--border); border-radius:5px; overflow:hidden;}
+  .exec-barra > div{height:100%; background:var(--c1); border-radius:5px;}
+  .exec-barra.pag > div{background:var(--c2);}
+  .exec-barra-num{text-align:right; font-weight:600; font-variant-numeric:tabular-nums;}
+  .exec-tit{font-size:14px; font-weight:600; color:var(--c1); margin:20px 0 8px;}
+  .exec-tab{font-size:12.5px;}
+  .exec-tab thead th{padding:8px 12px;}
+  .exec-tab tbody td{padding:8px 12px;}
+  .exec-form{display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; background:#F0E7F7; border:1px solid #DCC9EC; border-radius:10px; padding:10px 12px; margin-top:8px;}
+  .exec-form .form-field{min-width:130px;}
+  .exec-form .form-field input, .exec-form .form-field select{padding:7px 9px; font-size:12.5px;}
+
+  /* ---------- módulo Orçamento ---------- */
+  .po-bloco-titulo{font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--ink-soft); margin:4px 2px 8px;}
+  .rp-cel{padding:4px 6px !important;}
+  .rp-input{width:100%; text-align:right; font-family:inherit; font-size:12.5px; font-variant-numeric:tabular-nums; border:1px solid transparent; border-radius:6px; padding:6px 8px; background:transparent; color:var(--ink);}
+  .rp-input:hover{border-color:var(--border); background:var(--surface);}
+  .rp-input:focus{outline:none; border-color:var(--c2); background:var(--surface);}
+  .rp-input.alterado{background:#FFF8E6; border-color:#F1DFAE;}
+
+  /* ================= Painel lateral (drawer) ================= */
+  .drawer-overlay{justify-content:flex-end; align-items:stretch; padding:0; background:rgba(42,20,88,.35);}
+  .drawer{
+    max-width:min(580px, 100vw) !important; width:100%; height:100vh; max-height:100vh !important;
+    border-radius:0 !important; border:none; border-left:1px solid var(--border);
+    box-shadow:-18px 0 48px rgba(42,20,88,.22); animation:drawerEntra .18s ease-out;
+  }
+  .drawer.modal-card-wide{max-width:min(1000px, 100vw) !important;}
+  @keyframes drawerEntra{from{transform:translateX(40px); opacity:.4;} to{transform:none; opacity:1;}}
+  .drawer-header{align-items:center; padding:16px 22px; gap:12px;}
+  .drawer-header .modal-title{flex:1; font-size:16px;}
+  .drawer-voltar{display:none; background:none; border:none; font-size:20px; color:var(--c1); cursor:pointer; padding:4px 6px;}
+  .drawer-fechar{
+    width:32px; height:32px; border-radius:8px; border:1px solid #F2C9C3; background:#fff; color:#B42318;
+    font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .drawer-fechar:hover{background:#FDECEA;}
+  .drawer .modal-body{padding:20px 22px 24px;}
+  .drawer .modal-footer{padding:12px 22px; background:#FAF6F2;}
+  .bloco-drawer{border-top:1px solid var(--border); margin-top:18px; padding-top:14px;}
+  .bloco-drawer > h4{font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:var(--ink-soft); font-weight:600; margin-bottom:10px;}
+  .historico-lista{list-style:none; margin:0; padding:0; font-size:12.5px;}
+  .historico-lista li{padding:8px 0; border-bottom:1px dashed var(--border); line-height:1.5;}
+  .historico-lista .h-cab{color:var(--ink-soft);}
+  .historico-lista .h-acao{font-weight:600; color:var(--c1);}
+  .historico-lista .h-alt{color:var(--ink); font-size:12px; margin-top:2px; word-break:break-word;}
+  .benef-grade{display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:4px 12px; border:1px solid var(--border); border-radius:9px; padding:10px 12px; max-height:220px; overflow:auto;}
+  .benef-grade label{display:flex; align-items:center; gap:6px; font-size:12.5px; cursor:pointer;}
+  .benef-grade input{accent-color:var(--c1); width:auto !important; flex:0 0 auto; padding:0; margin:0;}
+  .benef-grade label{justify-content:flex-start; text-align:left;}
+  .benef-grade .pos{color:var(--ink-soft); font-size:10.5px; font-variant-numeric:tabular-nums; min-width:18px;}
+  .chip-unid{display:inline-block; font-size:11px; padding:2px 8px; border-radius:12px; background:#F0E7FA; color:var(--c1-soft); margin:2px 4px 2px 0;}
+  .transf-tag{display:inline-block; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.3px; padding:2px 7px; border-radius:20px;}
+  .transf-tag.prevista{background:rgba(202,138,4,.15); color:#A16207;}
+  .transf-tag.realizada{background:rgba(30,142,90,.14); color:#1E8E5A;}
+  .transf-tag.parcial{background:rgba(37,99,235,.13); color:#2563EB;}
+  .transf-tag.cancelada{background:#F0E7E0; color:var(--ink-soft);}
+  .tipo-receita{display:inline-block; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.3px; padding:2px 7px; border-radius:20px;}
+  .tipo-receita.previsao{background:rgba(37,99,235,.13); color:#2563EB;}
+  .tipo-receita.chegada{background:rgba(30,142,90,.14); color:#1E8E5A;}
+  .ponta{font-size:12px; line-height:1.45;}
+  .ponta small{color:var(--ink-soft); white-space:nowrap;}
+  #trBody .linha-acoes{flex-wrap:wrap; justify-content:flex-end; max-width:230px; margin-left:auto;}
+
+  /* ================= Celular ================= */
+  .menu-mobile{display:none;}
+  @media (max-width: 640px){
+    .menu-mobile{
+      display:flex; align-items:center; justify-content:center; position:fixed; top:10px; left:10px; z-index:45;
+      width:40px; height:40px; border-radius:10px; border:1px solid var(--border); background:var(--surface);
+      color:var(--c1); font-size:19px; box-shadow:0 4px 14px rgba(42,20,88,.12); cursor:pointer;
+    }
+    .sidebar.collapsed{width:0 !important; padding:0 !important; overflow:hidden; border:none;}
+    .main{margin-left:0 !important;}
+    .topbar{padding:62px 16px 10px !important; flex-direction:column; align-items:flex-start !important; gap:10px;}
+    .topbar-right{flex-wrap:wrap;}
+    .drawer, .drawer.modal-card-wide{max-width:100vw !important; border-left:none;}
+    .drawer-voltar{display:block;}
+    .drawer-fechar{display:none;}
+    .drawer-header{padding:12px 14px;}
+    .drawer .modal-body{padding:16px 14px 20px;}
+    .drawer .modal-footer{padding:10px 14px; flex-wrap:wrap;}
+    .drawer .modal-footer .acao-btn{flex:1; justify-content:center;}
+    .drawer .modal-footer .espaco{display:none;}
+    .form-grid{grid-template-columns:1fr !important;}
+    .filter-bar{flex-direction:column; align-items:stretch;}
+    .filter-field{min-width:0 !important; width:100%;}
+    .kpi-row{grid-template-columns:1fr !important;}
+    .lista-abas{overflow-x:auto;}
+    .exec-barras{grid-template-columns:90px 1fr 46px;}
+
+    /* listas viram cartões: cada linha um cartão, cada célula "rótulo: valor" */
+    table.tabela-cartoes thead{display:none;}
+    table.tabela-cartoes, table.tabela-cartoes tbody, table.tabela-cartoes tfoot{display:block; width:100%;}
+    table.tabela-cartoes tbody tr{display:block; border:1px solid var(--border); border-radius:12px; margin-bottom:10px; padding:8px 12px; background:var(--surface) !important;}
+    table.tabela-cartoes tbody td{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:6px 0 !important; border:none; text-align:right; max-width:none !important;}
+    table.tabela-cartoes tbody td::before{content:attr(data-label); font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-soft); font-weight:600; text-align:left; flex-shrink:0; padding-top:2px;}
+    table.tabela-cartoes tbody td[data-label=""]::before{display:none;}
+    table.tabela-cartoes tbody td .linha-acoes{justify-content:flex-end; flex-wrap:wrap; width:100%;}
+    table.tabela-cartoes tbody td.num .cur-cell{justify-content:flex-end; gap:6px;}
+    table.tabela-cartoes tfoot tr{display:flex; justify-content:space-between; border-radius:10px; overflow:hidden;}
+    table.tabela-cartoes tfoot td{display:block; padding:10px 12px !important;}
+    table.tabela-cartoes tfoot td:empty{display:none;}
+  }

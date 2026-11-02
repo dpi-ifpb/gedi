@@ -129,3 +129,71 @@ function estadoCarregando(texto){
 function estadoErro(msg){
   return `<div class="state-box"><h3>Não foi possível carregar os dados</h3><p>${escapeHtml(msg)}</p></div>`;
 }
+
+/* ---------- histórico de alterações (gestor e administrador) ---------- */
+const ROTULOS_CAMPOS = {
+  ano: 'Ano', unidade: 'Unidade', fonte: 'Fonte', descricao: 'Descrição', valor: 'Valor', natureza: 'Natureza',
+  processo: 'Processo', linkSuap: 'Link SUAP', percentual: 'Acompanhar em %', status: 'Situação', id: 'ID', idBase: 'Base do ID',
+  origem: 'Origem', acao: 'Ação', financiador: 'Financiador', beneficiarias: 'Beneficiárias', ativo: 'Ativo',
+  analise: 'Análise', empenhos: 'Empenhos', pagamentos: 'Pagamentos', execucao: 'Evolução física', transferencia: 'Transferência',
+  nome: 'Nome', codigo: 'Código', perfis: 'Perfis', unidades: 'Unidades', previsao: 'Previsão', data: 'Data',
+  documento: 'Documento', observacao: 'Observação', de: 'De', para: 'Para', justificativa: 'Justificativa',
+  dataRealizacao: 'Data da NC', automatica: 'Automática', despesa: 'Despesa', situacaoLegado: 'Situação (planilha)', importado: 'Importada',
+};
+function blocoHistorico(entidade, docId){
+  if(!temPerfil(P_GESTAO)) return '';
+  return `<div class="bloco-drawer"><h4>Histórico de alterações</h4><div id="hist_${escapeAttr(docId)}" class="muted" style="font-size:12.5px;">Carregando…</div></div>`;
+}
+function resumoValor(v){
+  if(v === null || v === undefined || v === '') return '—';
+  if(typeof v === 'boolean') return v ? 'sim' : 'não';
+  if(Array.isArray(v)) return v.length && typeof v[0] === 'object' ? `${v.length} lançamento(s)` : (v.join(', ') || '—');
+  if(typeof v === 'object'){
+    if(v.unidade) return `${v.unidade}/${v.origem || ''}/${v.acao || ''}/${v.natureza || ''}`;
+    if('resultado' in v) return `${v.resultado || ''}${v.observacao ? ': ' + v.observacao : ''}`;
+    if(v._d || v.seconds) return 'data/hora';
+    return '…';
+  }
+  const t = String(v);
+  return t.length > 80 ? t.slice(0, 77) + '…' : t;
+}
+async function carregarHistorico(entidade, docId){
+  const el = document.getElementById(`hist_${docId}`);
+  if(!el) return;
+  try{
+    const itens = await Repo.historico.listar(entidade, docId);
+    if(!document.getElementById(`hist_${docId}`)) return;
+    el.classList.remove('muted');
+    el.innerHTML = itens.length ? `<ul class="historico-lista">${itens.map(h => {
+      const alts = h.versao === 1 ? [] : Object.entries(h.alteracoes || {}).filter(([k]) => k !== '_documento')
+        .map(([k, v]) => `${ROTULOS_CAMPOS[k] || k}: ${escapeHtml(resumoValor(v.de))} → ${escapeHtml(resumoValor(v.para))}`);
+      return `<li><span class="h-cab">${fmtDataHora(h.em)} · ${escapeHtml(h.por)}</span><br><span class="h-acao">${escapeHtml(h.acao)}${h.versao === 1 ? ' (criação)' : ''}</span>
+        ${alts.length ? `<div class="h-alt">${alts.join('<br>')}</div>` : ''}</li>`;
+    }).join('')}</ul>` : '<span class="muted">Sem registros.</span>';
+  } catch(e){ el.textContent = 'Não foi possível carregar o histórico.'; }
+}
+
+/* ---------- tabelas em cartões no celular: copia o título da coluna para cada célula ---------- */
+function rotularTabelasCartoes(){
+  document.querySelectorAll('table.tabela-cartoes').forEach(t => {
+    const ths = [...t.querySelectorAll('thead tr:last-child th')].map(th => th.textContent.trim());
+    if(!ths.length) return;
+    t.querySelectorAll('tbody tr').forEach(tr => {
+      [...tr.children].forEach((td, i) => { if(!td.hasAttribute('data-label')) td.setAttribute('data-label', td.colSpan > 1 ? '' : (ths[i] || '')); });
+    });
+  });
+}
+let rotularPendente = false;
+new MutationObserver(() => {
+  if(rotularPendente) return;
+  rotularPendente = true;
+  requestAnimationFrame(() => { rotularPendente = false; rotularTabelasCartoes(); });
+}).observe(document.documentElement, { childList: true, subtree: true });
+
+// acrescenta o bloco de histórico ao painel lateral já aberto
+function anexarHistorico(entidade, docId){
+  const corpo = document.getElementById('formModalBody');
+  if(!corpo || !temPerfil(P_GESTAO)) return;
+  corpo.insertAdjacentHTML('beforeend', blocoHistorico(entidade, docId));
+  carregarHistorico(entidade, docId);
+}

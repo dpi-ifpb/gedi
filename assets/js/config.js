@@ -45,6 +45,9 @@ const P_ADMIN = ['administrador'];
 const PAGINAS_PERFIS = {
   sobre: null,
   formacao: P_ORC,
+  painelOrc: P_ORC,
+  receitas: P_ORC,
+  transferencias: P_ORC,
   totais: P_ORC,
   detalhe: P_ORC,
   extra: P_ORC,
@@ -64,7 +67,7 @@ const PAGINAS_PERFIS = {
 // Listas fixas do registro de despesas (momento de planejamento).
 const NATUREZAS = ['Custeio', 'Investimento'];
 const RESULTADOS_ANALISE = { deferida: 'Deferida', indeferida: 'Indeferida', pendente: 'Não analisada' };
-const FINANCIADOR_NENHUM = '0000';
+const FINANCIADOR_NENHUM = '000';
 
 // Valores iniciais das tabelas de Unidades e Origens — usados só pelo botão
 // "Carregar valores iniciais" quando as tabelas ainda estão vazias. Extraídos
@@ -78,6 +81,10 @@ const UNIDADES_INICIAIS = [
   ['PC', 'Picuí'], ['PI', 'Princesa Isabel'], ['QM', 'Queimadas'], ['RE', 'Reitoria'],
   ['SL', 'Santa Luzia'], ['SR', 'Santa Rita'], ['SP', 'Sapé'], ['SD', 'Soledade'], ['SS', 'Sousa'],
 ];
+// [sigla, código no ID, resultado primário no SIAFI]
 const ORIGENS_INICIAIS = [
-  ['EFQ', 'L'], ['PAC', 'P'], ['RP2', '2'], ['RP6', '6'], ['RP7', '7'], ['RTC', 'R'],
+  ['EFQ', 'L', '2'], ['PAC', 'P', '3'], ['RP2', '2', '2'], ['RP6', '6', '6'], ['RP7', '7', '7'], ['RTC', 'R', '2'],
 ];
+
+const ROTULO_STATUS_TRANSF = { prevista: 'Prevista', parcial: 'Parcial', realizada: 'Realizada', cancelada: 'Cancelada' };
+const ROTULO_TIPO_TRANSF = { despesa: 'Automática (despesa)', repasse: 'Repasse', troca: 'Troca orçamentária' };
