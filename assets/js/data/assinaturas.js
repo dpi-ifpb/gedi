@@ -39,7 +39,6 @@ function iniciarAssinaturas(){
   assinar('unidades', (a, b) => Repo.unidades.observar(a, b));
   assinar('origens', (a, b) => Repo.origens.observar(a, b));
   assinar('acoes', (a, b) => Repo.acoes.observar(a, b));
-  assinar('ptres', (a, b) => Repo.ptres.observar(a, b));
   assinar('posicoes', (a, b) => Repo.posicoes.observar(a, b));
   if(temPerfil(P_ORC)){
     assinar('financiadores', (a, b) => Repo.financiadores.observar(a, b));
@@ -138,15 +137,8 @@ function nomeAcao(codigo){
   return a ? `${a.codigo} · ${a.descricao}` : (codigo || '—');
 }
 
-function ptresOrdenados(somenteAtivos){
-  return TABELAS.ptres.filter(p => !somenteAtivos || p.ativo).sort((a, b) => a.codigo.localeCompare(b.codigo));
-}
-function acaoDoPtres(codigo){
-  const p = TABELAS.ptres.find(x => x.codigo === codigo);
-  return p ? p.acao : '';
-}
-// opções de PTRES para selects: "123456 · 20RL · descrição"
-function opcoesPtres(atual){
-  return ptresOrdenados(false).filter(p => p.ativo || p.codigo === atual)
-    .map(p => ({ valor: p.codigo, texto: `${p.codigo} · ${p.acao}${p.descricao ? ' · ' + p.descricao : ''}` }));
+// opções de ação para selects: "20RL · descrição" (só ativas, mais a atual)
+function opcoesAcao(atual){
+  return acoesOrdenadas(false).filter(a => a.ativo || a.codigo === atual)
+    .map(a => ({ valor: a.codigo, texto: `${a.codigo} · ${a.descricao.length > 70 ? a.descricao.slice(0, 67) + '…' : a.descricao}` }));
 }

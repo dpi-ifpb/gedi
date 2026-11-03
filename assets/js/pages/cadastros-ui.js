@@ -140,10 +140,8 @@ const ROTULOS_CAMPOS = {
   documento: 'Documento', observacao: 'Observação', de: 'De', para: 'Para', justificativa: 'Justificativa',
   dataRealizacao: 'Data da NC', automatica: 'Automática', despesa: 'Despesa', situacaoLegado: 'Situação (planilha)', importado: 'Importada',
 };
-function blocoHistorico(entidade, docId){
-  if(!temPerfil(P_GESTAO)) return '';
-  return `<div class="bloco-drawer"><h4>Histórico de alterações</h4><div id="hist_${escapeAttr(docId)}" class="muted" style="font-size:12.5px;">Carregando…</div></div>`;
-}
+// O histórico não aparece nos painéis: fica na página de histórico, acessível só pela URL (index.html#auditoria).
+function blocoHistorico(){ return ''; }
 function resumoValor(v){
   if(v === null || v === undefined || v === '') return '—';
   if(typeof v === 'boolean') return v ? 'sim' : 'não';
@@ -191,9 +189,4 @@ new MutationObserver(() => {
 }).observe(document.documentElement, { childList: true, subtree: true });
 
 // acrescenta o bloco de histórico ao painel lateral já aberto
-function anexarHistorico(entidade, docId){
-  const corpo = document.getElementById('formModalBody');
-  if(!corpo || !temPerfil(P_GESTAO)) return;
-  corpo.insertAdjacentHTML('beforeend', blocoHistorico(entidade, docId));
-  carregarHistorico(entidade, docId);
-}
+function anexarHistorico(){}

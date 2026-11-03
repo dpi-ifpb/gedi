@@ -65,6 +65,11 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M8 14h3"/><path d="M8 17h6"/></svg>
       <span class="nav-label">Receitas</span>
     </div>
+    <div class="nav-item" id="navLista" onclick="switchPage('lista')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5"/><path d="M12 11v6"/><path d="M9 14h6"/></svg>
+      <span class="nav-label">Despesas</span>
+      <span class="nav-badge" id="navListaBadge" style="display:none;"></span>
+    </div>
     <div class="nav-item" id="navTransferencias" onclick="switchPage('transferencias')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13"/><path d="M14 5l3 3-3 3"/><path d="M20 16H7"/><path d="M10 13l-3 3 3 3"/></svg>
       <span class="nav-label">Transferências</span>
@@ -74,13 +79,7 @@
       <span class="nav-label">Formação do Orçamento</span>
     </div>
 
-    <div class="nav-section-label">Despesas</div>
-    <div class="nav-item" id="navLista" onclick="switchPage('lista')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5"/><path d="M12 11v6"/><path d="M9 14h6"/></svg>
-      <span class="nav-label">Lista</span>
-      <span class="nav-badge" id="navListaBadge" style="display:none;"></span>
-    </div>
-    <div class="nav-item" id="navTotais" onclick="switchPage('totais')">
+    <div class="nav-item" id="navTotais" onclick="switchPage('totais')" style="display:none;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
       <span class="nav-label">Totais</span>
     </div>
@@ -128,14 +127,11 @@
     </div>
 
     <div class="nav-section-label">Administração</div>
-    <div class="nav-item" id="navFinanciadores" onclick="switchPage('financiadores')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M4 10h16"/><path d="M12 3 4 7v3h16V7l-8-4Z"/><path d="M6 10v8"/><path d="M10 10v8"/><path d="M14 10v8"/><path d="M18 10v8"/></svg>
-      <span class="nav-label">Financiadores</span>
-    </div>
     <div class="nav-item" id="navTabelas" onclick="switchPage('tabelas')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/><circle cx="18" cy="18" r="2"/></svg>
-      <span class="nav-label">Unidades, Origens e Ações</span>
+      <span class="nav-label">Cadastros</span>
     </div>
+    <div class="nav-item" id="navAuditoria" style="display:none;"><span class="nav-label">Histórico de alterações</span></div>
     <div class="nav-item" id="navUsuarios" onclick="switchPage('usuarios')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3.1-6.5 7-6.5s7 2.9 7 6.5"/></svg>
       <span class="nav-label">Usuários</span>
@@ -377,7 +373,7 @@
   <div id="page-lista" style="display:none;">
     <div class="topbar">
       <div class="topbar-left">
-        <h1>Lista de Despesas</h1>
+        <h1>Despesas</h1>
         <p>Despesas registradas pelas unidades. O ID é gerado quando a despesa é deferida na análise.</p>
       </div>
       <div class="topbar-right">
@@ -388,29 +384,26 @@
     <div class="content" id="contentLista"></div>
   </div>
 
-  <!-- ============ TELA · FINANCIADORES ============ -->
-  <div id="page-financiadores" style="display:none;">
-    <div class="topbar">
-      <div class="topbar-left">
-        <h1>Financiadores</h1>
-        <p>Parlamentares (emendas), empresas parceiras e outros. O código compõe as 4 últimas posições do ID da despesa.</p>
-      </div>
-      <div class="topbar-right">
-        <button class="acao-btn" onclick="abrirFormFinanciador()">+ Novo financiador</button>
-      </div>
-    </div>
-    <div class="content" id="contentFinanciadores"></div>
-  </div>
-
   <!-- ============ TELA · UNIDADES E ORIGENS ============ -->
   <div id="page-tabelas" style="display:none;">
     <div class="topbar">
       <div class="topbar-left">
-        <h1>Unidades, Origens e Ações</h1>
-        <p>Códigos usados nos lançamentos e na formação do ID das despesas.</p>
+        <h1>Cadastros</h1>
+        <p>Unidades, origens, ações do orçamento, financiadores e posições das unidades no ID das despesas.</p>
       </div>
     </div>
     <div class="content" id="contentTabelas"></div>
+  </div>
+
+  <!-- ============ TELA · HISTÓRICO DE ALTERAÇÕES (só pela URL: #auditoria) ============ -->
+  <div id="page-auditoria" style="display:none;">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>Histórico de alterações</h1>
+        <p>Quem fez cada gravação, quando e o que mudou, por entidade. Esta página não aparece no menu: acesse pelo endereço terminado em #auditoria.</p>
+      </div>
+    </div>
+    <div class="content" id="contentAuditoria"></div>
   </div>
 
   <!-- ============ TELA · USUÁRIOS ============ -->
@@ -545,6 +538,7 @@
 <script src="assets/js/pages/lista-despesas.js"></script>
 <script src="assets/js/pages/orcamento.js"></script>
 <script src="assets/js/pages/administracao.js"></script>
+<script src="assets/js/pages/auditoria.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>

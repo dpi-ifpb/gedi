@@ -141,6 +141,7 @@ function showApp(label){
   aplicarRestricaoDePerfil();
   iniciarAssinaturas();
   if(typeof iniciarPainelComDados === 'function') iniciarPainelComDados();
+  if(typeof abrirPaginaPelaUrl === 'function') abrirPaginaPelaUrl();
   startInactivityWatch();
 }
 

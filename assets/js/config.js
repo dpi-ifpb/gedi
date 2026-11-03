@@ -59,8 +59,8 @@ const PAGINAS_PERFIS = {
   pares: P_ORC,
   simulador: P_ORC,
   simuladorF: P_ORC,
-  financiadores: P_ADMIN,
   tabelas: P_ADMIN,
+  auditoria: P_GESTAO,
   usuarios: P_ADMIN,
 };
 
@@ -83,7 +83,7 @@ const UNIDADES_INICIAIS = [
 ];
 // [sigla, código no ID, resultado primário no SIAFI]
 const ORIGENS_INICIAIS = [
-  ['EFQ', 'L', '2'], ['PAC', 'P', '3'], ['RP2', '2', '2'], ['RP6', '6', '6'], ['RP7', '7', '7'], ['RTC', 'R', '2'],
+  ['EFQ', 'Q', '2'], ['LOA', 'L', '2'], ['PAC', 'P', '3'], ['RP2', '2', '2'], ['RP6', '6', '6'], ['RP7', '7', '7'], ['RTC', 'R', '2'],
 ];
 
 const ROTULO_STATUS_TRANSF = { prevista: 'Prevista', parcial: 'Parcial', realizada: 'Realizada', cancelada: 'Cancelada' };

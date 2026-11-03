@@ -109,7 +109,7 @@ function renderLista(){
           </tr>` : `
           <tr>
             <th>Unidade</th><th>Descrição</th><th class="th-center">Natureza</th><th>Processo</th>
-            <th class="num th-center">Valor</th><th>Registro</th><th class="th-center">Ações</th>
+            <th class="num th-center">Valor</th><th>Registrada em</th><th class="th-center">Ações</th>
           </tr>`}
         </thead>
         <tbody id="listaBody"></tbody>
@@ -208,7 +208,7 @@ function renderListaTabela(){
       <td><span class="tipo-tag ${naturezaTagClass(d.natureza)}">${escapeHtml(d.natureza)}</span></td>
       <td>${processoCell(d)}</td>
       <td class="num">${fmtBRLCell(d.valor)}</td>
-      <td class="muted" style="font-size:12px;">${escapeHtml(d.criadoPor)}<br>${fmtDataHora(d.criadoEm)}</td>
+      <td class="muted" style="font-size:12px;">${fmtDataHora(d.criadoEm)}</td>
       <td>${botoesLinha(d)}</td>
     </tr>`).join('') || `<tr><td colspan="8" class="muted" style="padding:24px 26px;">${analisadas ? 'Nenhuma despesa analisada para os filtros selecionados.' : 'Nenhuma despesa aguardando análise.'}</td></tr>`;
 
@@ -276,8 +276,7 @@ function abrirFormRegistro(docId){
           <input type="url" id="rfLink" maxlength="500" placeholder="https://suap.ifpb.edu.br/…" value="${d ? escapeAttr(d.linkSuap) : ''}">
         </div>
       </div>
-      ${d ? `<div class="auditoria">Registrada por ${escapeHtml(d.criadoPor || '—')} em ${fmtDataHora(d.criadoEm)}<br>
-        Última alteração por ${escapeHtml(d.atualizadoPor || '—')} em ${fmtDataHora(d.atualizadoEm)}</div>` : ''}`,
+`,
     textoSalvar: d ? 'Salvar alterações' : 'Registrar',
     aoSalvar: async () => {
       const dados = {
@@ -329,11 +328,11 @@ function dlDespesa(d, semHistorico){
       <dt>Valor · Natureza</dt><dd>${fmtBRL(d.valor)} · ${escapeHtml(d.natureza)}</dd>
       <dt>Processo eletrônico</dt><dd>${processoCell(d)}</dd>
       ${d.percentual ? '<dt>Acompanhamento</dt><dd>Em percentual (evolução física e pagamento)</dd>' : ''}
-      <dt>Registro</dt><dd>${escapeHtml(d.criadoPor || '—')} em ${fmtDataHora(d.criadoEm)}</dd>
+      <dt>Registrada em</dt><dd>${fmtDataHora(d.criadoEm)}</dd>
       ${d.status !== 'pendente' ? `
-      <dt>Resultado da análise</dt><dd>${resultadoTag(d.status)}${d.analise.por ? ` por ${escapeHtml(d.analise.por)} em ${fmtDataHora(d.analise.em)}` : ''}</dd>
+      <dt>Resultado da análise</dt><dd>${resultadoTag(d.status)}${d.analise.em ? ` em ${fmtDataHora(d.analise.em)}` : ''}</dd>
       ${d.status === 'deferida' ? `
-        <dt>Origem · PTRES · Ação</dt><dd>${escapeHtml(d.origem)} · ${escapeHtml(d.ptres || '—')} · ${escapeHtml(nomeAcao(d.acao))}</dd>
+        <dt>Origem · Ação</dt><dd>${escapeHtml(d.origem)} · ${escapeHtml(nomeAcao(d.acao))}</dd>
         <dt>Financiador</dt><dd>${escapeHtml(d.financiador)} · ${escapeHtml(descricaoFinanciador(d.financiador))}</dd>
         <dt>Unidades beneficiadas</dt><dd>${benef ? d.beneficiarias.map(c => `<span class="chip-unid">${escapeHtml(nomeUnidade(c))}</span>`).join('') : 'Somente a unidade executora'}</dd>
         <dt>Descentralização (transferência)</dt><dd>${t ? `<span class="transf-tag ${t.status}">${ROTULO_STATUS_TRANSF[t.status] || t.status}</span> ${escapeHtml(nomeUnidade(t.de.unidade))} → ${escapeHtml(nomeUnidade(t.para.unidade))} · planejado ${fmtBRL(t.valor)} · realizado ${fmtBRL(t.realizado)}${t.lancamentos.length ? ` · NC: ${t.lancamentos.map(l => escapeHtml(l.numero)).join(', ')}` : ''}` : 'Não se aplica (recurso já está na executora)'}</dd>` : ''}
@@ -358,7 +357,7 @@ function abrirAnalise(docId){
   const deferida = d.status === 'deferida';
   const origens = origensOrdenadas(false).filter(o => o.ativo || o.sigla === d.origem)
     .map(o => ({ valor: o.sigla, texto: `${o.sigla} (código ${o.codigo})` }));
-  const listaPtres = opcoesPtres(d.ptres);
+  const listaAcoes = opcoesAcao(d.acao);
   const financiadores = [{ valor: FINANCIADOR_NENHUM, texto: '000 · Sem financiador' }]
     .concat(financiadoresOrdenados(false).filter(f => f.ativo || f.codigo === d.financiador)
       .map(f => ({ valor: f.codigo, texto: `${f.codigo} · ${f.descricao}` })));
@@ -378,9 +377,9 @@ function abrirAnalise(docId){
             <select id="afOrigem" onchange="previewIdAnalise()"><option value="">Selecione…</option>${opcoesSelect(origens, d.origem)}</select>
           </div>
           <div class="form-field">
-            <label for="afPtres">PTRES · ação do orçamento</label>
-            <select id="afPtres"><option value="">Selecione…</option>${opcoesSelect(listaPtres, d.ptres)}</select>
-            ${listaPtres.length ? '' : '<span class="ajuda">Nenhum PTRES cadastrado. O administrador cadastra em Unidades, Origens e Ações.</span>'}
+            <label for="afAcao">Ação do orçamento</label>
+            <select id="afAcao"><option value="">Selecione…</option>${opcoesSelect(listaAcoes, d.acao)}</select>
+            ${listaAcoes.length ? '' : '<span class="ajuda">Nenhuma ação cadastrada. O administrador cadastra em Administração → Cadastros.</span>'}
           </div>
           <div class="form-field span-2">
             <label for="afFinanciador">Financiador</label>
@@ -407,13 +406,13 @@ function abrirAnalise(docId){
     textoSalvar: deferida ? 'Salvar análise' : 'Deferir e gerar ID',
     aoSalvar: async () => {
       const origem = document.getElementById('afOrigem').value;
-      const ptres = document.getElementById('afPtres').value;
-      const acao = acaoDoPtres(ptres);
+      const ptres = '';
+      const acao = document.getElementById('afAcao').value;
       const financiador = document.getElementById('afFinanciador').value || FINANCIADOR_NENHUM;
       const observacao = document.getElementById('afObs').value.trim();
       const beneficiarias = beneficiariasMarcadas(d);
-      marcarInvalido('afOrigem', !origem); marcarInvalido('afPtres', !ptres);
-      if(!origem || !ptres) throw new Error('Selecione a origem e o PTRES (ação do orçamento) para deferir.');
+      marcarInvalido('afOrigem', !origem); marcarInvalido('afAcao', !acao);
+      if(!origem || !acao) throw new Error('Selecione a origem e a ação do orçamento para deferir.');
       if(deferida){
         const avisos = await Repo.despesas.atualizarAnalise(d.docId, { origem, ptres, acao, financiador, beneficiarias, observacao });
         fecharFormModal(); mostrarToast(avisos.length ? avisos.join(' ') : `Análise atualizada.`, avisos.length > 0);
@@ -462,7 +461,7 @@ async function alternarAtivoDespesa(docId, ativo){
   const nome = d.id || `"${d.descricao}"`;
   const msg = ativo
     ? `Reativar a despesa ${nome}?`
-    : `Inativar a despesa ${nome}?\n\nEla sai das listas e dos Totais, mas continua registrada e pode ser reativada depois.`;
+    : `Inativar a despesa ${nome}?\n\nEla sai das listas e do Painel, mas continua registrada e pode ser reativada depois.`;
   if(!confirm(msg)) return;
   try{
     const avisos = await Repo.despesas.definirAtivo(docId, ativo);
@@ -494,8 +493,8 @@ function abrirImportacao(){
       </p>
       <div class="form-grid" style="margin-bottom:12px;">
         <div class="form-field">
-          <label for="impPtres">PTRES · ação (para todas as linhas)</label>
-          <select id="impPtres"><option value="">Selecione…</option>${opcoesSelect(opcoesPtres(''), '')}</select>
+          <label for="impAcao">Ação do orçamento (para todas as linhas)</label>
+          <select id="impAcao"><option value="">Selecione…</option>${opcoesSelect(opcoesAcao(''), '')}</select>
         </div>
         <div class="form-field">
           <label for="impAno">Ano de referência das despesas</label>
@@ -513,9 +512,9 @@ function abrirImportacao(){
 
 function analisarImportacao(){
   const ano = parseInt(document.getElementById('impAno').value, 10);
-  const ptresImp = document.getElementById('impPtres').value;
-  const acaoImp = acaoDoPtres(ptresImp);
-  if(!ptresImp){ mostrarErroForm('Selecione o PTRES antes de analisar.'); return; }
+  const ptresImp = '';
+  const acaoImp = document.getElementById('impAcao').value;
+  if(!acaoImp){ mostrarErroForm('Selecione a ação do orçamento antes de analisar.'); return; }
   esconderErroForm();
   const linhasBrutas = document.getElementById('impTexto').value.split(/\r?\n/).filter(l => l.trim());
   const porNome = {};

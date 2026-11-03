@@ -33,17 +33,16 @@ function hojeISO(){
 const opUnidades = (filtroAtivo, atual) => unidadesOrdenadas(false).filter(u => !filtroAtivo || u.ativo || u.codigo === atual).map(u => ({ valor: u.codigo, texto: u.nome }));
 const opOrigens = (atual) => origensOrdenadas(false).filter(o => o.ativo || o.sigla === atual).map(o => o.sigla);
 const opAcoes = (atual) => acoesOrdenadas(false).filter(a => a.ativo || a.codigo === atual).map(a => ({ valor: a.codigo, texto: `${a.codigo} · ${a.descricao}` }));
-function auditoriaTexto(x){
-  return x && x.criadoPor ? `<div class="auditoria">Criado por ${escapeHtml(x.criadoPor)} em ${fmtDataHora(x.criadoEm)}<br>Última alteração por ${escapeHtml(x.atualizadoPor)} em ${fmtDataHora(x.atualizadoEm)}</div>` : '';
-}
+// quem criou/alterou não aparece nas telas: consulte a página de histórico (index.html#auditoria)
+function auditoriaTexto(){ return ''; }
 
 /* =============== Painel do Orçamento =============== */
-let poFiltros = { ano: null, agrupar: 'origem', unidade: '', origem: '', acao: '', ptres: '', natureza: '' };
-const AGRUPAMENTOS = [{ valor: 'origem', texto: 'Origem' }, { valor: 'unidade', texto: 'Unidade' }, { valor: 'acao', texto: 'Ação do orçamento' }, { valor: 'ptres', texto: 'PTRES' }, { valor: 'natureza', texto: 'Natureza' }];
+let poFiltros = { ano: null, agrupar: 'origem', unidade: '', origem: '', acao: '', natureza: '' };
+const AGRUPAMENTOS = [{ valor: 'origem', texto: 'Origem' }, { valor: 'unidade', texto: 'Unidade' }, { valor: 'acao', texto: 'Ação do orçamento' }, { valor: 'natureza', texto: 'Natureza' }];
 
 function casaFiltro(x){
   return (!poFiltros.unidade || x.unidade === poFiltros.unidade) && (!poFiltros.origem || x.origem === poFiltros.origem)
-    && (!poFiltros.acao || x.acao === poFiltros.acao) && (!poFiltros.ptres || x.ptres === poFiltros.ptres)
+    && (!poFiltros.acao || x.acao === poFiltros.acao)
     && (!poFiltros.natureza || x.natureza === poFiltros.natureza);
 }
 function calcularPainel(){
@@ -68,7 +67,7 @@ function calcularPainel(){
   let registradaTotal = 0;
   TABELAS.despesas.filter(d => d.ano === ano && d.ativo).forEach(d => {
     if(d.status === 'pendente'){
-      if(poFiltros.origem || poFiltros.acao || poFiltros.ptres) return;
+      if(poFiltros.origem || poFiltros.acao) return;
       if((poFiltros.unidade && d.unidade !== poFiltros.unidade) || (poFiltros.natureza && d.natureza !== poFiltros.natureza)) return;
       registradaTotal += d.valor;
       if(poFiltros.agrupar === 'unidade' || poFiltros.agrupar === 'natureza') g(chave(d)).registrada += d.valor;
@@ -85,7 +84,6 @@ function rotuloGrupo(k){
   if(poFiltros.agrupar === 'origem') return `<span class="badge ${origemBadgeClass(k)}">${escapeHtml(k)}</span>`;
   if(poFiltros.agrupar === 'unidade') return escapeHtml(nomeUnidade(k));
   if(poFiltros.agrupar === 'acao') return escapeHtml(nomeAcao(k));
-  if(poFiltros.agrupar === 'ptres'){ const p = TABELAS.ptres.find(x => x.codigo === k); return escapeHtml(p ? `${p.codigo} · ${p.acao}` : k); }
   return escapeHtml(k);
 }
 
@@ -99,7 +97,7 @@ function renderPainelOrc(){
 
   const { grupos, registradaTotal, aConfirmar } = calcularPainel();
   const mostraReg = poFiltros.agrupar === 'unidade' || poFiltros.agrupar === 'natureza';
-  const base = { origem: origensOrdenadas(true).map(o => o.sigla), unidade: unidadesOrdenadas(true).map(u => u.codigo), acao: [], ptres: [], natureza: NATUREZAS.slice() }[poFiltros.agrupar];
+  const base = { origem: origensOrdenadas(true).map(o => o.sigla), unidade: unidadesOrdenadas(true).map(u => u.codigo), acao: [], natureza: NATUREZAS.slice() }[poFiltros.agrupar];
   const ordem = [...new Set([...base, ...Object.keys(grupos)])];
   const tot = { prevista: 0, recebida: 0, registrada: 0, deferida: 0, empenhada: 0, paga: 0 };
   Object.values(grupos).forEach(x => Object.keys(tot).forEach(k => { tot[k] += x[k]; }));
@@ -126,7 +124,6 @@ function renderPainelOrc(){
       <div class="filter-field"><label>Unidade</label>${sel('unidade', opUnidades(false), poFiltros.unidade, 'Todas')}</div>
       <div class="filter-field"><label>Origem</label>${sel('origem', origensOrdenadas(false).map(o => o.sigla), poFiltros.origem, 'Todas')}</div>
       <div class="filter-field"><label>Ação</label>${sel('acao', acoesOrdenadas(false).map(a => ({ valor: a.codigo, texto: a.codigo })), poFiltros.acao, 'Todas')}</div>
-      <div class="filter-field"><label>PTRES</label>${sel('ptres', ptresOrdenados(false).map(p => ({ valor: p.codigo, texto: `${p.codigo} · ${p.acao}` })), poFiltros.ptres, 'Todos')}</div>
       <div class="filter-field"><label>Natureza</label>${sel('natureza', NATUREZAS, poFiltros.natureza, 'Todas')}</div>
     </div>
     <div class="po-bloco-titulo">Receita${poFiltros.unidade ? ` · ${escapeHtml(nomeUnidade(poFiltros.unidade))}` : ''}</div>
@@ -138,7 +135,7 @@ function renderPainelOrc(){
     </div>
     <div class="po-bloco-titulo">Despesa</div>
     <div class="kpi-row">
-      ${kpi('Registrada · não analisada', tot.registrada, poFiltros.origem || poFiltros.acao || poFiltros.ptres ? 'sem origem/PTRES até a análise' : '')}
+      ${kpi('Registrada · não analisada', tot.registrada, poFiltros.origem || poFiltros.acao ? 'sem origem/ação até a análise' : '')}
       ${kpi('Deferida', tot.deferida, pct(tot.deferida, tot.prevista))}
       ${kpi('Empenhada', tot.empenhada, pct(tot.empenhada, tot.deferida))}
       ${kpi('Paga', tot.paga, pct(tot.paga, tot.empenhada))}
@@ -168,9 +165,9 @@ function renderPainelOrc(){
           ${saldoCell(tot.prevista - tot.deferida)}${saldoCell(tot.recebida - tot.empenhada)}${saldoCell(tot.empenhada - tot.paga)}</tr></tfoot>
       </table>
     </div>
-    <p class="result-count" style="margin-top:10px;">Transferências tiram da origem e somam no destino (planejado na receita prevista; NCs lançadas na recebida): no total do IFPB elas se anulam. Despesas registradas e ainda não analisadas não têm origem nem PTRES. Saldos negativos em vermelho; indeferidas, canceladas e inativas ficam de fora.</p>`;
+    <p class="result-count" style="margin-top:10px;">Transferências tiram da origem e somam no destino (planejado na receita prevista; NCs lançadas na recebida): no total do IFPB elas se anulam. Despesas registradas e ainda não analisadas não têm origem nem ação. Saldos negativos em vermelho; indeferidas, canceladas e inativas ficam de fora.</p>`;
 }
-aoMudarDadosRegistrar(['receitas', 'transferencias', 'despesas', 'unidades', 'origens', 'acoes', 'ptres'], renderPainelOrc);
+aoMudarDadosRegistrar(['receitas', 'transferencias', 'despesas', 'unidades', 'origens', 'acoes'], renderPainelOrc);
 
 /* =============== Receitas (previsão e chegada) =============== */
 let rcFiltros = { ano: null, tipo: '', unidade: '', origem: '', acao: '', natureza: '', inativos: false };
@@ -196,12 +193,12 @@ function renderReceitas(){
     </div>
     <div class="result-count" id="rcContagem"></div>
     <div class="panel"><table class="tabela-cartoes">
-      <thead><tr><th>Tipo</th><th>Data</th><th>Unidade</th><th>PTRES · ação</th><th class="th-center">Origem</th><th class="th-center">Natureza</th><th>Documento</th><th class="num th-center">Valor</th><th class="th-center">Ações</th></tr></thead>
+      <thead><tr><th>Tipo</th><th>Data</th><th>Unidade</th><th>Ação</th><th class="th-center">Origem</th><th class="th-center">Natureza</th><th>Documento</th><th class="num th-center">Valor</th><th class="th-center">Ações</th></tr></thead>
       <tbody id="rcBody"></tbody><tfoot id="rcFoot"></tfoot>
     </table></div>`;
   renderReceitasTabela();
 }
-aoMudarDadosRegistrar(['receitas', 'unidades', 'origens', 'acoes', 'ptres'], renderReceitas);
+aoMudarDadosRegistrar(['receitas', 'unidades', 'origens', 'acoes'], renderReceitas);
 
 function renderReceitasTabela(){
   const body = document.getElementById('rcBody');
@@ -220,7 +217,7 @@ function renderReceitasTabela(){
       <td><span class="tipo-receita ${r.previsao ? 'previsao' : 'chegada'}">${r.previsao ? 'Previsão' : 'Chegada'}</span>${r.ativo ? '' : '<span class="tag-inativa">Inativo</span>'}</td>
       <td style="white-space:nowrap;">${fmtDataISO(r.data)}</td>
       <td>${escapeHtml(nomeUnidade(r.unidade))}</td>
-      <td class="id-cell">${escapeHtml(r.ptres || '—')} · ${escapeHtml(r.acao)}</td>
+      <td class="id-cell">${escapeHtml(r.acao)}</td>
       <td><span class="badge ${origemBadgeClass(r.origem)}">${escapeHtml(r.origem)}</span></td>
       <td><span class="tipo-tag ${naturezaTagClass(r.natureza)}">${escapeHtml(r.natureza)}</span></td>
       <td>${escapeHtml(r.documento) || '<span class="muted">—</span>'}</td>
@@ -244,7 +241,7 @@ function abrirFormReceita(docId){
         <div class="form-field"><label for="rcAno">Ano</label><input type="number" id="rcAno" min="2000" max="2100" value="${r ? r.ano : (rcFiltros.ano || anoAtual())}" ${dis}></div>
         <div class="form-field" id="rcDataBloco"><label for="rcData">${!r || r.previsao ? 'Data (opcional)' : 'Data da chegada'}</label><input type="date" id="rcData" value="${r ? r.data : ''}" ${dis}></div>
         <div class="form-field"><label for="rcUnidade">Unidade</label><select id="rcUnidade" ${dis}><option value="">Selecione…</option>${opcoesSelect(opUnidades(true, r && r.unidade), r ? r.unidade : rcFiltros.unidade)}</select></div>
-        <div class="form-field"><label for="rcPtres">PTRES · ação do orçamento</label><select id="rcPtres" ${dis}><option value="">Selecione…</option>${opcoesSelect(opcoesPtres(r && r.ptres), r ? r.ptres : '')}</select></div>
+        <div class="form-field"><label for="rcAcao">Ação do orçamento</label><select id="rcAcao" ${dis}><option value="">Selecione…</option>${opcoesSelect(opcoesAcao(r && r.acao), r ? r.acao : '')}</select></div>
         <div class="form-field"><label for="rcOrigem">Origem</label><select id="rcOrigem" ${dis}><option value="">Selecione…</option>${opcoesSelect(opOrigens(r && r.origem), r ? r.origem : rcFiltros.origem)}</select></div>
         <div class="form-field"><label for="rcNatureza">Natureza</label><select id="rcNatureza" ${dis}><option value="">Selecione…</option>${opcoesSelect(NATUREZAS, r ? r.natureza : rcFiltros.natureza)}</select></div>
         <div class="form-field"><label for="rcValor">Valor (R$)</label>
@@ -259,7 +256,7 @@ function abrirFormReceita(docId){
       const x = {
         previsao: document.getElementById('rcPrevisao').checked, ano: parseInt(document.getElementById('rcAno').value, 10),
         data: document.getElementById('rcData').value, unidade: document.getElementById('rcUnidade').value,
-        ptres: document.getElementById('rcPtres').value, acao: acaoDoPtres(document.getElementById('rcPtres').value), origem: document.getElementById('rcOrigem').value,
+        ptres: '', acao: document.getElementById('rcAcao').value, origem: document.getElementById('rcOrigem').value,
         natureza: document.getElementById('rcNatureza').value, valor: parseValorBR(document.getElementById('rcValor').value),
         documento: document.getElementById('rcDocumento').value, observacao: document.getElementById('rcObs').value,
       };
@@ -267,7 +264,7 @@ function abrirFormReceita(docId){
       checar('rcAno', x.ano >= 2000 && x.ano <= 2100, 'Informe o ano.');
       checar('rcData', x.previsao || /^\d{4}-\d{2}-\d{2}$/.test(x.data), 'Informe a data da chegada.');
       checar('rcUnidade', !!x.unidade, 'Selecione a unidade.');
-      checar('rcPtres', !!x.ptres, 'Selecione o PTRES.');
+      checar('rcAcao', !!x.acao, 'Selecione a ação do orçamento.');
       checar('rcOrigem', !!x.origem, 'Selecione a origem.');
       checar('rcNatureza', !!x.natureza, 'Selecione a natureza.');
       checar('rcValor', !isNaN(x.valor) && x.valor !== 0, 'Informe um valor diferente de zero.');
@@ -286,7 +283,7 @@ async function alternarAtivoReceita(docId, ativo){
 
 /* =============== Transferências =============== */
 /* Tipos: automática (despesa) · repasse (manual, entre unidades, sem objeto) · troca orçamentária
- * (mesma unidade: muda PTRES/ação, origem ou natureza; exige processo do pedido formal).
+ * (mesma unidade: muda ação, origem ou natureza; exige processo do pedido formal).
  * Cada transferência tem um código para constar na observação do documento no SIAFI:
  * despesa = base do ID (#AR.0001.2.000); repasse = #TR.NNNN; troca = #TO.NNNN.
  * Lançamentos: NCs (troca: documento da alteração); anulação = valor negativo.
@@ -294,11 +291,11 @@ async function alternarAtivoReceita(docId, ativo){
 let trFiltros = { ano: null, status: '', unidade: '', tipo: '' };
 
 function pontaHtml(p){
-  return `<div class="ponta"><strong>${escapeHtml(nomeUnidade(p.unidade))}</strong><br><small>${escapeHtml(p.origem || '')} · ${escapeHtml(p.ptres || '—')} · ${escapeHtml(p.acao || '')} · ${escapeHtml(p.natureza || '')}</small></div>`;
+  return `<div class="ponta"><strong>${escapeHtml(nomeUnidade(p.unidade))}</strong><br><small>${escapeHtml(p.origem || '')} · ${escapeHtml(p.acao || '')} · ${escapeHtml(p.natureza || '')}</small></div>`;
 }
 // "Reitoria → Areia" + classificação (uma linha se igual dos dois lados; duas, se mudou)
 function deParaHtml(t){
-  const cls = p => `${escapeHtml(p.origem || '')} · ${escapeHtml(p.ptres || '—')} · ${escapeHtml(p.acao || '')} · ${escapeHtml(p.natureza || '')}`;
+  const cls = p => `${escapeHtml(p.origem || '')} · ${escapeHtml(p.acao || '')} · ${escapeHtml(p.natureza || '')}`;
   const igual = cls(t.de) === cls(t.para);
   const unid = t.de.unidade === t.para.unidade ? escapeHtml(nomeUnidade(t.de.unidade)) : `${escapeHtml(nomeUnidade(t.de.unidade))} → ${escapeHtml(nomeUnidade(t.para.unidade))}`;
   return `<div class="ponta"><strong>${unid}</strong><br><small>${igual ? cls(t.de) : `${cls(t.de)}<br>→ ${cls(t.para)}`}</small></div>`;
@@ -329,7 +326,7 @@ function renderTransferencias(){
     </table></div>`;
   renderTransferenciasTabela();
 }
-aoMudarDadosRegistrar(['transferencias', 'unidades', 'despesas', 'ptres'], renderTransferencias);
+aoMudarDadosRegistrar(['transferencias', 'unidades', 'despesas', 'acoes'], renderTransferencias);
 
 function renderTransferenciasTabela(){
   const body = document.getElementById('trBody');
@@ -367,17 +364,16 @@ function camposPonta(prefixo, p, opcoes){
   const o = opcoes || {};
   return `
     ${o.semUnidade ? '' : `<div class="form-field"><label for="${prefixo}Unidade">Unidade</label><select id="${prefixo}Unidade"><option value="">Selecione…</option>${opcoesSelect(opUnidades(true, p && p.unidade), p ? p.unidade : '')}</select></div>`}
-    <div class="form-field"><label for="${prefixo}Ptres">PTRES · ação</label><select id="${prefixo}Ptres"><option value="">Selecione…</option>${opcoesSelect(opcoesPtres(p && p.ptres), p ? p.ptres : '')}</select></div>
+    <div class="form-field"><label for="${prefixo}Acao">Ação do orçamento</label><select id="${prefixo}Acao"><option value="">Selecione…</option>${opcoesSelect(opcoesAcao(p && p.acao), p ? p.acao : '')}</select></div>
     <div class="form-field"><label for="${prefixo}Origem">Origem</label><select id="${prefixo}Origem"><option value="">Selecione…</option>${opcoesSelect(opOrigens(p && p.origem), p ? p.origem : '')}</select></div>
     <div class="form-field"><label for="${prefixo}Natureza">Natureza</label><select id="${prefixo}Natureza"><option value="">Selecione…</option>${opcoesSelect(NATUREZAS, p ? p.natureza : '')}</select></div>`;
 }
 function lerPonta(prefixo, unidadeFixa){
   const v = s => (document.getElementById(prefixo + s) || {}).value || '';
-  const ptres = v('Ptres');
-  return { unidade: unidadeFixa || v('Unidade'), ptres, acao: acaoDoPtres(ptres), origem: v('Origem'), natureza: v('Natureza') };
+  return { unidade: unidadeFixa || v('Unidade'), ptres: '', acao: v('Acao'), origem: v('Origem'), natureza: v('Natureza') };
 }
 function copiarPontaDe(){
-  ['Ptres', 'Origem', 'Natureza'].forEach(s => { document.getElementById('tpara' + s).value = document.getElementById('tde' + s).value; });
+  ['Acao', 'Origem', 'Natureza'].forEach(s => { document.getElementById('tpara' + s).value = document.getElementById('tde' + s).value; });
 }
 
 /* repasse (entre unidades) ou troca orçamentária (mesma unidade) */
@@ -388,7 +384,7 @@ function abrirFormTransferencia(tipo, docId){
     titulo: t ? `Editar ${troca ? 'troca orçamentária' : 'repasse'} ${t.codigo}` : (troca ? 'Nova troca orçamentária' : 'Novo repasse'),
     corpo: `
       <p class="form-nota">${troca
-        ? 'Troca orçamentária: a mesma unidade passa recurso de um PTRES, origem ou natureza para outro. Exige pedido formal; registre o processo. Ela nasce <strong>prevista</strong> e é realizada quando a alteração aparece no Tesouro Gerencial.'
+        ? 'Troca orçamentária: a mesma unidade passa recurso de uma ação, origem ou natureza para outra. Exige pedido formal; registre o processo. Ela nasce <strong>prevista</strong> e é realizada quando a alteração aparece no Tesouro Gerencial.'
         : 'Repasse: recurso enviado a outra unidade sem objeto definido (a unidade prioriza os pagamentos). Ele nasce <strong>previsto</strong> e é realizado pelas NCs.'}
         O código gerado (${troca ? '#TO' : '#TR'}.NNNN) deve constar na observação do documento no SIAFI.</p>
       <div class="form-grid">
@@ -397,7 +393,7 @@ function abrirFormTransferencia(tipo, docId){
         ${troca ? `<div class="form-field span-2"><label for="tUnidade">Unidade</label><select id="tUnidade"><option value="">Selecione…</option>${opcoesSelect(opUnidades(true, t && t.de.unidade), t ? t.de.unidade : '')}</select></div>` : ''}
       </div>
       <div class="bloco-drawer"><h4>De (sai daqui)</h4><div class="form-grid">${camposPonta('tde', t && t.de, { semUnidade: troca })}</div></div>
-      <div class="bloco-drawer"><h4>Para (entra aqui)${troca ? '' : ` · <a href="#" onclick="copiarPontaDe(); return false;" style="text-transform:none; letter-spacing:0; color:var(--c2);">copiar PTRES, origem e natureza</a>`}</h4><div class="form-grid">${camposPonta('tpara', t && t.para, { semUnidade: troca })}</div></div>
+      <div class="bloco-drawer"><h4>Para (entra aqui)${troca ? '' : ` · <a href="#" onclick="copiarPontaDe(); return false;" style="text-transform:none; letter-spacing:0; color:var(--c2);">copiar ação, origem e natureza</a>`}</h4><div class="form-grid">${camposPonta('tpara', t && t.para, { semUnidade: troca })}</div></div>
       <div class="bloco-drawer"><div class="form-grid">
         <div class="form-field span-2"><label for="tJust">Objetivo / justificativa</label><textarea id="tJust" maxlength="500">${t ? escapeHtml(t.justificativa) : ''}</textarea></div>
         <div class="form-field"><label for="tProc">Processo${troca ? ' do pedido formal' : ' (opcional)'}</label><input type="text" id="tProc" maxlength="100" placeholder="23381.000000.2026-00" value="${t ? escapeAttr(t.processo) : ''}"></div>
@@ -410,12 +406,12 @@ function abrirFormTransferencia(tipo, docId){
       const x = { tipo, ano: parseInt(document.getElementById('tAno').value, 10), valor: parseValorBR(document.getElementById('tValor').value),
         de: lerPonta('tde', uni), para: lerPonta('tpara', uni), justificativa: document.getElementById('tJust').value,
         processo: document.getElementById('tProc').value, documento: document.getElementById('tDoc').value };
-      const ids = [...(troca ? ['tUnidade'] : ['tdeUnidade', 'tparaUnidade']), 'tdePtres', 'tdeOrigem', 'tdeNatureza', 'tparaPtres', 'tparaOrigem', 'tparaNatureza'];
+      const ids = [...(troca ? ['tUnidade'] : ['tdeUnidade', 'tparaUnidade']), 'tdeAcao', 'tdeOrigem', 'tdeNatureza', 'tparaAcao', 'tparaOrigem', 'tparaNatureza'];
       const faltam = ids.filter(id => !document.getElementById(id).value);
       ids.forEach(id => marcarInvalido(id, faltam.includes(id)));
       if(faltam.length) throw new Error('Preencha todos os campos de origem e destino.');
-      if(!troca && x.de.unidade === x.para.unidade) throw new Error('No repasse, as unidades de origem e destino devem ser diferentes. Para mudar PTRES, origem ou natureza na mesma unidade, use a troca orçamentária.');
-      if(troca && JSON.stringify(x.de) === JSON.stringify(x.para)) throw new Error('Na troca, PTRES, origem ou natureza precisam mudar.');
+      if(!troca && x.de.unidade === x.para.unidade) throw new Error('No repasse, as unidades de origem e destino devem ser diferentes. Para mudar ação, origem ou natureza na mesma unidade, use a troca orçamentária.');
+      if(troca && JSON.stringify(x.de) === JSON.stringify(x.para)) throw new Error('Na troca, ação, origem ou natureza precisam mudar.');
       if(isNaN(x.valor) || x.valor <= 0) throw new Error('Informe um valor maior que zero.');
       if(!x.justificativa.trim()){ marcarInvalido('tJust', true); throw new Error('Informe o objetivo / justificativa.'); }
       if(troca && !x.processo.trim()){ marcarInvalido('tProc', true); throw new Error('Informe o processo do pedido formal.'); }

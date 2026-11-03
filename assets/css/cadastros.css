@@ -195,20 +195,20 @@
   /* ================= Painel lateral (drawer) ================= */
   .drawer-overlay{justify-content:flex-end; align-items:stretch; padding:0; background:rgba(42,20,88,.35);}
   .drawer{
-    max-width:min(580px, 100vw) !important; width:100%; height:100vh; max-height:100vh !important;
+    max-width:min(870px, 100vw) !important; width:100%; height:100vh; max-height:100vh !important;
     border-radius:0 !important; border:none; border-left:1px solid var(--border);
     box-shadow:-18px 0 48px rgba(42,20,88,.22); animation:drawerEntra .18s ease-out;
   }
-  .drawer.modal-card-wide{max-width:min(1000px, 100vw) !important;}
+  .drawer.modal-card-wide{max-width:min(1200px, 100vw) !important;}
   @keyframes drawerEntra{from{transform:translateX(40px); opacity:.4;} to{transform:none; opacity:1;}}
-  .drawer-header{align-items:center; padding:16px 22px; gap:12px;}
-  .drawer-header .modal-title{flex:1; font-size:16px;}
-  .drawer-voltar{display:none; background:none; border:none; font-size:20px; color:var(--c1); cursor:pointer; padding:4px 6px;}
+  .drawer-header{align-items:center; padding:9px 16px 9px 22px; gap:12px; background:var(--c1); border-bottom:none; min-height:0;}
+  .drawer-header .modal-title{flex:1; font-size:14.5px; color:#fff; letter-spacing:.2px;}
+  .drawer-voltar{display:none; background:none; border:none; font-size:20px; color:#fff; cursor:pointer; padding:2px 6px;}
   .drawer-fechar{
-    width:32px; height:32px; border-radius:8px; border:1px solid #F2C9C3; background:#fff; color:#B42318;
+    width:28px; height:28px; border-radius:7px; border:1px solid rgba(255,255,255,.35); background:transparent; color:#fff;
     font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center;
   }
-  .drawer-fechar:hover{background:#FDECEA;}
+  .drawer-fechar:hover{background:rgba(255,255,255,.16);}
   .drawer .modal-body{padding:20px 22px 24px;}
   .drawer .modal-footer{padding:12px 22px; background:#FAF6F2;}
   .bloco-drawer{border-top:1px solid var(--border); margin-top:18px; padding-top:14px;}
@@ -251,7 +251,7 @@
     .drawer, .drawer.modal-card-wide{max-width:100vw !important; border-left:none;}
     .drawer-voltar{display:block;}
     .drawer-fechar{display:none;}
-    .drawer-header{padding:12px 14px;}
+    .drawer-header{padding:8px 12px;}
     .drawer .modal-body{padding:16px 14px 20px;}
     .drawer .modal-footer{padding:10px 14px; flex-wrap:wrap;}
     .drawer .modal-footer .acao-btn{flex:1; justify-content:center;}
@@ -276,3 +276,11 @@
     table.tabela-cartoes tfoot td{display:block; padding:10px 12px !important;}
     table.tabela-cartoes tfoot td:empty{display:none;}
   }
+
+  /* caixas de seleção: seta própria, afastada da borda direita */
+  .form-field select, .filter-field select{
+    -webkit-appearance:none; appearance:none; padding-right:38px !important;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%232A1458' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 14px center; background-size:12px 8px;
+  }
+  .form-field select:disabled{opacity:.85;}

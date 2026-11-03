@@ -7,7 +7,7 @@ let finFiltros = { busca: '', inativos: false };
 
 function renderFinanciadores(){
   const el = document.getElementById('contentFinanciadores');
-  if(!el || !podeVerPagina('financiadores')) return;
+  if(!el || !podeVerPagina('tabelas')) return;
   if(TABELAS_ERRO.financiadores){ el.innerHTML = estadoErro(TABELAS_ERRO.financiadores); return; }
   if(!TABELAS_CARREGADAS.financiadores){ el.innerHTML = estadoCarregando('Carregando financiadores…'); return; }
 
@@ -30,7 +30,7 @@ function renderFinanciadores(){
     </div>`;
   renderFinanciadoresTabela();
 }
-aoMudarDadosRegistrar(['financiadores'], renderFinanciadores);
+aoMudarDadosRegistrar(['financiadores'], () => { if(cadAba === 'financiadores') renderTabelasApoio(); });
 
 function renderFinanciadoresTabela(){
   const body = document.getElementById('finBody');
@@ -99,7 +99,18 @@ async function alternarAtivoFinanciador(codigo, ativo){
   } catch(e){ mostrarToast(traduzirErro(e), true); }
 }
 
-/* ---------------- Unidades e Origens ---------------- */
+/* ---------------- Cadastros (abas: unidades, origens, ações, financiadores, posições) ---------------- */
+let cadAba = 'unidades';
+const ABAS_CAD = [['unidades', 'Unidades'], ['origens', 'Origens'], ['acoes', 'Ações do orçamento'], ['financiadores', 'Financiadores'], ['posicoes', 'Posições no ID']];
+function trocarAbaCad(aba){ cadAba = aba; renderTabelasApoio(); }
+function cabSecao(titulo, botoes){ return `<div class="cad-section-head"><h2>${titulo}</h2><div class="linha-acoes">${botoes || ''}</div></div>`; }
+function tabelaCad(cab, linhas, vazio){
+  return `<div class="panel"><table class="tabela-cartoes"><thead><tr>${cab}</tr></thead><tbody>${linhas || `<tr><td colspan="9" class="muted" style="padding:20px 26px;">${vazio}</td></tr>`}</tbody></table></div>`;
+}
+const btnEditarInativar = (fnEd, fnAt, chave, ativo) => `<td><div class="linha-acoes" style="justify-content:center;">
+  <button class="linha-btn" onclick="${fnEd}('${escapeAttr(chave)}')">Editar</button>
+  <button class="linha-btn ${ativo ? 'perigo' : ''}" onclick="${fnAt}('${escapeAttr(chave)}', ${!ativo})">${ativo ? 'Inativar' : 'Reativar'}</button></div></td>`;
+
 function renderTabelasApoio(){
   const el = document.getElementById('contentTabelas');
   if(!el || !podeVerPagina('tabelas')) return;
@@ -107,107 +118,56 @@ function renderTabelasApoio(){
   if(!TABELAS_CARREGADAS.unidades || !TABELAS_CARREGADAS.origens){ el.innerHTML = estadoCarregando(); return; }
 
   const vazias = !TABELAS.unidades.length && !TABELAS.origens.length;
-  const usosUni = {}, usosOri = {};
-  TABELAS.despesas.forEach(d => { usosUni[d.unidade] = (usosUni[d.unidade] || 0) + 1; usosOri[d.origem] = (usosOri[d.origem] || 0) + 1; });
-
+  const usosUni = {}, usosOri = {}, usosAcao = {};
+  TABELAS.despesas.forEach(d => {
+    usosUni[d.unidade] = (usosUni[d.unidade] || 0) + 1; usosOri[d.origem] = (usosOri[d.origem] || 0) + 1;
+    if(d.acao) usosAcao[d.acao] = (usosAcao[d.acao] || 0) + 1;
+  });
+  let corpo = '';
+  if(cadAba === 'unidades'){
+    corpo = cabSecao('Unidades', `<button class="acao-btn" onclick="abrirFormUnidade()">+ Nova unidade</button>`)
+      + tabelaCad(`<th style="width:90px;">Sigla</th><th>Nome</th><th class="th-center">UG</th><th class="th-center">Despesas</th><th class="th-center">Ações</th>`,
+        unidadesOrdenadas(false).map(u => `<tr class="${u.ativo ? '' : 'linha-inativa'}">
+          <td class="id-cell">${escapeHtml(u.codigo)}</td>
+          <td>${escapeHtml(u.nome)}${u.ativo ? '' : '<span class="tag-inativa">Inativa</span>'}</td>
+          <td style="text-align:center;" class="id-cell">${escapeHtml(u.ug) || '<span class="muted">—</span>'}</td>
+          <td style="text-align:center;">${usosUni[u.codigo] || '—'}</td>
+          ${btnEditarInativar('abrirFormUnidade', 'alternarAtivoUnidade', u.codigo, u.ativo)}</tr>`).join(''), 'Nenhuma unidade cadastrada.')
+      + `<p class="result-count" style="margin-top:10px;">A sigla compõe o ID das despesas e não muda. A UG (6 dígitos) é usada para cruzar com o Tesouro Gerencial.</p>`;
+  } else if(cadAba === 'origens'){
+    corpo = cabSecao('Origens', `<button class="acao-btn" onclick="abrirFormOrigem()">+ Nova origem</button>`)
+      + tabelaCad(`<th>Sigla</th><th class="th-center">Código no ID</th><th class="th-center">RP (SIAFI)</th><th class="th-center">Despesas</th><th class="th-center">Ações</th>`,
+        origensOrdenadas(false).map(o => `<tr class="${o.ativo ? '' : 'linha-inativa'}">
+          <td><span class="badge ${origemBadgeClass(o.sigla)}">${escapeHtml(o.sigla)}</span>${o.ativo ? '' : '<span class="tag-inativa">Inativa</span>'}</td>
+          <td class="id-cell" style="text-align:center;">${escapeHtml(o.codigo)}</td>
+          <td style="text-align:center;">${o.rp ? 'RP ' + escapeHtml(o.rp) : '<span class="muted">—</span>'}</td>
+          <td style="text-align:center;">${usosOri[o.sigla] || '—'}</td>
+          ${btnEditarInativar('abrirFormOrigem', 'alternarAtivoOrigem', o.sigla, o.ativo)}</tr>`).join(''), 'Nenhuma origem cadastrada.')
+      + `<p class="result-count" style="margin-top:10px;">Sigla e código não mudam depois de criados, porque fazem parte dos IDs. Uma origem inativa deixa de aparecer para novas despesas.</p>`;
+  } else if(cadAba === 'acoes'){
+    corpo = cabSecao('Ações do orçamento', `<button class="acao-btn secundario" onclick="abrirImportTabela('acoes')">Importar lista</button><button class="acao-btn" onclick="abrirFormAcao()">+ Nova ação</button>`)
+      + tabelaCad(`<th style="width:90px;">Código</th><th>Descrição</th><th class="th-center">Despesas</th><th class="th-center">Ações</th>`,
+        acoesOrdenadas(false).map(a => `<tr class="${a.ativo ? '' : 'linha-inativa'}">
+          <td class="id-cell">${escapeHtml(a.codigo)}</td>
+          <td>${escapeHtml(a.descricao) || '<span class="muted">—</span>'}${a.ativo ? '' : '<span class="tag-inativa">Inativa</span>'}</td>
+          <td style="text-align:center;">${usosAcao[a.codigo] || '—'}</td>
+          ${btnEditarInativar('abrirFormAcao', 'alternarAtivoAcao', a.codigo, a.ativo)}</tr>`).join(''), 'Nenhuma ação cadastrada.')
+      + `<p class="result-count" style="margin-top:10px;">A ação é estável de um ano para o outro e identifica o recurso nos lançamentos (o PTRES não é usado porque pode mudar a cada exercício).</p>`;
+  } else if(cadAba === 'financiadores'){
+    corpo = cabSecao('Financiadores', `<button class="acao-btn" onclick="abrirFormFinanciador()">+ Novo financiador</button>`)
+      + `<p class="form-nota">Parlamentares (emendas), empresas parceiras e outros. O código de 3 dígitos compõe o ID da despesa.</p><div id="contentFinanciadores"></div>`;
+  } else {
+    corpo = secaoPosicoes();
+  }
   el.innerHTML = `
     ${vazias ? `<div class="aviso-box">
-      <span>As tabelas ainda estão vazias. Carregue os valores extraídos dos IDs já existentes (24 unidades e 6 origens).
-      Cajazeiras e LOA ficam de fora porque ainda não têm código — cadastre-os em seguida.</span>
+      <span>As tabelas ainda estão vazias. Carregue os valores iniciais (unidades e origens, com LOA = L e EFQ = Q).
+      Cajazeiras fica de fora porque ainda não tem sigla — cadastre-a em seguida.</span>
       <button class="acao-btn" onclick="carregarTabelasIniciais()">Carregar valores iniciais</button>
     </div>` : ''}
-    <div class="cad-grid">
-      <div>
-        <div class="cad-section-head">
-          <h2>Unidades</h2>
-          <button class="acao-btn" onclick="abrirFormUnidade()">+ Nova unidade</button>
-        </div>
-        <div class="panel">
-          <table>
-            <thead><tr><th style="width:80px;">Código</th><th>Nome</th><th class="th-center">UG</th><th class="th-center">Despesas</th><th class="th-center">Ações</th></tr></thead>
-            <tbody>${unidadesOrdenadas(false).map(u => `
-              <tr class="${u.ativo ? '' : 'linha-inativa'}">
-                <td class="id-cell">${escapeHtml(u.codigo)}</td>
-                <td>${escapeHtml(u.nome)}${u.ativo ? '' : '<span class="tag-inativa">Inativa</span>'}</td>
-                <td style="text-align:center;" class="id-cell">${escapeHtml(u.ug) || '<span class="muted">—</span>'}</td>
-                <td style="text-align:center;">${usosUni[u.codigo] || '—'}</td>
-                <td><div class="linha-acoes" style="justify-content:center;">
-                  <button class="linha-btn" onclick="abrirFormUnidade('${escapeAttr(u.codigo)}')">Editar</button>
-                  <button class="linha-btn ${u.ativo ? 'perigo' : ''}" onclick="alternarAtivoUnidade('${escapeAttr(u.codigo)}', ${!u.ativo})">${u.ativo ? 'Inativar' : 'Reativar'}</button>
-                </div></td>
-              </tr>`).join('') || `<tr><td colspan="5" class="muted" style="padding:20px 26px;">Nenhuma unidade cadastrada.</td></tr>`}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div>
-        <div class="cad-section-head">
-          <h2>Origens</h2>
-          <button class="acao-btn" onclick="abrirFormOrigem()">+ Nova origem</button>
-        </div>
-        <div class="panel">
-          <table>
-            <thead><tr><th>Sigla</th><th class="th-center">Código no ID</th><th class="th-center">RP (SIAFI)</th><th class="th-center">Despesas</th><th class="th-center">Ações</th></tr></thead>
-            <tbody>${origensOrdenadas(false).map(o => `
-              <tr class="${o.ativo ? '' : 'linha-inativa'}">
-                <td><span class="badge ${origemBadgeClass(o.sigla)}">${escapeHtml(o.sigla)}</span>${o.ativo ? '' : '<span class="tag-inativa">Inativa</span>'}</td>
-                <td class="id-cell" style="text-align:center;">${escapeHtml(o.codigo)}</td>
-                <td style="text-align:center;">${o.rp ? 'RP ' + escapeHtml(o.rp) : '<span class="muted">—</span>'}</td>
-                <td style="text-align:center;">${usosOri[o.sigla] || '—'}</td>
-                <td><div class="linha-acoes" style="justify-content:center;">
-                  <button class="linha-btn" onclick="abrirFormOrigem('${escapeAttr(o.sigla)}')">Editar</button>
-                  <button class="linha-btn ${o.ativo ? 'perigo' : ''}" onclick="alternarAtivoOrigem('${escapeAttr(o.sigla)}', ${!o.ativo})">${o.ativo ? 'Inativar' : 'Reativar'}</button>
-                </div></td>
-              </tr>`).join('') || `<tr><td colspan="5" class="muted" style="padding:20px 26px;">Nenhuma origem cadastrada.</td></tr>`}
-            </tbody>
-          </table>
-        </div>
-        <p class="result-count" style="margin-top:10px;">Sigla e código não mudam depois de criados, porque fazem parte dos IDs. Uma origem inativa deixa de aparecer para novas despesas.</p>
-
-        <div class="cad-section-head" style="margin-top:28px;">
-          <h2>Ações do orçamento</h2>
-          <button class="acao-btn" onclick="abrirFormAcao()">+ Nova ação</button>
-        </div>
-        <div class="panel">
-          <table>
-            <thead><tr><th>Código</th><th>Descrição</th><th class="th-center">Ações</th></tr></thead>
-            <tbody>${acoesOrdenadas(false).map(a => `
-              <tr class="${a.ativo ? '' : 'linha-inativa'}">
-                <td class="id-cell">${escapeHtml(a.codigo)}</td>
-                <td>${escapeHtml(a.descricao)}${a.ativo ? '' : '<span class="tag-inativa">Inativa</span>'}</td>
-                <td><div class="linha-acoes" style="justify-content:center;">
-                  <button class="linha-btn" onclick="abrirFormAcao('${escapeAttr(a.codigo)}')">Editar</button>
-                  <button class="linha-btn ${a.ativo ? 'perigo' : ''}" onclick="alternarAtivoAcao('${escapeAttr(a.codigo)}', ${!a.ativo})">${a.ativo ? 'Inativar' : 'Reativar'}</button>
-                </div></td>
-              </tr>`).join('') || `<tr><td colspan="3" class="muted" style="padding:20px 26px;">Nenhuma ação cadastrada.</td></tr>`}
-            </tbody>
-          </table>
-        </div>
-
-        <div class="cad-section-head" style="margin-top:28px;">
-          <h2>PTRES</h2>
-          <button class="acao-btn" onclick="abrirFormPtres()" ${TABELAS.acoes.length ? '' : 'disabled title="Cadastre uma ação antes"'}>+ Novo PTRES</button>
-        </div>
-        <div class="panel">
-          <table>
-            <thead><tr><th>PTRES</th><th>Ação</th><th>Descrição</th><th class="th-center">Ações</th></tr></thead>
-            <tbody>${ptresOrdenados(false).map(pt => `
-              <tr class="${pt.ativo ? '' : 'linha-inativa'}">
-                <td class="id-cell">${escapeHtml(pt.codigo)}</td>
-                <td class="id-cell">${escapeHtml(pt.acao)}</td>
-                <td>${escapeHtml(pt.descricao)}${pt.ativo ? '' : '<span class="tag-inativa">Inativo</span>'}</td>
-                <td><div class="linha-acoes" style="justify-content:center;">
-                  <button class="linha-btn" onclick="abrirFormPtres('${escapeAttr(pt.codigo)}')">Editar</button>
-                  <button class="linha-btn ${pt.ativo ? 'perigo' : ''}" onclick="alternarAtivoPtres('${escapeAttr(pt.codigo)}', ${!pt.ativo})">${pt.ativo ? 'Inativar' : 'Reativar'}</button>
-                </div></td>
-              </tr>`).join('') || `<tr><td colspan="4" class="muted" style="padding:20px 26px;">Nenhum PTRES cadastrado.</td></tr>`}
-            </tbody>
-          </table>
-        </div>
-        <p class="result-count" style="margin-top:10px;">Cada PTRES pertence a uma ação. Nos lançamentos escolhe-se o PTRES, e a ação vem junto.</p>
-      </div>
-    </div>
-    ${secaoPosicoes()}`;
+    <div class="lista-abas" role="tablist">${ABAS_CAD.map(([k, t]) => `<button type="button" role="tab" class="lista-aba ${cadAba === k ? 'ativa' : ''}" onclick="trocarAbaCad('${k}')">${t}</button>`).join('')}</div>
+    ${corpo}`;
+  if(cadAba === 'financiadores') renderFinanciadores();
 }
 
 /* ---------- tabela de posições das unidades no ID (por ano) ---------- */
@@ -218,7 +178,7 @@ function secaoPosicoes(){
   const fora = unidadesOrdenadas(true).filter(u => u.codigo !== 'IF' && (!pos || !pos.includes(u.codigo)));
   const hex = pos ? Math.ceil(pos.length / 4) : 0;
   return `
-    <div class="cad-section-head" style="margin-top:32px;">
+    <div class="cad-section-head">
       <h2>Posições das unidades no ID (beneficiárias)</h2>
       <div class="filter-field" style="min-width:110px;"><select onchange="posAno=parseInt(this.value,10); renderTabelasApoio()">${opcoesSelect(anos.map(String), String(posAno))}</select></div>
     </div>
@@ -259,7 +219,6 @@ function abrirFormAcao(codigo){
         <div class="form-field span-2"><label for="faDesc">Descrição</label>
           <input type="text" id="faDesc" maxlength="200" placeholder="Ex.: Funcionamento de Instituições Federais de Educação Profissional e Tecnológica" value="${a ? escapeAttr(a.descricao) : ''}"></div>
       </div>
-      ${a && a.criadoPor ? `<div class="auditoria">Criada por ${escapeHtml(a.criadoPor)} em ${fmtDataHora(a.criadoEm)}<br>Última alteração por ${escapeHtml(a.atualizadoPor)} em ${fmtDataHora(a.atualizadoEm)}</div>` : ''}
       ${a ? blocoHistorico('acoes', a.codigo) : ''}`,
     aoSalvar: async () => {
       const descricao = document.getElementById('faDesc').value.trim();
@@ -280,7 +239,7 @@ async function alternarAtivoAcao(codigo, ativo){
   if(!ativo && !confirm(`Inativar a ação ${codigo}? Ela deixa de aparecer em novos lançamentos.`)) return;
   try{ await Repo.acoes.atualizar(codigo, { ativo }); mostrarToast(`Ação ${codigo} ${ativo ? 'reativada' : 'inativada'}.`); } catch(e){ mostrarToast(traduzirErro(e), true); }
 }
-aoMudarDadosRegistrar(['unidades', 'origens', 'acoes', 'ptres', 'posicoes', 'despesas'], renderTabelasApoio);
+aoMudarDadosRegistrar(['unidades', 'origens', 'acoes', 'posicoes', 'despesas'], renderTabelasApoio);
 
 async function carregarTabelasIniciais(){
   try{
@@ -303,7 +262,7 @@ function abrirFormUnidade(codigo){
         <div class="form-field span-2">
           <label for="fuNome">Nome</label>
           <input type="text" id="fuNome" maxlength="80" placeholder="Ex.: Cajazeiras" value="${u ? escapeAttr(u.nome) : ''}">
-          <span class="ajuda">É o nome mostrado em Totais e Detalhamento e o usado para reconhecer a unidade na importação.</span>
+          <span class="ajuda">É o nome mostrado nas telas e o usado para reconhecer a unidade na importação.</span>
         </div>
         <div class="form-field">
           <label for="fuUg">UG (SIAFI)</label>
@@ -414,7 +373,7 @@ function renderUsuarios(){
     <div class="result-count" id="usuContagem"></div>
     <div class="panel">
       <table>
-        <thead><tr><th>E-mail</th><th>Perfis</th><th>Última alteração</th><th class="th-center">Ações</th></tr></thead>
+        <thead><tr><th>E-mail</th><th>Perfis</th><th class="th-center">Ações</th></tr></thead>
         <tbody id="usuBody"></tbody>
       </table>
     </div>`;
@@ -435,7 +394,6 @@ function renderUsuariosTabela(){
       <td>${u.perfis.map(p => `<span class="perfil-chip">${escapeHtml(PERFIS[p] || p)}</span>`).join('')}
           ${u.perfis.includes('registrador_despesas') && u.unidades.length ? `<div class="muted" style="font-size:11.5px; margin-top:3px;">Unidades: ${u.unidades.map(c => escapeHtml(nomeUnidade(c))).join(', ')}</div>` : ''}
           ${u.legado ? `<span class="perfil-chip legado">cadastro antigo: ${escapeHtml(u.legado)}</span>` : ''}</td>
-      <td class="muted" style="font-size:12px;">${u.atualizadoPor ? `${escapeHtml(u.atualizadoPor)}<br>${fmtDataHora(u.atualizadoEm)}` : '—'}</td>
       <td><div class="linha-acoes" style="justify-content:center;">
         <button class="linha-btn" onclick="abrirFormUsuario('${escapeAttr(u.email)}')">Editar</button>
         ${u.email === eu.toLowerCase() ? '' : `<button class="linha-btn perigo" onclick="removerUsuario('${escapeAttr(u.email)}')">Remover</button>`}
@@ -447,7 +405,7 @@ const DESCRICAO_PERFIS = {
   administrador: 'Tudo, inclusive usuários, financiadores, tabelas e importações.',
   gestor_planejamento: 'Analisa as despesas (defere ou indefere), registra e edita; vê as telas orçamentárias.',
   registrador_despesas: 'Registra despesas das unidades marcadas abaixo e as edita enquanto não forem analisadas.',
-  leitor_orcamentario_financeiro: 'Consulta Formação do Orçamento e as telas de Despesas (Lista e Totais).',
+  leitor_orcamentario_financeiro: 'Consulta o módulo Orçamento (painel, receitas, despesas e transferências).',
   leitor_recursos_humanos: 'Consulta Estrutura Organizacional e Funções Gratificadas.',
 };
 
@@ -509,36 +467,128 @@ async function removerUsuario(email){
 }
 
 /* ---------- PTRES ---------- */
-function abrirFormPtres(codigo){
-  const pt = codigo ? TABELAS.ptres.find(x => x.codigo === codigo) : null;
-  const acoes = acoesOrdenadas(false).filter(a => a.ativo || (pt && pt.acao === a.codigo)).map(a => ({ valor: a.codigo, texto: `${a.codigo} · ${a.descricao}` }));
+/* ---------- importação de ações e PTRES por colagem ----------
+ * Aceita: linhas "código<TAB>descrição" (ou ";"), "20RL - Funcionamento…" (Painel do Orçamento/SIOP),
+ * ou um CSV com cabeçalho (Portal da Transparência), localizando as colunas de código e nome da ação.
+ * PTRES: "ptres<TAB>ação<TAB>descrição". */
+let importTabela = null;
+const RE_ACAO = /^[0-9A-Z]{4}$/, RE_PTRES = /^[0-9]{4,8}$/;
+function abrirImportTabela(tipo){
+  importTabela = { tipo, itens: [] };
+  const acoes = tipo === 'acoes';
   abrirFormModal({
-    titulo: pt ? `PTRES ${pt.codigo}` : 'Novo PTRES',
+    titulo: acoes ? 'Importar ações do orçamento' : 'Importar PTRES',
+    largo: true,
     corpo: `
-      <div class="form-grid">
-        <div class="form-field"><label for="fpCodigo">PTRES</label>
-          <input type="text" id="fpCodigo" maxlength="8" inputmode="numeric" placeholder="Ex.: 169970" value="${pt ? escapeAttr(pt.codigo) : ''}" ${pt ? 'disabled' : ''}>
-          <span class="ajuda">Somente números (4 a 8). Não muda depois de criado.</span></div>
-        <div class="form-field"><label for="fpAcao">Ação do orçamento</label>
-          <select id="fpAcao"><option value="">Selecione…</option>${opcoesSelect(acoes, pt ? pt.acao : '')}</select></div>
-        <div class="form-field span-2"><label for="fpDesc">Descrição (opcional)</label>
-          <input type="text" id="fpDesc" maxlength="200" placeholder="Ex.: Funcionamento · campus" value="${pt ? escapeAttr(pt.descricao) : ''}"></div>
-      </div>`,
-    aoSalvar: async () => {
-      const acao = document.getElementById('fpAcao').value, descricao = document.getElementById('fpDesc').value.trim();
-      marcarInvalido('fpAcao', !acao);
-      if(!acao) throw new Error('Selecione a ação.');
-      if(pt){ await Repo.ptres.atualizar(pt.codigo, { acao, descricao }); fecharFormModal(); mostrarToast(`PTRES ${pt.codigo} atualizado.`); return; }
-      const cod = document.getElementById('fpCodigo').value.trim();
-      marcarInvalido('fpCodigo', !/^\d{4,8}$/.test(cod));
-      if(!/^\d{4,8}$/.test(cod)) throw new Error('O PTRES deve ter de 4 a 8 dígitos.');
-      await Repo.ptres.criar(cod, acao, descricao);
-      fecharFormModal(); mostrarToast(`PTRES ${cod} cadastrado.`);
-    },
+      <p style="font-size:13px; line-height:1.6; margin-bottom:12px;">${acoes
+        ? `Cole as linhas copiadas de uma planilha. Formatos aceitos:<br>
+           • <strong>código</strong> e <strong>descrição</strong> em colunas (ex.: <code>20RL</code> · <code>Funcionamento de Instituições…</code>);<br>
+           • uma coluna como <code>20RL - Funcionamento de Instituições…</code> (exportação do Painel do Orçamento Federal);<br>
+           • o CSV baixado do Portal da Transparência (com cabeçalho): o GEDI localiza as colunas de código e nome da ação e remove as repetições.`
+        : `Cole as linhas com as colunas <strong>PTRES, ação e descrição</strong> (a descrição é opcional),
+           por exemplo copiadas de uma consulta do Tesouro Gerencial ou de uma planilha da Coordenação de Orçamento.
+           Ações ainda não cadastradas são criadas junto (sem descrição; complete depois).`}</p>
+      <textarea class="import-textarea" id="itTexto" placeholder="${acoes ? '20RL&#9;Funcionamento de Instituições Federais de Educação Profissional e Tecnológica' : '169970&#9;20RL&#9;Funcionamento - PB'}"></textarea>
+      <label class="check-linha" style="margin-top:10px;"><input type="checkbox" id="itAtualizar"> <span>Atualizar a descrição dos que já existem</span></label>
+      <div style="margin-top:10px;"><button class="acao-btn secundario" onclick="analisarImportTabela()">Analisar linhas</button></div>
+      <div id="itResultado"></div>`,
+    textoSalvar: 'Importar',
+    aoSalvar: executarImportTabela,
   });
-  if(pt) anexarHistorico('ptres', pt.codigo);
+  document.getElementById('formModalSalvar').disabled = true;
 }
-async function alternarAtivoPtres(codigo, ativo){
-  if(!ativo && !confirm(`Inativar o PTRES ${codigo}? Ele deixa de aparecer em novos lançamentos.`)) return;
-  try{ await Repo.ptres.atualizar(codigo, { ativo }); mostrarToast(`PTRES ${codigo} ${ativo ? 'reativado' : 'inativado'}.`); } catch(e){ mostrarToast(traduzirErro(e), true); }
+
+function celulasLinha(linha){
+  const sep = linha.includes('\t') ? '\t' : (linha.includes(';') ? ';' : null);
+  const cel = sep ? linha.split(sep) : [linha];
+  return cel.map(c => c.trim().replace(/^"(.*)"$/, '$1').trim());
+}
+function semAcento(s){ return normalizarTexto(s); }
+
+function lerLinhasAcoes(linhas){
+  const itens = new Map(), ignoradas = [];
+  let iCod = -1, iNome = -1, inicio = 0;
+  // cabeçalho de CSV (Portal da Transparência e similares)
+  const cab = celulasLinha(linhas[0] || '').map(semAcento);
+  const achar = (f) => cab.findIndex(f);
+  const c1 = achar(h => /acao/.test(h) && /codigo|cod\b/.test(h));
+  const c2 = achar(h => /acao/.test(h) && /nome|descricao|titulo/.test(h));
+  if(c1 >= 0){ iCod = c1; iNome = c2; inicio = 1; }
+  linhas.slice(inicio).forEach((l, k) => {
+    const c = celulasLinha(l);
+    let cod = '', desc = '';
+    if(iCod >= 0){ cod = (c[iCod] || '').toUpperCase(); desc = iNome >= 0 ? (c[iNome] || '') : ''; }
+    else {
+      const m = (c[0] || '').match(/^([0-9A-Za-z]{4})\s*[-–—:]\s*(.+)$/);
+      if(m){ cod = m[1].toUpperCase(); desc = m[2]; }
+      else { cod = (c[0] || '').toUpperCase(); desc = c.slice(1).filter(Boolean).join(' '); }
+    }
+    if(!RE_ACAO.test(cod)){ if(k > 0 || inicio) ignoradas.push(l.slice(0, 60)); return; }
+    if(!itens.has(cod) || (!itens.get(cod).descricao && desc)) itens.set(cod, { codigo: cod, descricao: desc.slice(0, 300) });
+  });
+  return { itens: [...itens.values()], ignoradas };
+}
+function lerLinhasPtres(linhas){
+  const itens = new Map(), ignoradas = [];
+  linhas.forEach(l => {
+    const c = celulasLinha(l);
+    const cod = (c[0] || '').replace(/\D/g, '') === c[0] ? c[0] : '';
+    let acao = (c[1] || '').toUpperCase(), desc = c.slice(2).filter(Boolean).join(' ');
+    const m = acao.match(/^([0-9A-Z]{4})\s*[-–—:]/); if(m) acao = m[1];
+    if(!RE_PTRES.test(cod) || !RE_ACAO.test(acao)){ ignoradas.push(l.slice(0, 60)); return; }
+    itens.set(cod, { codigo: cod, acao, descricao: desc.slice(0, 300) });
+  });
+  return { itens: [...itens.values()], ignoradas };
+}
+
+function analisarImportTabela(){
+  const linhas = document.getElementById('itTexto').value.split(/\r?\n/).filter(l => l.trim());
+  const acoes = importTabela.tipo === 'acoes';
+  const { itens, ignoradas } = acoes ? lerLinhasAcoes(linhas) : lerLinhasPtres(linhas);
+  const atualizar = document.getElementById('itAtualizar').checked;
+  const existentes = new Map((acoes ? TABELAS.acoes : TABELAS.ptres).map(x => [x.codigo, x]));
+  itens.forEach(it => {
+    const ex = existentes.get(it.codigo);
+    it.situacao = !ex ? 'nova'
+      : (atualizar && ((it.descricao && it.descricao !== ex.descricao) || (!acoes && it.acao !== ex.acao)) ? 'atualizar' : 'existe');
+  });
+  importTabela.itens = itens;
+  const novas = itens.filter(i => i.situacao === 'nova').length, atu = itens.filter(i => i.situacao === 'atualizar').length;
+  const acoesNovas = acoes ? [] : [...new Set(itens.filter(i => i.situacao !== 'existe').map(i => i.acao))].filter(a => !TABELAS.acoes.some(x => x.codigo === a));
+  const rot = { nova: 'Nova', atualizar: 'Atualizar', existe: 'Já existe' };
+  document.getElementById('itResultado').innerHTML = `
+    <p class="result-count" style="margin:12px 0 8px;">${itens.length} encontrada(s): <strong>${novas}</strong> nova(s), <strong>${atu}</strong> a atualizar,
+      ${itens.length - novas - atu} já existente(s)${ignoradas.length ? `; ${ignoradas.length} linha(s) ignorada(s) (código inválido ou cabeçalho)` : ''}.
+      ${acoesNovas.length ? `<br>Ações que serão criadas sem descrição: ${acoesNovas.map(escapeHtml).join(', ')}.` : ''}</p>
+    <div class="panel" style="max-height:320px; overflow:auto;"><table>
+      <thead><tr><th>${acoes ? 'Código' : 'PTRES'}</th>${acoes ? '' : '<th>Ação</th>'}<th>Descrição</th><th>Situação</th></tr></thead>
+      <tbody>${itens.map(i => `<tr class="${i.situacao === 'existe' ? 'linha-inativa' : ''}"><td class="id-cell">${escapeHtml(i.codigo)}</td>${acoes ? '' : `<td class="id-cell">${escapeHtml(i.acao)}</td>`}
+        <td>${escapeHtml(i.descricao || '—')}</td><td>${rot[i.situacao]}</td></tr>`).join('') || `<tr><td colspan="4" class="muted">Nenhuma linha válida.</td></tr>`}</tbody>
+    </table></div>`;
+  document.getElementById('formModalSalvar').disabled = !(novas + atu);
+}
+
+async function executarImportTabela(){
+  const acoes = importTabela.tipo === 'acoes';
+  const fila = importTabela.itens.filter(i => i.situacao !== 'existe');
+  let ok = 0; const erros = [];
+  if(!acoes){
+    const faltam = [...new Set(fila.map(i => i.acao))].filter(a => !TABELAS.acoes.some(x => x.codigo === a));
+    for(const a of faltam){ try{ await Repo.acoes.criar(a, ''); } catch(e){ erros.push(`${a}: ${traduzirErro(e)}`); } }
+  }
+  for(const it of fila){
+    try{
+      if(acoes){
+        if(it.situacao === 'nova') await Repo.acoes.criar(it.codigo, it.descricao);
+        else await Repo.acoes.atualizar(it.codigo, { descricao: it.descricao });
+      } else {
+        if(it.situacao === 'nova') await Repo.ptres.criar(it.codigo, it.acao, it.descricao);
+        else await Repo.ptres.atualizar(it.codigo, { acao: it.acao, ...(it.descricao ? { descricao: it.descricao } : {}) });
+      }
+      ok++;
+    } catch(e){ erros.push(`${it.codigo}: ${traduzirErro(e)}`); }
+  }
+  if(erros.length){ mostrarErroForm(`${ok} gravado(s). Falhas: ${erros.slice(0, 5).join(' · ')}${erros.length > 5 ? '…' : ''}`); return; }
+  fecharFormModal();
+  mostrarToast(`${ok} ${acoes ? 'ação(ões)' : 'PTRES'} importado(s).`);
 }

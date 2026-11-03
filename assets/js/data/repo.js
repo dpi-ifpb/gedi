@@ -119,6 +119,12 @@ const Repo = (() => {
       const snap = await db().collection('historico').where('entidade', '==', entidade).where('docId', '==', docId).get();
       return snap.docs.map(d => { const x = d.data(); return { ...x, em: paraData(x.em) }; }).sort((a, b) => b.versao - a.versao);
     },
+    // todos os registros de uma entidade, do mais recente para o mais antigo (ordenação no cliente: dispensa índice composto)
+    async listarEntidade(entidade){
+      const snap = await db().collection('historico').where('entidade', '==', entidade).get();
+      return snap.docs.map(d => { const x = d.data(); return { ...x, em: paraData(x.em) }; })
+        .sort((a, b) => (b.em ? b.em.getTime() : 0) - (a.em ? a.em.getTime() : 0));
+    },
   };
 
   /* ---------------- usuários ---------------- */
@@ -263,7 +269,7 @@ const Repo = (() => {
    *            id "auto_{docId da despesa}", código = base do ID da despesa (#AR.0001.2.000).
    *   repasse  manual: recurso repassado a outra unidade, que prioriza os pagamentos. Sem objeto.
    *            código #TR.NNNN (sequencial do ano).
-   *   troca    troca orçamentária: mesma unidade, muda PTRES/ação, origem ou natureza. Exige pedido
+   *   troca    troca orçamentária: mesma unidade, muda ação, origem ou natureza. Exige pedido
    *            formal (processo). Código #TO.NNNN.
    * de / para = { unidade, ptres, acao, origem, natureza }; valor = PLANEJADO.
    * lancamentos = documentos que realizam a transferência (NC no Tesouro Gerencial; para a troca,
@@ -389,7 +395,7 @@ const Repo = (() => {
     && d.unidade !== d.fonte && !(SEM_TRANSFERENCIA.includes(d.unidade) && SEM_TRANSFERENCIA.includes(d.fonte || FONTE_PADRAO));
 
   /* Mantém a transferência automática coerente com a despesa (mesma transação).
-   * O PLANEJADO acompanha sempre a despesa (valor, PTRES, origem, natureza). Se já houver NC
+   * O PLANEJADO acompanha sempre a despesa (valor, ação, origem, natureza). Se já houver NC
    * lançada e as pontas mudarem, o GEDI avisa para conferir as NCs. Inativar a despesa cancela
    * a transferência só se não houver NC; havendo, ela fica e o GEDI pede a anulação. */
   function sincronizarTransferencia(tx, docId, despesaDepois, transfAntes, avisos){
@@ -416,7 +422,7 @@ const Repo = (() => {
     const mud = { ...alvo, cancelada: false };
     mud.status = statusTransferencia({ ...transfAntes, ...mud });
     if(temLanc && (JSON.stringify(alvo.de) !== JSON.stringify(transfAntes.de) || JSON.stringify(alvo.para) !== JSON.stringify(transfAntes.para)))
-      avisos.push('A transferência já tem NC lançada e PTRES, origem ou natureza mudaram: confira as NCs.');
+      avisos.push('A transferência já tem NC lançada e ação, origem ou natureza mudaram: confira as NCs.');
     if(temLanc && alvo.valor !== transfAntes.valor)
       avisos.push(`O valor planejado da transferência passou a ${alvo.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}; ela fica parcial até as NCs somarem esse valor.`);
     if(JSON.stringify(diferencas(transfAntes, mud)) !== '{}') escrever(tx, ref, transfAntes, mud, 'alterar (despesa)');

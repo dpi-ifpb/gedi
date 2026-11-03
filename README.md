@@ -49,13 +49,13 @@ Cada campus, a Reitoria e a pseudounidade **"- Institucional -"** (ações de al
 
 ### 2.2 Origem do recurso
 Indica **por onde o recurso veio**: `LOA`, `EFQ` (Eficiência e Qualidade), `RTC` (Reserva Técnica), `RP2`, `RP6` (emendas individuais), `RP7` (emendas de bancada), `PAC`…
-- Cada origem tem um **código de 1 caractere** usado no ID (`RP2` → `2`, `EFQ` → `L`, `RTC` → `R`, `PAC` → `P`).
+- Cada origem tem um **código de 1 caractere** usado no ID (`LOA` → `L`, `EFQ` → `Q`, `RTC` → `R`, `RP2` → `2`, `PAC` → `P`).
 - Cada origem guarda o **resultado primário (RP) no SIAFI**. LOA, EFQ e RTC são todas RP 2: **essa distinção existe só no GEDI** e serve para rastrear a procedência do recurso.
 
-### 2.3 Ação do orçamento e PTRES
+### 2.3 Ação do orçamento
 - **Ação** (ex.: `20RL`, `2994`): a ação orçamentária do governo federal.
-- **PTRES**: o programa de trabalho resumido do SIAFI. **Cada PTRES pertence a uma ação**; uma ação pode ter vários PTRES.
-- Nos lançamentos escolhe-se o **PTRES**, e a ação vem junto. Isso permite relatórios por ação e por PTRES.
+- Receitas, despesas e transferências são identificadas pela **ação**, que é estável de um ano para o outro.
+- O **PTRES** (programa de trabalho resumido do SIAFI) **não é usado**, porque pode mudar a cada exercício. A origem, a natureza e a UG já distinguem o que importa (emenda ou discricionária, custeio ou investimento, unidade).
 
 ### 2.4 Natureza
 **Custeio** (GND 3) ou **Investimento** (GND 4).
@@ -74,7 +74,7 @@ Registro ──► Análise ──┬──► Deferida  (ganha o ID; entra nos 
 (sem ID)               └──► Indeferida (com justificativa; pode ser reanalisada)
 ```
 - **Registro**: ano, unidade executora, descrição, valor, natureza, processo eletrônico e link do SUAP, e se a despesa é *acompanhada em percentual* (obras e serviços de engenharia).
-- **Análise**: o analista define **origem, PTRES, financiador e beneficiárias** e **defere** ou **indefere**.
+- **Análise**: o analista define **origem, ação, financiador e beneficiárias** e **defere** ou **indefere**.
 - **Execução** (só nas deferidas): empenhos (empenho, reforço, anulação), pagamentos parciais e, se for o caso, a evolução física de 0 a 100%. A fase é calculada: *Deferida → Empenhada → Em pagamento → Quitada*.
 - Despesas **não são excluídas**: são **inativadas** e saem dos saldos.
 
@@ -93,7 +93,7 @@ Gerado **no deferimento**:
 - A **base** (`#AR.0001.2.000`) é a identidade permanente: **nunca muda**. Como o sequencial reinicia a cada ano, a identificação completa é **ano + ID**.
 - O **bloco das beneficiárias** pode ser ajustado depois do deferimento (com histórico).
 
-**Como ler o bloco das beneficiárias.** Cada ano tem uma **tabela de posições** (Administração → Unidades, Origens e Ações) que ordena as unidades. Cada caractere hexadecimal representa **4 unidades**, com os valores **8, 4, 2, 1**:
+**Como ler o bloco das beneficiárias.** Cada ano tem uma **tabela de posições** (Administração → Cadastros → Posições no ID) que ordena as unidades. Cada caractere hexadecimal representa **4 unidades**, com os valores **8, 4, 2, 1**:
 
 | Caractere | Bits | Unidades do grupo beneficiadas |
 |---|---|---|
@@ -113,7 +113,7 @@ Exemplo `840100` (tabela de 2026: Areia = 1, Esperança = 6, Picuí = 16):
 > As posições de um ano **não mudam** depois de criadas; unidades novas entram no fim. Para 2027 (18 unidades, após o IFSertãoPB), cria-se a tabela de 2027.
 
 ### 2.9 Receita: previsão e chegada
-Cada **lançamento de receita** tem ano, unidade, PTRES (ação), origem, natureza e valor.
+Cada **lançamento de receita** tem ano, unidade, ação, origem, natureza e valor.
 - **Previsão orçamentária** (caixa marcada): o orçamento esperado, como a LOA de cada unidade.
 - **Chegada** (caixa desmarcada): receita que efetivamente chegou, com data.
 - Revisões e estornos são **novos lançamentos**, inclusive com valor negativo. O histórico fica completo.
@@ -125,7 +125,7 @@ Movimentação de recurso planejada no GEDI. Há **três tipos**, cada um com um
 |---|---|---|---|---|
 | **Automática (despesa)** | A Reitoria banca uma despesa de outra unidade | **Definido**: a despesa | Fonte → executora | A base do ID da despesa (`#AR.0001.2.000`) |
 | **Repasse** (manual) | A Reitoria repassa recurso; a unidade prioriza os pagamentos | **Sem objeto** definido | Unidade A → unidade B | `#TR.0001` (sequencial do ano) |
-| **Troca orçamentária** (manual) | Mudar PTRES/ação, origem ou natureza **na mesma unidade** | Remanejamento (exige **pedido formal**) | Unidade X → unidade X | `#TO.0001` (sequencial do ano) |
+| **Troca orçamentária** (manual) | Mudar ação, origem ou natureza **na mesma unidade** | Remanejamento (exige **pedido formal**) | Unidade X → unidade X | `#TO.0001` (sequencial do ano) |
 
 **Planejado × realizado.** O valor da transferência é o **planejado**. O **realizado** é a soma dos **lançamentos**:
 - nas automáticas e nos repasses, as **notas de crédito (NC)**;
@@ -138,7 +138,7 @@ Movimentação de recurso planejada no GEDI. Há **três tipos**, cada um com um
 - **Realizada**: a soma **bate** com o planejado;
 - **Cancelada**.
 
-**A automática acompanha a despesa**: mudar valor, PTRES, origem ou natureza atualiza o planejado. Inativar a despesa cancela a transferência; se já houver NC, a transferência fica e o GEDI pede a anulação.
+**A automática acompanha a despesa**: mudar valor, ação, origem ou natureza atualiza o planejado. Inativar a despesa cancela a transferência; se já houver NC, a transferência fica e o GEDI pede a anulação.
 
 **Efeito nos saldos**: a transferência tira da origem e soma no destino. O planejado entra na **receita prevista**; as NCs entram na **receita recebida**. No total do IFPB, as transferências se anulam.
 
@@ -150,8 +150,8 @@ Os perfis são **acumuláveis** (uma pessoa pode ter vários). O acesso é pela 
 
 | Perfil | O que pode fazer |
 |---|---|
-| **Administrador** | Tudo: usuários, tabelas (unidades/UG, origens, ações, PTRES, posições), financiadores, importação, além do que o gestor faz |
-| **Gestor de Planejamento** | Analisa despesas (defere/indefere), registra e edita despesas, lança execução, receitas e transferências, vê o histórico |
+| **Administrador** | Tudo: usuários, cadastros (unidades/UG, origens, ações, financiadores, posições), importação, além do que o gestor faz |
+| **Gestor de Planejamento** | Analisa despesas (defere/indefere), registra e edita despesas, lança execução, receitas e transferências, consulta o histórico (página `#auditoria`) |
 | **Registrador de Despesas** | Registra despesas **das unidades marcadas no seu usuário** e as edita enquanto não forem analisadas |
 | **Leitor Orçamentário-Financeiro** | Consulta o módulo Orçamento e as telas de Despesas |
 | **Leitor de Recursos Humanos** | Consulta Estrutura Organizacional e Funções Gratificadas |
@@ -165,18 +165,18 @@ As permissões são aplicadas **no servidor** (regras do Firestore), não só es
 Exemplo: em 2026, a Reitoria vai bancar a estruturação de um laboratório em Areia que também atende Esperança e Picuí.
 
 **Passo 0 · Tabelas (administrador, uma vez por ano)**
-1. *Administração → Unidades, Origens e Ações*: confira as **UGs**, cadastre as **ações** e os **PTRES**.
-2. Na mesma tela, **crie a tabela de posições** do ano.
-3. *Administração → Financiadores*, se houver emendas.
+1. *Administração → Cadastros*: confira as **UGs** (aba Unidades) e cadastre as **ações** (aba Ações do orçamento, uma a uma ou pelo botão **Importar lista**: veja a seção 5).
+2. Na aba **Posições no ID**, crie a tabela de posições do ano.
+3. Na aba **Financiadores**, cadastre os financiadores, se houver emendas.
 
 **Passo 1 · Previsão orçamentária (gestor)**
-*Orçamento → Receitas → + Lançar receita*, com a caixa **Previsão orçamentária** marcada: Reitoria · PTRES 169970 (20RL) · RP2 · Custeio · R$ 1.000.000,00. Faça o mesmo com a LOA de cada unidade.
+*Orçamento → Receitas → + Lançar receita*, com a caixa **Previsão orçamentária** marcada: Reitoria · ação 20RL · RP2 · Custeio · R$ 1.000.000,00. Faça o mesmo com a LOA de cada unidade.
 
 **Passo 2 · Registro da demanda (registrador ou gestor)**
-*Despesas → Lista → + Registrar despesa*: Areia · "Estruturação de laboratório" · R$ 100.000,00 · Custeio · processo e link do SUAP. A despesa entra em **Não analisadas** (o contador aumenta).
+*Orçamento → Despesas → + Registrar despesa*: Areia · "Estruturação de laboratório" · R$ 100.000,00 · Custeio · processo e link do SUAP. A despesa entra em **Não analisadas** (o contador aumenta).
 
 **Passo 3 · Análise (gestor)**
-Clique em **Analisar**: escolha RP2, PTRES 169970, financiador 000 e marque **Esperança** e **Picuí** como beneficiárias. A prévia mostra `#AR.····.2.000.840100`. Clique em **Deferir e gerar ID**.
+Clique em **Analisar**: escolha RP2, ação 20RL, financiador 000 e marque **Esperança** e **Picuí** como beneficiárias. A prévia mostra `#AR.····.2.000.840100`. Clique em **Deferir e gerar ID**.
 - O ID gerado é `#AR.0001.2.000.840100`.
 - Como a fonte (Reitoria) é diferente da executora (Areia), nasce a **transferência automática** `#AR.0001.2.000`, *prevista*, Reitoria → Areia, R$ 100.000,00.
 
@@ -189,33 +189,33 @@ A equipe emite a NC da Reitoria para a UG de Areia, com **`#AR.0001.2.000` na ob
 - Se uma NC for anulada, lance a **anulação**: o realizado cai, e o saldo a realizar reaparece.
 
 **Passo 6 · Execução (gestor)**
-*Despesas → Lista → Analisadas → Execução*: lance os empenhos (nº da NE) e os pagamentos. Em obras, informe a evolução física.
+*Orçamento → Despesas → Analisadas → Execução*: lance os empenhos (nº da NE) e os pagamentos. Em obras, informe a evolução física.
 
 **Passo 7 · Acompanhamento**
 *Orçamento → Painel do Orçamento*, agrupado por unidade: a Reitoria mostra a previsão reduzida pela transferência; Areia mostra a receita recebida (pela NC), a despesa deferida, a empenhada e a paga, com os saldos.
 
 **Remanejamentos:**
 - Para mandar recurso a uma unidade **sem objeto definido**, use *Transferências → **+ Repasse*** (código `#TR`).
-- Para mudar **PTRES, origem ou natureza na mesma unidade** (após o pedido formal), use ***+ Troca orçamentária*** (código `#TO`), informando o processo. Ela fica *prevista* até a alteração aparecer no Tesouro Gerencial.
+- Para mudar **ação, origem ou natureza na mesma unidade** (após o pedido formal), use ***+ Troca orçamentária*** (código `#TO`), informando o processo. Ela fica *prevista* até a alteração aparecer no Tesouro Gerencial.
 
 ---
 
 ## 5. Tela por tela
 
-**Orçamento**
-- **Painel do Orçamento**: indicadores de receita, despesa e saldos, e tabela agrupada por origem, unidade, ação, PTRES ou natureza. Mostra também o total de transferências ainda a realizar. Saldos negativos aparecem em vermelho.
+**Orçamento** (receitas e despesas no mesmo módulo)
+- **Painel do Orçamento**: indicadores de receita, despesa e saldos, e tabela agrupada por origem, unidade, ação ou natureza. Mostra também o total de transferências ainda a realizar. Saldos negativos aparecem em vermelho. Substitui a antiga tela de Totais.
 - **Receitas**: lançamentos de previsão e de chegada, com filtros por tipo, unidade, origem, ação e natureza.
+- **Despesas**: abas **Não analisadas** (com contador, também no menu) e **Analisadas** (com resultado, origem e fase). Ações: Registrar, Analisar, Editar, Execução, Ver, Inativar/Reativar e Importar (administrador; planilha antiga → despesas já deferidas).
 - **Transferências**: automáticas, repasses e trocas. Botões: **NCs/Documentos** (lançamentos e anulações), **Ver**, **Editar** e **Cancelar** (só manuais e enquanto previstas).
 - **Formação do Orçamento**: continua lendo a planilha "Bases e reforços orçamentários".
 
-**Despesas**
-- **Lista**: abas **Não analisadas** (com contador, também no menu) e **Analisadas** (com resultado, origem e fase). Ações: Registrar, Analisar, Editar, Execução, Ver (com histórico), Inativar/Reativar e Importar (administrador; planilha antiga → despesas já deferidas).
-- **Totais**: tabela de unidade × origem × natureza, só com as despesas deferidas e ativas.
-
 **Administração**
-- **Financiadores**: código de 3 dígitos e descrição.
-- **Unidades, Origens e Ações**: unidades (sigla, nome, UG), origens (sigla, código no ID, RP no SIAFI), ações, PTRES e a tabela de posições por ano.
+- **Cadastros**, em abas: **Unidades** (sigla, nome, UG), **Origens** (sigla, código no ID, RP no SIAFI), **Ações do orçamento**, **Financiadores** (código de 3 dígitos) e **Posições no ID** (tabela por ano).
+  - **Importar lista de ações**: cole linhas de planilha. Servem a exportação do **Painel do Orçamento Federal (SIOP)** (`20RL - Funcionamento…`) ou o CSV de despesas do **Portal da Transparência** filtrado pelo órgão 26417 (o GEDI acha as colunas de código e nome da ação e remove repetições). As duas fontes são públicas.
+    Também serve uma planilha com as colunas "Código da ação" e "Descrição da ação".
 - **Usuários**: e-mail, perfis e, para o registrador, as unidades em que pode registrar.
+
+**Histórico de alterações** (gestor e administrador): página fora do menu, aberta pelo endereço do GEDI terminado em **`#auditoria`** (ex.: `https://dpi-ifpb.github.io/gedi/#auditoria`). Mostra, por entidade, cada gravação com data, usuário, operação e o que mudou.
 
 **No celular**: o menu vira ☰, as listas aparecem em cartões e os formulários ocupam a tela inteira.
 
@@ -239,7 +239,7 @@ O GEDI **planeja**; o SIAFI **executa**; o **Tesouro Gerencial** lê o SIAFI e d
 | GEDI | Tesouro Gerencial |
 |---|---|
 | Unidade | UG emitente / favorecida |
-| PTRES / ação | PTRES / ação de governo |
+| Ação | Ação de governo |
 | Natureza | GND 3 / 4 |
 | Origem | Resultado primário (LOA/EFQ/RTC só no GEDI, identificadas pelo código na observação) |
 | Transferência | NC (ou documento de alteração), reconhecida pelo código |
@@ -253,7 +253,7 @@ Documentos importados **com** código são vinculados automaticamente e atualiza
 - Todo cadastro guarda **quem criou, quando, quem alterou por último, quando** e o **número da versão**.
 - Cada gravação gera um registro no **histórico** com o que mudou (*de → para*). O histórico nunca é alterado nem apagado.
 - As regras de segurança **recusam** qualquer gravação sem esse registro.
-- Gestor e administrador veem o histórico no detalhe de cada registro (botões **Ver** ou **Editar**).
+- As telas não mostram quem cadastrou ou alterou. Gestor e administrador consultam essas informações na página **Histórico de alterações**, aberta pelo endereço terminado em `#auditoria` (não aparece no menu), organizada por entidade e com busca.
 
 ---
 
@@ -270,12 +270,12 @@ Documentos importados **com** código são vinculados automaticamente e atualiza
 | **NC** | Nota de crédito: descentralização de crédito entre UGs no SIAFI |
 | **NE** | Nota de empenho |
 | **Origem** | Por onde o recurso veio (LOA, EFQ, RTC, RP2, RP6, RP7, PAC…) |
-| **PTRES** | Programa de trabalho resumido; cada PTRES pertence a uma ação |
+| **PTRES** | Programa de trabalho resumido do SIAFI; não é usado no GEDI porque pode mudar a cada exercício |
 | **Repasse** | Transferência manual entre unidades, sem objeto definido (`#TR`) |
 | **RP** | Resultado primário no SIAFI (2 = discricionária, 6 = emenda individual, 7 = emenda de bancada…) |
 | **Tabela de posições** | Ordem das unidades no bloco hexadecimal das beneficiárias, por ano |
 | **Tesouro Gerencial** | Ferramenta de consulta aos dados do SIAFI, usada na integração |
-| **Troca orçamentária** | Mudança de PTRES/ação, origem ou natureza dentro da mesma unidade, por pedido formal (`#TO`) |
+| **Troca orçamentária** | Mudança de ação, origem ou natureza dentro da mesma unidade, por pedido formal (`#TO`) |
 | **UG** | Unidade gestora no SIAFI (6 dígitos) |
 
 ---
@@ -295,13 +295,14 @@ assets/js/auth.js              login e perfis do usuário
 assets/js/app.js               navegação
 assets/js/data/repo.js         ÚNICA camada de acesso ao banco (gravação com auditoria + histórico)
 assets/js/data/assinaturas.js  dados ao vivo do Firestore
-assets/js/pages/lista-despesas.js   Despesas → Lista (registro, análise, execução, importação)
+assets/js/pages/lista-despesas.js   Orçamento → Despesas (registro, análise, execução, importação)
 assets/js/pages/orcamento.js        Orçamento → Painel, Receitas, Transferências
 assets/js/pages/administracao.js    Administração
-assets/js/pages/cadastros-ui.js     painel lateral, histórico, utilidades
+assets/js/pages/auditoria.js        histórico de alterações (#auditoria)
+assets/js/pages/cadastros-ui.js     painel lateral e utilidades
 ```
 
-**Coleções do Firestore**: `usuarios`, `unidades`, `origens`, `acoes`, `ptres`, `posicoes`, `financiadores`, `receitas`, `transferencias`, `despesas`, `ids`, `contadores`, `historico`, `dados_estaticos`.
+**Coleções do Firestore**: `usuarios`, `unidades`, `origens`, `acoes`, `posicoes`, `financiadores`, `receitas`, `transferencias`, `despesas`, `ids`, `contadores`, `historico`, `dados_estaticos`.
 
 **Trocar de banco de dados**: reescreva só `assets/js/data/repo.js`, mantendo as funções e o formato dos objetos.
 

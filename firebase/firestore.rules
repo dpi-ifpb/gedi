@@ -176,7 +176,7 @@ service cloud.firestore {
     // lancamentos: NCs / anulações (valor negativo) / documento da alteração; status calculado pelo GEDI.
     function pontaValida(p) {
       return p is map && p.unidade is string && p.unidade.matches('^[A-Z]{2}$')
-        && p.get('acao', '') is string && p.get('ptres', '') is string
+        && p.acao is string && p.acao.size() > 0 && p.get('ptres', '') is string
         && p.origem is string && p.natureza in ['Custeio', 'Investimento'];
     }
     function transferenciaValida(d) {
