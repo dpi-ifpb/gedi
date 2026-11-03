@@ -201,14 +201,14 @@
   }
   .drawer.modal-card-wide{max-width:min(1200px, 100vw) !important;}
   @keyframes drawerEntra{from{transform:translateX(40px); opacity:.4;} to{transform:none; opacity:1;}}
-  .drawer-header{align-items:center; padding:9px 16px 9px 22px; gap:12px; background:var(--c1); border-bottom:none; min-height:0;}
-  .drawer-header .modal-title{flex:1; font-size:14.5px; color:#fff; letter-spacing:.2px;}
-  .drawer-voltar{display:none; background:none; border:none; font-size:20px; color:#fff; cursor:pointer; padding:2px 6px;}
+  .drawer-header{align-items:center; padding:9px 16px 9px 22px; gap:12px; background:#FAF6F2; border-bottom:1px solid var(--border); min-height:0;}
+  .drawer-header .modal-title{flex:1; font-size:14.5px; color:var(--c1); letter-spacing:.2px;}
+  .drawer-voltar{display:none; background:none; border:none; font-size:20px; color:var(--c1); cursor:pointer; padding:2px 6px;}
   .drawer-fechar{
-    width:28px; height:28px; border-radius:7px; border:1px solid rgba(255,255,255,.35); background:transparent; color:#fff;
+    width:30px; height:30px; border-radius:50%; border:1px solid var(--border); background:var(--surface); color:var(--c1);
     font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center;
   }
-  .drawer-fechar:hover{background:rgba(255,255,255,.16);}
+  .drawer-fechar:hover{background:var(--c4); border-color:var(--c1);}
   .drawer .modal-body{padding:20px 22px 24px;}
   .drawer .modal-footer{padding:12px 22px; background:#FAF6F2;}
   .bloco-drawer{border-top:1px solid var(--border); margin-top:18px; padding-top:14px;}

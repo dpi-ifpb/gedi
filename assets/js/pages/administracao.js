@@ -118,6 +118,7 @@ function renderTabelasApoio(){
   if(!TABELAS_CARREGADAS.unidades || !TABELAS_CARREGADAS.origens){ el.innerHTML = estadoCarregando(); return; }
 
   const vazias = !TABELAS.unidades.length && !TABELAS.origens.length;
+  const falta = faltamValoresPadrao(), totalFalta = falta.unidades + falta.origens + falta.acoes;
   const usosUni = {}, usosOri = {}, usosAcao = {};
   TABELAS.despesas.forEach(d => {
     usosUni[d.unidade] = (usosUni[d.unidade] || 0) + 1; usosOri[d.origem] = (usosOri[d.origem] || 0) + 1;
@@ -136,13 +137,12 @@ function renderTabelasApoio(){
       + `<p class="result-count" style="margin-top:10px;">A sigla compõe o ID das despesas e não muda. A UG (6 dígitos) é usada para cruzar com o Tesouro Gerencial.</p>`;
   } else if(cadAba === 'origens'){
     corpo = cabSecao('Origens', `<button class="acao-btn" onclick="abrirFormOrigem()">+ Nova origem</button>`)
-      + tabelaCad(`<th>Sigla</th><th class="th-center">Código no ID</th><th class="th-center">RP (SIAFI)</th><th class="th-center">Despesas</th><th class="th-center">Ações</th>`,
+      + tabelaCad(`<th>Sigla</th><th class="th-center">Código no ID</th><th class="th-center">Despesas</th><th class="th-center">Ações</th>`,
         origensOrdenadas(false).map(o => `<tr class="${o.ativo ? '' : 'linha-inativa'}">
           <td><span class="badge ${origemBadgeClass(o.sigla)}">${escapeHtml(o.sigla)}</span>${o.ativo ? '' : '<span class="tag-inativa">Inativa</span>'}</td>
           <td class="id-cell" style="text-align:center;">${escapeHtml(o.codigo)}</td>
-          <td style="text-align:center;">${o.rp ? 'RP ' + escapeHtml(o.rp) : '<span class="muted">—</span>'}</td>
           <td style="text-align:center;">${usosOri[o.sigla] || '—'}</td>
-          ${btnEditarInativar('abrirFormOrigem', 'alternarAtivoOrigem', o.sigla, o.ativo)}</tr>`).join(''), 'Nenhuma origem cadastrada.')
+          <td><div class="linha-acoes" style="justify-content:center;"><button class="linha-btn ${o.ativo ? 'perigo' : ''}" onclick="alternarAtivoOrigem('${escapeAttr(o.sigla)}', ${!o.ativo})">${o.ativo ? 'Inativar' : 'Reativar'}</button></div></td></tr>`).join(''), 'Nenhuma origem cadastrada.')
       + `<p class="result-count" style="margin-top:10px;">Sigla e código não mudam depois de criados, porque fazem parte dos IDs. Uma origem inativa deixa de aparecer para novas despesas.</p>`;
   } else if(cadAba === 'acoes'){
     corpo = cabSecao('Ações do orçamento', `<button class="acao-btn secundario" onclick="abrirImportTabela('acoes')">Importar lista</button><button class="acao-btn" onclick="abrirFormAcao()">+ Nova ação</button>`)
@@ -160,10 +160,11 @@ function renderTabelasApoio(){
     corpo = secaoPosicoes();
   }
   el.innerHTML = `
-    ${vazias ? `<div class="aviso-box">
-      <span>As tabelas ainda estão vazias. Carregue os valores iniciais (unidades e origens, com LOA = L e EFQ = Q).
-      Cajazeiras fica de fora porque ainda não tem sigla — cadastre-a em seguida.</span>
-      <button class="acao-btn" onclick="carregarTabelasIniciais()">Carregar valores iniciais</button>
+    ${totalFalta ? `<div class="aviso-box">
+      <span>${vazias ? 'As tabelas ainda estão vazias.' : 'Alguns valores padrão ainda não foram cadastrados.'}
+      Carregue de uma vez: ${[falta.unidades && `${falta.unidades} unidade(s)`, falta.origens && `${falta.origens} origem(ns) (LOA = L, EFQ = Q…)`, falta.acoes && `${falta.acoes} ação(ões) do orçamento`].filter(Boolean).join(', ')}.
+      Só cria o que falta; nada do que já existe é alterado.</span>
+      <button class="acao-btn" id="btnValoresPadrao" onclick="carregarTabelasIniciais()">Carregar valores padrão</button>
     </div>` : ''}
     <div class="lista-abas" role="tablist">${ABAS_CAD.map(([k, t]) => `<button type="button" role="tab" class="lista-aba ${cadAba === k ? 'ativa' : ''}" onclick="trocarAbaCad('${k}')">${t}</button>`).join('')}</div>
     ${corpo}`;
@@ -241,11 +242,25 @@ async function alternarAtivoAcao(codigo, ativo){
 }
 aoMudarDadosRegistrar(['unidades', 'origens', 'acoes', 'posicoes', 'despesas'], renderTabelasApoio);
 
+// quantos itens dos valores padrão ainda não existem no banco
+function faltamValoresPadrao(){
+  const tem = (lista, campo) => new Set(lista.map(x => x[campo]));
+  const u = tem(TABELAS.unidades, 'codigo'), o = tem(TABELAS.origens, 'sigla'), a = tem(TABELAS.acoes, 'codigo');
+  return {
+    unidades: UNIDADES_INICIAIS.filter(([c]) => !u.has(c)).length,
+    origens: ORIGENS_INICIAIS.filter(([c]) => !o.has(c)).length,
+    acoes: ACOES_INICIAIS.filter(([c]) => !a.has(c)).length,
+  };
+}
 async function carregarTabelasIniciais(){
+  const btn = document.getElementById('btnValoresPadrao');
+  if(btn){ btn.disabled = true; btn.textContent = 'Carregando…'; }
   try{
-    await Repo.carregarTabelasIniciais();
-    mostrarToast('Tabelas de unidades e origens carregadas.');
-  } catch(e){ mostrarToast(traduzirErro(e), true); }
+    const c = await Repo.carregarTabelasIniciais({
+      unidades: TABELAS.unidades.map(x => x.codigo), origens: TABELAS.origens.map(x => x.sigla), acoes: TABELAS.acoes.map(x => x.codigo),
+    });
+    mostrarToast(`Valores padrão carregados: ${c.unidades} unidade(s), ${c.origens} origem(ns) e ${c.acoes} ação(ões).`);
+  } catch(e){ mostrarToast(traduzirErro(e), true); if(btn){ btn.disabled = false; btn.textContent = 'Carregar valores padrão'; } }
 }
 
 function abrirFormUnidade(codigo){
@@ -319,24 +334,16 @@ function abrirFormOrigem(sigla){
           <input type="text" id="foCodigo" maxlength="1" placeholder="Ex.: 2, R, P" style="text-transform:uppercase;" value="${o ? escapeAttr(o.codigo) : ''}" ${o ? 'disabled' : ''}>
           <span class="ajuda">1 caractere, único entre as origens; não muda depois de criado. Já usados: ${origensOrdenadas(false).map(x => `${x.codigo} (${x.sigla})`).join(', ') || 'nenhum'}.</span>
         </div>
-        <div class="form-field">
-          <label for="foRp">Resultado primário no SIAFI</label>
-          <input type="text" id="foRp" maxlength="1" inputmode="numeric" placeholder="Ex.: 2" value="${o ? escapeAttr(o.rp) : ''}">
-          <span class="ajuda">O SIAFI não distingue LOA, EFQ e RTC (todas RP 2): essas origens existem só no GEDI. O RP serve para conferir os dados importados.</span>
-        </div>
       </div>`,
     aoSalvar: async () => {
-      const rp = document.getElementById('foRp').value.trim();
-      marcarInvalido('foRp', rp && !/^\d$/.test(rp));
-      if(rp && !/^\d$/.test(rp)) throw new Error('O resultado primário é 1 dígito.');
-      if(o){ await Repo.origens.atualizar(o.sigla, { rp }); fecharFormModal(); mostrarToast(`Origem ${o.sigla} atualizada.`); return; }
+      if(o){ fecharFormModal(); return; }
       const sg = document.getElementById('foSigla').value.trim().toUpperCase();
       const codigo = document.getElementById('foCodigo').value.trim().toUpperCase();
       const siglaOk = /^[A-Z0-9]{2,6}$/.test(sg), codOk = /^[0-9A-Z]$/.test(codigo);
       marcarInvalido('foSigla', !siglaOk); marcarInvalido('foCodigo', !codOk);
       if(!siglaOk) throw new Error('A sigla deve ter de 2 a 6 letras/números.');
       if(!codOk) throw new Error('O código deve ser 1 número ou letra.');
-      await Repo.origens.criar(sg, codigo, rp);
+      await Repo.origens.criar(sg, codigo);
       fecharFormModal(); mostrarToast(`Origem ${sg} cadastrada com o código ${codigo}.`);
     },
   });
@@ -592,3 +599,15 @@ async function executarImportTabela(){
   fecharFormModal();
   mostrarToast(`${ok} ${acoes ? 'ação(ões)' : 'PTRES'} importado(s).`);
 }
+
+/* ---------- carga automática dos valores padrão ----------
+ * Logo após a implantação, no primeiro acesso de um administrador, o GEDI cria sozinho as unidades,
+ * origens e ações do orçamento que ainda não existem (nada é sobrescrito). Roda uma vez por sessão. */
+let cargaPadraoFeita = false;
+aoMudarDadosRegistrar(['unidades', 'origens', 'acoes'], () => {
+  if(cargaPadraoFeita || !temPerfil(P_ADMIN)) return;
+  if(!TABELAS_CARREGADAS.unidades || !TABELAS_CARREGADAS.origens || !TABELAS_CARREGADAS.acoes) return;
+  cargaPadraoFeita = true;
+  const f = faltamValoresPadrao();
+  if(f.unidades + f.origens + f.acoes > 0) carregarTabelasIniciais();
+});

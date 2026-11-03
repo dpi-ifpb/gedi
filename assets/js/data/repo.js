@@ -176,10 +176,10 @@ const Repo = (() => {
     observar(onDados, onErro){
       return observarColecao('origens', (sigla, d) => ({ sigla, codigo: d.codigo, rp: d.rp || '', ativo: d.ativo !== false, ...auditoria(d) }), onDados, onErro);
     },
-    async criar(sigla, codigo, rp){
+    async criar(sigla, codigo){
       const repetido = await db().collection('origens').where('codigo', '==', codigo).limit(1).get();
       if(!repetido.empty) throw new Error(`O código "${codigo}" já é usado pela origem ${repetido.docs[0].id}.`);
-      return salvar(db().collection('origens').doc(sigla), { codigo, rp: rp || '', ativo: true }, { criar: true, msgExiste: `A origem ${sigla} já existe.` });
+      return salvar(db().collection('origens').doc(sigla), { codigo, ativo: true }, { criar: true, msgExiste: `A origem ${sigla} já existe.` });
     },
     atualizar(sigla, dados){ return salvar(db().collection('origens').doc(sigla), dados, { exigirExistente: true, acao: 'ativo' in dados ? (dados.ativo ? 'reativar' : 'inativar') : 'alterar' }); },
   };
@@ -222,13 +222,18 @@ const Repo = (() => {
     },
   };
   // carga inicial: só cria o que ainda não existe
-  async function carregarTabelasIniciais(){
-    for(const [codigo, nome] of UNIDADES_INICIAIS){
-      await salvar(db().collection('unidades').doc(codigo), { nome, ativo: true }, { criar: true }).catch(() => {});
-    }
-    for(const [sigla, codigo, rp] of ORIGENS_INICIAIS){
-      await salvar(db().collection('origens').doc(sigla), { codigo, rp: rp || '', ativo: true }, { criar: true }).catch(() => {});
-    }
+  // carga dos valores padrão: cria só o que ainda não existe (nada é sobrescrito) e devolve quantos criou
+  async function carregarTabelasIniciais(existentes){
+    const ja = { unidades: new Set(existentes.unidades), origens: new Set(existentes.origens), acoes: new Set(existentes.acoes) };
+    const criados = { unidades: 0, origens: 0, acoes: 0 };
+    const criar = async (col, id, dados) => {
+      if(ja[col].has(id)) return;
+      try{ await salvar(db().collection(col).doc(id), dados, { criar: true }); criados[col]++; } catch(e){ /* já existe */ }
+    };
+    for(const [codigo, nome] of UNIDADES_INICIAIS) await criar('unidades', codigo, { nome, ativo: true });
+    for(const [sigla, codigo] of ORIGENS_INICIAIS) await criar('origens', sigla, { codigo, ativo: true });
+    for(const [codigo, descricao] of ACOES_INICIAIS) await criar('acoes', codigo, { descricao, ativo: true });
+    return criados;
   }
 
   const financiadores = {

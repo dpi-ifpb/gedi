@@ -2,11 +2,14 @@
 const PAGES = ['totais', 'detalhe', 'extra', 'formacao', 'painelOrc', 'receitas', 'transferencias', 'lista', 'estrutura', 'funcoes', 'indicadores', 'historico', 'pares', 'simulador', 'simuladorF', 'tabelas', 'usuarios', 'auditoria', 'sobre'];
 function switchPage(page){
   if(!podeVerPagina(page)) page = 'sobre';
+  // ao sair da página de histórico, limpa o #auditoria do endereço (só se ela estava aberta)
+  const audAberta = document.getElementById('page-auditoria') && document.getElementById('page-auditoria').style.display === 'block';
   PAGES.forEach(p => {
-    document.getElementById('page-' + p).style.display = (p === page) ? 'block' : 'none';
-    document.getElementById('nav' + p.charAt(0).toUpperCase() + p.slice(1)).classList.toggle('active', p === page);
+    const pg = document.getElementById('page-' + p), nav = document.getElementById('nav' + p.charAt(0).toUpperCase() + p.slice(1));
+    if(pg) pg.style.display = (p === page) ? 'block' : 'none';
+    if(nav) nav.classList.toggle('active', p === page);
   });
-  if(page !== 'auditoria' && location.hash === '#auditoria') history.replaceState(null, '', location.pathname + location.search);
+  if(page !== 'auditoria' && audAberta && location.hash === '#auditoria') history.replaceState(null, '', location.pathname + location.search);
   window.scrollTo(0,0);
   // no celular, o menu fecha ao escolher uma tela
   if(window.innerWidth <= 640){ document.getElementById('sidebar').classList.add('collapsed'); if(typeof updateCollapseIcon === 'function') updateCollapseIcon(); }

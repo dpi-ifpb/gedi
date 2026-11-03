@@ -2,15 +2,35 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gestão Estratégica e Des. Institucional · IFPB</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/base.css">
-<link rel="stylesheet" href="assets/css/tables.css">
-<link rel="stylesheet" href="assets/css/modal.css">
-<link rel="stylesheet" href="assets/css/auth.css">
-<link rel="stylesheet" href="assets/css/cadastros.css">
+<script>
+/* Versão desta publicação. Se o navegador estiver com arquivos antigos guardados (cache),
+   o GEDI compara com versao.json (sempre buscado sem cache) e recarrega a página uma vez. */
+window.GEDI_VERSAO = '5.5';
+(function(){
+  const hashInicial = location.hash;
+  try{
+    fetch('versao.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => {
+      if(!j || !j.versao || j.versao === window.GEDI_VERSAO) return;
+      const chave = 'gedi_recarregou_' + j.versao;
+      if(sessionStorage.getItem(chave)) return;   // evita recarregar em laço
+      sessionStorage.setItem(chave, '1');
+      location.replace(location.pathname + '?v=' + encodeURIComponent(j.versao) + hashInicial);
+    }).catch(() => {});
+  } catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="assets/css/base.css?v=5.5">
+<link rel="stylesheet" href="assets/css/tables.css?v=5.5">
+<link rel="stylesheet" href="assets/css/modal.css?v=5.5">
+<link rel="stylesheet" href="assets/css/auth.css?v=5.5">
+<link rel="stylesheet" href="assets/css/cadastros.css?v=5.5">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -515,30 +535,30 @@
 
 </div><!-- /#appRoot -->
 
-<script src="assets/js/data/firebase-config.js"></script>
-<script src="assets/js/data/firebase-data-loader.js"></script>
-<script src="assets/js/auth.js"></script>
-<script src="assets/js/config.js"></script>
-<script src="assets/js/utils.js"></script>
-<script src="assets/js/data/repo.js"></script>
-<script src="assets/js/data/assinaturas.js"></script>
-<script src="assets/js/data/live-loaders.js"></script>
-<script src="assets/js/pages/totais.js"></script>
-<script src="assets/js/pages/detalhamento.js"></script>
-<script src="assets/js/pages/nova-dist-custeio.js"></script>
-<script src="assets/js/pages/formacao-orcamento.js"></script>
-<script src="assets/js/pages/estrutura-organizacional.js"></script>
-<script src="assets/js/pages/funcoes-gratificadas.js"></script>
-<script src="assets/js/pages/indicadores.js"></script>
-<script src="assets/js/pages/indicadores-historico.js"></script>
-<script src="assets/js/pages/simulador-qe.js"></script>
-<script src="assets/js/pages/simulador-funcionamento.js"></script>
-<script src="assets/js/pages/analise-pares.js"></script>
-<script src="assets/js/pages/cadastros-ui.js"></script>
-<script src="assets/js/pages/lista-despesas.js"></script>
-<script src="assets/js/pages/orcamento.js"></script>
-<script src="assets/js/pages/administracao.js"></script>
-<script src="assets/js/pages/auditoria.js"></script>
-<script src="assets/js/app.js"></script>
+<script src="assets/js/data/firebase-config.js?v=5.5"></script>
+<script src="assets/js/data/firebase-data-loader.js?v=5.5"></script>
+<script src="assets/js/auth.js?v=5.5"></script>
+<script src="assets/js/config.js?v=5.5"></script>
+<script src="assets/js/utils.js?v=5.5"></script>
+<script src="assets/js/data/repo.js?v=5.5"></script>
+<script src="assets/js/data/assinaturas.js?v=5.5"></script>
+<script src="assets/js/data/live-loaders.js?v=5.5"></script>
+<script src="assets/js/pages/totais.js?v=5.5"></script>
+<script src="assets/js/pages/detalhamento.js?v=5.5"></script>
+<script src="assets/js/pages/nova-dist-custeio.js?v=5.5"></script>
+<script src="assets/js/pages/formacao-orcamento.js?v=5.5"></script>
+<script src="assets/js/pages/estrutura-organizacional.js?v=5.5"></script>
+<script src="assets/js/pages/funcoes-gratificadas.js?v=5.5"></script>
+<script src="assets/js/pages/indicadores.js?v=5.5"></script>
+<script src="assets/js/pages/indicadores-historico.js?v=5.5"></script>
+<script src="assets/js/pages/simulador-qe.js?v=5.5"></script>
+<script src="assets/js/pages/simulador-funcionamento.js?v=5.5"></script>
+<script src="assets/js/pages/analise-pares.js?v=5.5"></script>
+<script src="assets/js/pages/cadastros-ui.js?v=5.5"></script>
+<script src="assets/js/pages/lista-despesas.js?v=5.5"></script>
+<script src="assets/js/pages/orcamento.js?v=5.5"></script>
+<script src="assets/js/pages/administracao.js?v=5.5"></script>
+<script src="assets/js/pages/auditoria.js?v=5.5"></script>
+<script src="assets/js/app.js?v=5.5"></script>
 </body>
 </html>

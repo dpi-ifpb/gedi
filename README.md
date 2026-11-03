@@ -50,7 +50,7 @@ Cada campus, a Reitoria e a pseudounidade **"- Institucional -"** (ações de al
 ### 2.2 Origem do recurso
 Indica **por onde o recurso veio**: `LOA`, `EFQ` (Eficiência e Qualidade), `RTC` (Reserva Técnica), `RP2`, `RP6` (emendas individuais), `RP7` (emendas de bancada), `PAC`…
 - Cada origem tem um **código de 1 caractere** usado no ID (`LOA` → `L`, `EFQ` → `Q`, `RTC` → `R`, `RP2` → `2`, `PAC` → `P`).
-- Cada origem guarda o **resultado primário (RP) no SIAFI**. LOA, EFQ e RTC são todas RP 2: **essa distinção existe só no GEDI** e serve para rastrear a procedência do recurso.
+- LOA, EFQ e RTC não se distinguem no SIAFI: **essa distinção existe só no GEDI** e serve para rastrear a procedência do recurso.
 
 ### 2.3 Ação do orçamento
 - **Ação** (ex.: `20RL`, `2994`): a ação orçamentária do governo federal.
@@ -165,6 +165,7 @@ As permissões são aplicadas **no servidor** (regras do Firestore), não só es
 Exemplo: em 2026, a Reitoria vai bancar a estruturação de um laboratório em Areia que também atende Esperança e Picuí.
 
 **Passo 0 · Tabelas (administrador, uma vez por ano)**
+0. Logo após a implantação, no primeiro acesso de um administrador, o GEDI **carrega sozinho os valores padrão**: as unidades, as origens (LOA = L, EFQ = Q…) e as 17 ações do orçamento do IFPB. Só cria o que falta e não altera nada do que já existe. Se algo faltar depois, o botão **Carregar valores padrão** aparece em *Administração → Cadastros*.
 1. *Administração → Cadastros*: confira as **UGs** (aba Unidades) e cadastre as **ações** (aba Ações do orçamento, uma a uma ou pelo botão **Importar lista**: veja a seção 5).
 2. Na aba **Posições no ID**, crie a tabela de posições do ano.
 3. Na aba **Financiadores**, cadastre os financiadores, se houver emendas.
@@ -210,7 +211,7 @@ A equipe emite a NC da Reitoria para a UG de Areia, com **`#AR.0001.2.000` na ob
 - **Formação do Orçamento**: continua lendo a planilha "Bases e reforços orçamentários".
 
 **Administração**
-- **Cadastros**, em abas: **Unidades** (sigla, nome, UG), **Origens** (sigla, código no ID, RP no SIAFI), **Ações do orçamento**, **Financiadores** (código de 3 dígitos) e **Posições no ID** (tabela por ano).
+- **Cadastros**, em abas: **Unidades** (sigla, nome, UG), **Origens** (sigla e código no ID), **Ações do orçamento**, **Financiadores** (código de 3 dígitos) e **Posições no ID** (tabela por ano).
   - **Importar lista de ações**: cole linhas de planilha. Servem a exportação do **Painel do Orçamento Federal (SIOP)** (`20RL - Funcionamento…`) ou o CSV de despesas do **Portal da Transparência** filtrado pelo órgão 26417 (o GEDI acha as colunas de código e nome da ação e remove repetições). As duas fontes são públicas.
     Também serve uma planilha com as colunas "Código da ação" e "Descrição da ação".
 - **Usuários**: e-mail, perfis e, para o registrador, as unidades em que pode registrar.
@@ -241,7 +242,7 @@ O GEDI **planeja**; o SIAFI **executa**; o **Tesouro Gerencial** lê o SIAFI e d
 | Unidade | UG emitente / favorecida |
 | Ação | Ação de governo |
 | Natureza | GND 3 / 4 |
-| Origem | Resultado primário (LOA/EFQ/RTC só no GEDI, identificadas pelo código na observação) |
+| Origem | Só no GEDI (LOA/EFQ/RTC…), identificada pelo código do GEDI na observação do documento |
 | Transferência | NC (ou documento de alteração), reconhecida pelo código |
 
 Documentos importados **com** código são vinculados automaticamente e atualizam o realizado. Documentos **sem** código vão para uma fila de **não conciliados**, para o gestor vincular. No futuro, a importação também trará **dotações** (previsão), **empenhos** e **pagamentos**.
@@ -272,7 +273,6 @@ Documentos importados **com** código são vinculados automaticamente e atualiza
 | **Origem** | Por onde o recurso veio (LOA, EFQ, RTC, RP2, RP6, RP7, PAC…) |
 | **PTRES** | Programa de trabalho resumido do SIAFI; não é usado no GEDI porque pode mudar a cada exercício |
 | **Repasse** | Transferência manual entre unidades, sem objeto definido (`#TR`) |
-| **RP** | Resultado primário no SIAFI (2 = discricionária, 6 = emenda individual, 7 = emenda de bancada…) |
 | **Tabela de posições** | Ordem das unidades no bloco hexadecimal das beneficiárias, por ano |
 | **Tesouro Gerencial** | Ferramenta de consulta aos dados do SIAFI, usada na integração |
 | **Troca orçamentária** | Mudança de ação, origem ou natureza dentro da mesma unidade, por pedido formal (`#TO`) |
@@ -287,6 +287,8 @@ Documentos importados **com** código são vinculados automaticamente e atualiza
 
 ```
 index.html                     estrutura da página, menu e portão de login
+versao.json                    número da versão publicada (controle de cache)
+ferramentas/nova-versao.py     marca uma versão nova antes de publicar
 firebase/firestore.rules       regras de segurança (publicar no Console do Firebase)
 IMPLANTACAO.md                 passo a passo da versão atual
 assets/css/                    base, tabelas, modal, login, cadastros (painel lateral e celular)
@@ -303,6 +305,8 @@ assets/js/pages/cadastros-ui.js     painel lateral e utilidades
 ```
 
 **Coleções do Firestore**: `usuarios`, `unidades`, `origens`, `acoes`, `posicoes`, `financiadores`, `receitas`, `transferencias`, `despesas`, `ids`, `contadores`, `historico`, `dados_estaticos`.
+
+**Versão e cache**: cada publicação tem um número (`window.GEDI_VERSAO` no `index.html` e `versao.json`). Todos os arquivos são pedidos com `?v=<versão>`, e a página recarrega sozinha se o `versao.json` indicar uma versão mais nova. Para marcar uma versão nova: `python3 ferramentas/nova-versao.py 5.6`.
 
 **Trocar de banco de dados**: reescreva só `assets/js/data/repo.js`, mantendo as funções e o formato dos objetos.
 

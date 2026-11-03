@@ -137,7 +137,7 @@ function showApp(label){
   const av = document.getElementById('authUserAvatar');
   if(av) av.textContent = initials(label);
   const box = document.getElementById('authUser');
-  if(box) box.title = 'Perfis: ' + PERFIS_ATUAIS.map(p => PERFIS[p] || p).join(', ');
+  if(box) box.title = 'Perfis: ' + PERFIS_ATUAIS.map(p => PERFIS[p] || p).join(', ') + (window.GEDI_VERSAO ? ' · GEDI v' + window.GEDI_VERSAO : '');
   aplicarRestricaoDePerfil();
   iniciarAssinaturas();
   if(typeof iniciarPainelComDados === 'function') iniciarPainelComDados();
